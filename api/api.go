@@ -1,13 +1,16 @@
 package api
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
-	"strconv"
+	"regexp"
+	"strings"
 
 	"github.com/adhocteam/soapbox/api/proto"
+	"golang.org/x/net/context"
 )
 
 type server struct {
@@ -26,41 +29,43 @@ func NewServer(db *sql.DB, httpClient *http.Client) *server {
 }
 
 const (
-	// TODO(paulsmith): use codegen or other helper here for mapping columns and structs
+	// TODO(paulsmith): use codegen or other helper here for
+	// mapping columns and structs
 	createAppSQL = `
-INSERT INTO applications (name, description, external_dns, github_repo_url, dockerfile_path, entrypoint, type)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO applications (name, slug, description, external_dns, github_repo_url, dockerfile_path, entrypoint_override, type)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id
 `
 )
 
 func (s *server) CreateApplication(ctx context.Context, req *proto.CreateApplicationRequest) (*proto.CreateApplicationResponse, error) {
-	// verify access the GitHub repo (private - then need OAuth2 token)
-	resp, err := s.httpClient.Head(req.GetGithubRepoURL())
+	// verify access to the GitHub repo (if private, then need
+	// OAuth2 token: this is not the responsibility of this
+	// module, the caller should supply this server with an HTTP
+	// client configured with the token)
+	err := canAccessURL(s.httpClient, req.GetGithubRepoURL())
 	if err != nil {
-		// TODO(paulsmith): use github.com/pkg/errors errors.Wrap instead
-		return nil, fmt.Errorf("error checking for GitHub repo: %v", err)
+		return nil, fmt.Errorf("couldn't connect to GitHub repo: %v", err)
 	}
-	resp.Body.Close()
-	if resp.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("error checking for GitHub repo: HTTP status %d", resp.StatusCode)
-	}
-	// supply a default Dockerfile path ("/Dockerfile")
+
+	// supply a default Dockerfile path ("Dockerfile")
 	dockerfilePath := req.GetDockerfilePath()
 	if dockerfilePath == "" {
-		dockerfilePath = "./Dockerfile"
+		dockerfilePath = "Dockerfile"
 	}
 
 	args := []interface{}{
 		req.GetName(),
+		slugify(req.GetName()),
 		req.GetDescription(),
 		req.GetExternalDNS(),
 		req.GetGithubRepoURL(),
-		req.GetDockerfilePath(),
-		req.GetEntrypoint(),
+		dockerfilePath,
+		req.GetEntrypointOverride(),
 	}
 
-	// TODO(paulsmith): define an enum type in db and maybe in Go
+	// TODO(paulsmith): define an enum type
+	// the strings must stay in sync with app_type enum in /db/schema.sql
 	var appType string
 	switch req.GetType() {
 	case proto.CreateApplicationRequest_SERVER:
@@ -77,8 +82,40 @@ func (s *server) CreateApplication(ctx context.Context, req *proto.CreateApplica
 	}
 
 	appResp := &proto.CreateApplicationResponse{
-		Id: strconv.Itoa(id),
+		Id: int32(id),
 	}
 
 	return appResp, nil
+}
+
+type httpHead interface {
+	Head(url string) (*http.Response, error)
+}
+
+func canAccessURL(client httpHead, url string) error {
+	resp, err := client.Head(url)
+	if err != nil {
+		// TODO(paulsmith): use github.com/pkg/errors errors.Wrap instead
+		return fmt.Errorf("couldn't make HTTP HEAD request to %s: %v", url, err)
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode/100 != 2 {
+		return fmt.Errorf("non-success HTTP status response from %s: %d", url, resp.StatusCode)
+	}
+	return nil
+}
+
+var (
+	slugSpaceRe      = regexp.MustCompile(`\s+`)
+	slugNotAllowedRe = regexp.MustCompile(`[^a-z0-9-]`)
+	slugRepeatDashRe = regexp.MustCompile(`-{2,}`)
+)
+
+func slugify(s string) string {
+	s = strings.TrimSpace(strings.ToLower(s))
+	s = slugSpaceRe.ReplaceAllString(s, "-")
+	s = slugNotAllowedRe.ReplaceAllString(s, "")
+	s = slugRepeatDashRe.ReplaceAllString(s, "-")
+	return s
 }

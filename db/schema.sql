@@ -1,6 +1,7 @@
 create type app_type as enum ('server', 'cronjob');
 
 create table applications (
+       -- TODO(paulsmith): use app generated ID
        id serial not null primary key,
        name text not null,
        type app_type not null,

@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/adhocteam/soapbox/api"
-	"github.com/adhocteam/soapbox/api/proto"
+	pb "github.com/adhocteam/soapbox/soapboxpb"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 )
@@ -30,6 +30,6 @@ func main() {
 
 	gs := grpc.NewServer()
 	as := api.NewServer(db, nil)
-	proto.RegisterApplicationServer(gs, as)
+	pb.RegisterApplicationServer(gs, as)
 	log.Fatal(gs.Serve(ln))
 }

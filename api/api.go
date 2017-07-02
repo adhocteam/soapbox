@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/adhocteam/soapbox/api/proto"
+	pb "github.com/adhocteam/soapbox/soapboxpb"
 	"golang.org/x/net/context"
 )
 
@@ -38,7 +38,7 @@ RETURNING id
 `
 )
 
-func (s *server) CreateApplication(ctx context.Context, req *proto.CreateApplicationRequest) (*proto.CreateApplicationResponse, error) {
+func (s *server) CreateApplication(ctx context.Context, req *pb.CreateApplicationRequest) (*pb.CreateApplicationResponse, error) {
 	// verify access to the GitHub repo (if private, then need
 	// OAuth2 token: this is not the responsibility of this
 	// module, the caller should supply this server with an HTTP
@@ -68,9 +68,9 @@ func (s *server) CreateApplication(ctx context.Context, req *proto.CreateApplica
 	// the strings must stay in sync with app_type enum in /db/schema.sql
 	var appType string
 	switch req.GetType() {
-	case proto.CreateApplicationRequest_SERVER:
+	case pb.CreateApplicationRequest_SERVER:
 		appType = "server"
-	case proto.CreateApplicationRequest_CRONJOB:
+	case pb.CreateApplicationRequest_CRONJOB:
 		appType = "cronjob"
 	}
 	args = append(args, appType)
@@ -81,7 +81,7 @@ func (s *server) CreateApplication(ctx context.Context, req *proto.CreateApplica
 		return nil, fmt.Errorf("couldn't insert to database new application: %v", err)
 	}
 
-	appResp := &proto.CreateApplicationResponse{
+	appResp := &pb.CreateApplicationResponse{
 		Id: int32(id),
 	}
 
@@ -118,4 +118,36 @@ func slugify(s string) string {
 	s = slugNotAllowedRe.ReplaceAllString(s, "")
 	s = slugRepeatDashRe.ReplaceAllString(s, "-")
 	return s
+}
+
+const (
+	listAppsSQL = `SELECT id, name FROM applications ORDER BY created_at ASC`
+)
+
+func (s *server) ListApplications(ctx context.Context, req *pb.ListApplicationRequest) (*pb.ListApplicationResponse, error) {
+	rows, err := s.db.Query(listAppsSQL)
+	if err != nil {
+		return nil, fmt.Errorf("querying db for apps list: %v", err)
+	}
+
+	var apps []*pb.ApplicationSummary
+
+	for rows.Next() {
+		var a pb.ApplicationSummary
+		dest := []interface{}{&a.Id, &a.Name}
+		if err := rows.Scan(dest...); err != nil {
+			return nil, fmt.Errorf("scanning db row: %v", err)
+		}
+		apps = append(apps, &a)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating over db rows: %v", err)
+	}
+
+	resp := &pb.ListApplicationResponse{
+		Applications: apps,
+	}
+
+	return resp, nil
 }

@@ -1,0 +1,25 @@
+<h1>Applications</h1>
+
+<div class="card">
+    <div class="card-header text-right">
+	<%= link_to '+ New Application', new_application_path, class: "btn btn-primary" %>
+    </div>
+    <div class="card-block">
+    <table class="table table-striped">
+	<thead>
+	    <tr>
+		<th>ID</th>
+		<th>Name</th>
+	    </tr>
+	</thead>
+	<tbody>
+	    <% @applications.each do |app| %>
+		<tr scope="row">
+		    <td><%= app.id %></td>
+		    <td><b><%= app.name %></b></td>
+		</tr>
+	    <% end %>
+	</tbody>
+    </table>
+    </div>
+</div>

@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
-  get 'soapbox_application/index'
+  get 'dashboard/index'
 
-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
+  resources :applications
+
+  root 'dashboard#index'
 end

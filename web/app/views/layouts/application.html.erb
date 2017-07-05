@@ -66,18 +66,18 @@ body {
             <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Settings</a>
+            <a class="nav-link disabled" href="#">Settings</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Profile</a>
+            <a class="nav-link disabled" href="#">Profile</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Help</a>
+            <a class="nav-link disabled" href="#">Help</a>
           </li>
         </ul>
-        <form class="form-inline mt-2 mt-md-0">
+        <form class="form-inline mt-2 mt-md-0" disabled>
           <input class="form-control mr-sm-2" type="text" placeholder="Search">
-          <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+          <button class="btn btn-outline-success my-2 my-sm-0 disabled" disabled type="submit">Search</button>
         </form>
       </div>
     </nav>
@@ -87,16 +87,16 @@ body {
         <nav class="col-sm-3 col-md-2 hidden-xs-down bg-faded sidebar">
           <ul class="nav nav-pills flex-column">
             <li class="nav-item">
-              <a class="nav-link<%= ' active' if current_page?(root_path) %>" href="/">Overview <span class="sr-only">(current)</span></a>
+              <a class="nav-link<%= ' active' if current_page?(root_path) %>" href="/">Dashboard <span class="sr-only">(current)</span></a>
             </li>
             <li class="nav-item">
               <a class="nav-link<%= ' active' if current_page?(controller: :applications) %>" href="/applications">Applications</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Environments</a>
+              <a class="nav-link disabled" href="#">Environments</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Deployments</a>
+              <a class="nav-link disabled" href="#">Deployments</a>
             </li>
           </ul>
         </nav>

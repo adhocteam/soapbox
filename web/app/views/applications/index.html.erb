@@ -1,22 +1,25 @@
-<h1>Applications</h1>
-
 <div class="card">
-    <div class="card-header text-right">
-	<%= link_to '+ New Application', new_application_path, class: "btn btn-primary" %>
-    </div>
     <div class="card-block">
-    <table class="table table-striped">
+	<h4 class="card-title">Applications</h4>
+	<div class="text-right mb-3">
+	    <%= link_to '+ New Application', new_application_path, class: "btn btn-primary" %>
+	</div>
+	<table class="table table-striped">
 	<thead>
 	    <tr>
-		<th>ID</th>
 		<th>Name</th>
+		<th>Created At</th>
 	    </tr>
 	</thead>
 	<tbody>
 	    <% @applications.each do |app| %>
 		<tr scope="row">
-		    <td><%= app.id %></td>
-		    <td><b><%= app.name %></b></td>
+		    <td>
+			<%= link_to app.name, application_path(app.id) %>
+		    </td>
+		    <td>
+			
+		    </td>
 		</tr>
 	    <% end %>
 	</tbody>

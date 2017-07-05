@@ -11,11 +11,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :githubRepoURL, :string, 4
     optional :dockerfilePath, :string, 5
     optional :entrypointOverride, :string, 6
-    optional :type, :enum, 7, "CreateApplicationRequest.Type"
-  end
-  add_enum "CreateApplicationRequest.Type" do
-    value :SERVER, 0
-    value :CRONJOB, 1
+    optional :type, :enum, 7, "ApplicationType"
   end
   add_message "CreateApplicationResponse" do
     optional :id, :int32, 1
@@ -29,11 +25,31 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "ListApplicationResponse" do
     repeated :applications, :message, 1, "ApplicationSummary"
   end
+  add_message "GetApplicationRequest" do
+    optional :id, :int32, 1
+  end
+  add_message "GetApplicationResponse" do
+    optional :id, :int32, 1
+    optional :name, :string, 2
+    optional :description, :string, 3
+    optional :externalDNS, :string, 4
+    optional :githubRepoURL, :string, 5
+    optional :dockerfilePath, :string, 6
+    optional :entrypointOverride, :string, 7
+    optional :type, :enum, 8, "ApplicationType"
+    optional :createdAt, :string, 9
+  end
+  add_enum "ApplicationType" do
+    value :SERVER, 0
+    value :CRONJOB, 1
+  end
 end
 
 CreateApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("CreateApplicationRequest").msgclass
-CreateApplicationRequest::Type = Google::Protobuf::DescriptorPool.generated_pool.lookup("CreateApplicationRequest.Type").enummodule
 CreateApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("CreateApplicationResponse").msgclass
 ListApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("ListApplicationRequest").msgclass
 ApplicationSummary = Google::Protobuf::DescriptorPool.generated_pool.lookup("ApplicationSummary").msgclass
 ListApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("ListApplicationResponse").msgclass
+GetApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("GetApplicationRequest").msgclass
+GetApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("GetApplicationResponse").msgclass
+ApplicationType = Google::Protobuf::DescriptorPool.generated_pool.lookup("ApplicationType").enummodule

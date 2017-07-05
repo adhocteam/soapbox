@@ -1,0 +1,28 @@
+<div class="card">
+    <div class="card-header" >
+	Applications
+    </div>
+    <div class="card-block" >
+	<h4 class="card-title"><%= @app.name %></h4>
+	<h6 class="card-subtitle mb-2 text-muted">ID: <%= @app.id %></h6>
+	<p class="card-text">
+	    <% if !@app.description.blank? %>
+		<%= @app.description %>
+	    <% else %>
+		<i>No description.</i>
+	    <% end %>
+	</p>
+	<table class="table">
+	    <tbody>
+		<tr>
+		    <th>GitHub repository</th>
+		    <td><a href="<%= @app.githubRepoURL %>"><code><%= @app.githubRepoURL %></code></a></td>
+		</tr>
+	    </tbody>
+	</table>
+	<p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.createdAt, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
+    </div>
+</div>
+
+
+

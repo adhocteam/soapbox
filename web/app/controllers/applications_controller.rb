@@ -32,5 +32,10 @@ class ApplicationsController < ApplicationController
       render :new
     end
   end
+
+  def show
+    stub = Application::Stub.new('localhost:9090', :this_channel_is_insecure)
+    @app = stub.get_application(GetApplicationRequest.new(id: params[:id].to_i))
+  end
 end
 

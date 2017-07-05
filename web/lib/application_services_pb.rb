@@ -15,6 +15,7 @@ module Application
 
     rpc :CreateApplication, CreateApplicationRequest, CreateApplicationResponse
     rpc :ListApplications, ListApplicationRequest, ListApplicationResponse
+    rpc :GetApplication, GetApplicationRequest, GetApplicationResponse
   end
 
   Stub = Service.rpc_stub_class

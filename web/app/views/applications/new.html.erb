@@ -1,7 +1,9 @@
-<h1>Create a new Soapbox application</h1>
-
 <div class="card" >
     <div class="card-block" >
+	<h4 class="card-title">Create a new Soapbox application</h4>
+
+	<p class="card-text">Soapbox will build your application from your GitHub repository (as a Docker image), and run it in our managed infrastructure.</p>
+
 	<%= form_for :application, url: applications_path do |f| %>
 	    <% if @form.errors.any? %>
 		<div class="alert alert-danger" role="alert" >
@@ -16,8 +18,8 @@
 		    <div class="form-control-feedback"><%= msg %></div>
 		<% end %>
 	    </div>
-	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:description) %>">
-		<%= f.label :description, class: "col-form-label" %>
+	    <div class="form-group <%= ' has-danger' if @form.errors.include?(:description) %>">
+		<%= f.label :description, class: "col-form-label" %> (optional)
 		<%= f.text_area :description, value: @form.description, class: "form-control" %>
 		<% @form.errors.full_messages_for(:description).each do |msg| %>
 		    <div class="form-control-feedback"><%= msg %></div>
@@ -39,8 +41,10 @@
 		    <div class="form-control-feedback"><%= msg %></div>
 		<% end %>
 	    </div>
-	    <%= link_to 'Cancel', applications_path, class: "btn" %>
-	    <%= f.submit "Create application", class: "btn btn-primary" %>
+	    <div>
+		<%= link_to 'Cancel', applications_path, class: "btn" %>
+		<%= f.submit "Create application", class: "btn btn-primary" %>
+	    </div>
 	<% end %>
     </div>
 </div>

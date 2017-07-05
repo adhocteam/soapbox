@@ -68,9 +68,9 @@ func (s *server) CreateApplication(ctx context.Context, req *pb.CreateApplicatio
 	// the strings must stay in sync with app_type enum in /db/schema.sql
 	var appType string
 	switch req.GetType() {
-	case pb.CreateApplicationRequest_SERVER:
+	case pb.ApplicationType_SERVER:
 		appType = "server"
-	case pb.CreateApplicationRequest_CRONJOB:
+	case pb.ApplicationType_CRONJOB:
 		appType = "cronjob"
 	}
 	args = append(args, appType)
@@ -150,4 +150,41 @@ func (s *server) ListApplications(ctx context.Context, req *pb.ListApplicationRe
 	}
 
 	return resp, nil
+}
+
+const (
+	getApplicationSQL = `
+SELECT id, name, description, external_dns, github_repo_url, dockerfile_path, entrypoint_override, type, created_at
+FROM applications
+WHERE id = $1
+`
+)
+
+func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.GetApplicationResponse, error) {
+	var resp pb.GetApplicationResponse
+	// TODO(paulsmith): implement interface for scanning to the Go type (pb.ApplicationType)
+	var appType string
+	dest := []interface{}{
+		&resp.Id,
+		&resp.Name,
+		&resp.Description,
+		&resp.ExternalDNS,
+		&resp.GithubRepoURL,
+		&resp.DockerfilePath,
+		&resp.EntrypointOverride,
+		&appType,
+		&resp.CreatedAt,
+	}
+	if err := s.db.QueryRow(getApplicationSQL, req.Id).Scan(dest...); err != nil {
+		return nil, fmt.Errorf("scanning query result: %v", err)
+	}
+	switch appType {
+	case "server":
+		resp.Type = pb.ApplicationType_SERVER
+	case "cronjob":
+		resp.Type = pb.ApplicationType_CRONJOB
+	default:
+		return nil, fmt.Errorf("unknown app type enum value %q", appType)
+	}
+	return &resp, nil
 }

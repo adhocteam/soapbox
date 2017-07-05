@@ -3,17 +3,27 @@
 <div class="card" >
     <div class="card-block" >
 	<%= form_for :application, url: applications_path do |f| %>
+	    <% if @form.errors.any? %>
+		<div class="alert alert-danger" role="alert" >
+		    <p><strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this application from being created.</p>
+		    <ul>
+			<% @form.errors.full_messages.each do |msg| %>
+			    <li><%= msg %></li>
+			<% end %>
+		    </ul>
+		</div>
+	    <% end %>
 	    <div class="form-group">
 		<%= f.label :name %>
 		<%= f.text_field :name, class: "form-control form-control-lg" %>
 	    </div>
 	    <div class="form-group">
 		<%= f.label :description %>
-		<%= f.text_field :description, class: "form-control" %>
+		<%= f.text_area :description, class: "form-control" %>
 	    </div>
 	    <div class="form-group">
 		<%= f.label :github_repo_url, 'GitHub repository URL' %>
-		<%= f.text_field :github_repo_url, class: "form-control" %>
+		<%= f.text_field :github_repo_url, placeholder: "https://github.com/org/repo", class: "form-control" %>
 	    </div>
 	    <div class="form-group">
 		<%= f.label :type %>

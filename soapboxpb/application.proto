@@ -4,6 +4,12 @@ option go_package = "soapboxpb";
 service Application {
     rpc CreateApplication (CreateApplicationRequest) returns (CreateApplicationResponse) {}
     rpc ListApplications (ListApplicationRequest) returns (ListApplicationResponse) {}
+    rpc GetApplication (GetApplicationRequest) returns (GetApplicationResponse) {}
+}
+
+enum ApplicationType {
+    SERVER = 0;
+    CRONJOB = 1;
 }
 
 message CreateApplicationRequest {
@@ -13,11 +19,7 @@ message CreateApplicationRequest {
     string githubRepoURL = 4;
     string dockerfilePath = 5;
     string entrypointOverride = 6;
-    enum Type {
-	SERVER = 0;
-	CRONJOB = 1;
-    }
-    Type type = 7;
+    ApplicationType type = 7;
 }
 
 message CreateApplicationResponse {
@@ -33,4 +35,20 @@ message ApplicationSummary {
 
 message ListApplicationResponse {
     repeated ApplicationSummary applications = 1;
+}
+
+message GetApplicationRequest {
+    int32 id = 1;
+}
+
+message GetApplicationResponse {
+    int32 id = 1;
+    string name = 2;
+    string description = 3;
+    string externalDNS = 4;
+    string githubRepoURL = 5;
+    string dockerfilePath = 6;
+    string entrypointOverride = 7;
+    ApplicationType type = 8;
+    string createdAt = 9;
 }

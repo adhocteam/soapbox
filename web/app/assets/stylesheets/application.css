@@ -13,3 +13,11 @@
  *= require_tree .
  *= require_self
  */
+
+form .required label {
+    font-weight: 700;
+}
+
+form .required label:after {
+    content: " *";
+}

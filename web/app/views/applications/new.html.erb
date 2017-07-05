@@ -1,38 +1,46 @@
-<h1>New Application</h1>
+<h1>Create a new Soapbox application</h1>
 
 <div class="card" >
     <div class="card-block" >
 	<%= form_for :application, url: applications_path do |f| %>
 	    <% if @form.errors.any? %>
 		<div class="alert alert-danger" role="alert" >
-		    <p><strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this application from being created.</p>
-		    <ul>
-			<% @form.errors.full_messages.each do |msg| %>
-			    <li><%= msg %></li>
-			<% end %>
-		    </ul>
+		    <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented
+		    this application from being created.
 		</div>
 	    <% end %>
-	    <div class="form-group">
-		<%= f.label :name %>
-		<%= f.text_field :name, class: "form-control form-control-lg" %>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:name) %>">
+		<%= f.label :name, class: "col-form-label" %>
+		<%= f.text_field :name, value: @form.name, class: "form-control form-control-lg" %>
+		<% @form.errors.full_messages_for(:name).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
 	    </div>
-	    <div class="form-group">
-		<%= f.label :description %>
-		<%= f.text_area :description, class: "form-control" %>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:description) %>">
+		<%= f.label :description, class: "col-form-label" %>
+		<%= f.text_area :description, value: @form.description, class: "form-control" %>
+		<% @form.errors.full_messages_for(:description).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
 	    </div>
-	    <div class="form-group">
-		<%= f.label :github_repo_url, 'GitHub repository URL' %>
-		<%= f.text_field :github_repo_url, placeholder: "https://github.com/org/repo", class: "form-control" %>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:github_repo_url) %>">
+		<%= f.label :github_repo_url, 'GitHub repository URL', class: "col-form-label" %>
+		<%= f.text_field :github_repo_url, value: @form.github_repo_url, placeholder: "https://github.com/org/repo", class: "form-control" %>
+		<% @form.errors.full_messages_for(:github_repo_url).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
 	    </div>
-	    <div class="form-group">
-		<%= f.label :type %>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:type) %>">
+		<%= f.label :type, class: "col-form-label" %>
 		<%= f.select :type, {}, {}, {class: "form-control"} do %>
-		    <%= options_for_select([['Server', 'server'], ['Cron job', 'cronjob']]) %>
+		    <%= options_for_select([['Server', 'server'], ['Cron job', 'cronjob']], @form.type) %>
+		<% end %>
+		<% @form.errors.full_messages_for(:type).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
 		<% end %>
 	    </div>
 	    <%= link_to 'Cancel', applications_path, class: "btn" %>
-	    <%= f.submit nil, class: "btn btn-primary" %>
+	    <%= f.submit "Create application", class: "btn btn-primary" %>
 	<% end %>
     </div>
 </div>

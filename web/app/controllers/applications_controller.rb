@@ -1,12 +1,14 @@
 require 'application_pb'
-require 'application_services_pb'
 
 class ApplicationsController < ApplicationController
   def index
     req = Soapbox::ListApplicationRequest.new
-    stub = Soapbox::Applications::Stub.new('localhost:9090', :this_channel_is_insecure)
-    res = stub.list_applications(req)
-    @applications = res.applications
+    res = $api_client.list_applications(req)
+    if res.applications.count == 0
+      redirect_to new_application_path
+    else
+      @applications = res.applications
+    end
   end
 
   def new
@@ -25,8 +27,7 @@ class ApplicationsController < ApplicationController
                                                   description: @form.description,
                                                   githubRepoURL: @form.github_repo_url,
                                                   type: type)
-      stub = Soapbox::Applications::Stub.new('localhost:9090', :this_channel_is_insecure)
-      stub.create_application(req)
+      $api_client.create_application(req)
       redirect_to applications_path
     else
       render :new
@@ -34,8 +35,7 @@ class ApplicationsController < ApplicationController
   end
 
   def show
-    stub = Soapbox::Applications::Stub.new('localhost:9090', :this_channel_is_insecure)
     req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
-    @app = stub.get_application(req).app
+    @app = $api_client.get_application(req).app
   end
 end

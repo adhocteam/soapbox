@@ -4,31 +4,34 @@
 require 'google/protobuf'
 
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "CreateApplicationRequest" do
+  add_message "soapbox.CreateApplicationRequest" do
     optional :name, :string, 1
     optional :description, :string, 2
     optional :externalDNS, :string, 3
     optional :githubRepoURL, :string, 4
     optional :dockerfilePath, :string, 5
     optional :entrypointOverride, :string, 6
-    optional :type, :enum, 7, "ApplicationType"
+    optional :type, :enum, 7, "soapbox.ApplicationType"
   end
-  add_message "CreateApplicationResponse" do
+  add_message "soapbox.CreateApplicationResponse" do
     optional :id, :int32, 1
   end
-  add_message "ListApplicationRequest" do
+  add_message "soapbox.ListApplicationRequest" do
   end
-  add_message "ApplicationSummary" do
+  add_message "soapbox.ApplicationSummary" do
     optional :id, :int32, 1
     optional :name, :string, 2
   end
-  add_message "ListApplicationResponse" do
-    repeated :applications, :message, 1, "ApplicationSummary"
+  add_message "soapbox.ListApplicationResponse" do
+    repeated :applications, :message, 1, "soapbox.ApplicationSummary"
   end
-  add_message "GetApplicationRequest" do
+  add_message "soapbox.GetApplicationRequest" do
     optional :id, :int32, 1
   end
-  add_message "GetApplicationResponse" do
+  add_message "soapbox.GetApplicationResponse" do
+    optional :app, :message, 1, "soapbox.Application"
+  end
+  add_message "soapbox.Application" do
     optional :id, :int32, 1
     optional :name, :string, 2
     optional :description, :string, 3
@@ -36,20 +39,23 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :githubRepoURL, :string, 5
     optional :dockerfilePath, :string, 6
     optional :entrypointOverride, :string, 7
-    optional :type, :enum, 8, "ApplicationType"
+    optional :type, :enum, 8, "soapbox.ApplicationType"
     optional :createdAt, :string, 9
   end
-  add_enum "ApplicationType" do
+  add_enum "soapbox.ApplicationType" do
     value :SERVER, 0
     value :CRONJOB, 1
   end
 end
 
-CreateApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("CreateApplicationRequest").msgclass
-CreateApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("CreateApplicationResponse").msgclass
-ListApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("ListApplicationRequest").msgclass
-ApplicationSummary = Google::Protobuf::DescriptorPool.generated_pool.lookup("ApplicationSummary").msgclass
-ListApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("ListApplicationResponse").msgclass
-GetApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("GetApplicationRequest").msgclass
-GetApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("GetApplicationResponse").msgclass
-ApplicationType = Google::Protobuf::DescriptorPool.generated_pool.lookup("ApplicationType").enummodule
+module Soapbox
+  CreateApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreateApplicationRequest").msgclass
+  CreateApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreateApplicationResponse").msgclass
+  ListApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationRequest").msgclass
+  ApplicationSummary = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ApplicationSummary").msgclass
+  ListApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationResponse").msgclass
+  GetApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetApplicationRequest").msgclass
+  GetApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetApplicationResponse").msgclass
+  Application = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Application").msgclass
+  ApplicationType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ApplicationType").enummodule
+end

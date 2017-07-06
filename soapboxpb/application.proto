@@ -1,7 +1,8 @@
 syntax = "proto3";
+package soapbox;
 option go_package = "soapboxpb";
 
-service Application {
+service Applications {
     rpc CreateApplication (CreateApplicationRequest) returns (CreateApplicationResponse) {}
     rpc ListApplications (ListApplicationRequest) returns (ListApplicationResponse) {}
     rpc GetApplication (GetApplicationRequest) returns (GetApplicationResponse) {}
@@ -42,6 +43,10 @@ message GetApplicationRequest {
 }
 
 message GetApplicationResponse {
+    Application app = 1;
+}
+
+message Application {
     int32 id = 1;
     string name = 2;
     string description = 3;

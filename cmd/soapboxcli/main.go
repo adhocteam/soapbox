@@ -30,10 +30,10 @@ func main() {
 	}
 	defer conn.Close()
 
-	client := pb.NewApplicationClient(conn)
+	client := pb.NewApplicationsClient(conn)
 	ctx := context.Background()
 
-	type command func(context.Context, pb.ApplicationClient, []string) error
+	type command func(context.Context, pb.ApplicationsClient, []string) error
 	var cmd command
 
 	switch flag.Arg(0) {
@@ -56,7 +56,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "usage: %s <command>\n", filepath.Base(os.Args[0]))
 }
 
-func createApplication(ctx context.Context, client pb.ApplicationClient, args []string) error {
+func createApplication(ctx context.Context, client pb.ApplicationsClient, args []string) error {
 	args = args[1:]
 	if len(args) < 4 {
 		return fmt.Errorf("4 arguments are required: name, description, github repo URL, and type (server, cronjob)")
@@ -87,7 +87,7 @@ func createApplication(ctx context.Context, client pb.ApplicationClient, args []
 	return nil
 }
 
-func listApplications(ctx context.Context, client pb.ApplicationClient, args []string) error {
+func listApplications(ctx context.Context, client pb.ApplicationsClient, args []string) error {
 	req := &pb.ListApplicationRequest{}
 	apps, err := client.ListApplications(ctx, req)
 	if err != nil {
@@ -99,7 +99,7 @@ func listApplications(ctx context.Context, client pb.ApplicationClient, args []s
 	return nil
 }
 
-func getApplication(ctx context.Context, client pb.ApplicationClient, args []string) error {
+func getApplication(ctx context.Context, client pb.ApplicationsClient, args []string) error {
 	args = args[1:]
 	if len(args) < 1 {
 		return fmt.Errorf("1 argument required: ID of application")
@@ -113,13 +113,13 @@ func getApplication(ctx context.Context, client pb.ApplicationClient, args []str
 	if err != nil {
 		return fmt.Errorf("getting application: %v", err)
 	}
-	fmt.Printf("name:                %s\n", resp.Name)
-	fmt.Printf("ID:                  %d\n", resp.Id)
-	fmt.Printf("type:                %s\n", pb.ApplicationType_name[int32(resp.Type)])
-	fmt.Printf("created at:          %s\n", resp.CreatedAt)
-	fmt.Printf("external DNS:        %s\n", resp.ExternalDNS)
-	fmt.Printf("Dockerfile path:     %s\n", resp.DockerfilePath)
-	fmt.Printf("entrypoint override: %s\n", resp.EntrypointOverride)
-	fmt.Printf("description:\n%s\n", resp.Description)
+	fmt.Printf("name:                %s\n", resp.App.Name)
+	fmt.Printf("ID:                  %d\n", resp.App.Id)
+	fmt.Printf("type:                %s\n", pb.ApplicationType_name[int32(resp.App.Type)])
+	fmt.Printf("created at:          %s\n", resp.App.CreatedAt)
+	fmt.Printf("external DNS:        %s\n", resp.App.ExternalDNS)
+	fmt.Printf("Dockerfile path:     %s\n", resp.App.DockerfilePath)
+	fmt.Printf("entrypoint override: %s\n", resp.App.EntrypointOverride)
+	fmt.Printf("description:\n%s\n", resp.App.Description)
 	return nil
 }

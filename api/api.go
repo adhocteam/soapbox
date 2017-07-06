@@ -162,27 +162,29 @@ WHERE id = $1
 
 func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.GetApplicationResponse, error) {
 	var resp pb.GetApplicationResponse
+	var app pb.Application
+	resp.App = &app
 	// TODO(paulsmith): implement interface for scanning to the Go type (pb.ApplicationType)
 	var appType string
 	dest := []interface{}{
-		&resp.Id,
-		&resp.Name,
-		&resp.Description,
-		&resp.ExternalDNS,
-		&resp.GithubRepoURL,
-		&resp.DockerfilePath,
-		&resp.EntrypointOverride,
+		&app.Id,
+		&app.Name,
+		&app.Description,
+		&app.ExternalDNS,
+		&app.GithubRepoURL,
+		&app.DockerfilePath,
+		&app.EntrypointOverride,
 		&appType,
-		&resp.CreatedAt,
+		&app.CreatedAt,
 	}
 	if err := s.db.QueryRow(getApplicationSQL, req.Id).Scan(dest...); err != nil {
 		return nil, fmt.Errorf("scanning query result: %v", err)
 	}
 	switch appType {
 	case "server":
-		resp.Type = pb.ApplicationType_SERVER
+		app.Type = pb.ApplicationType_SERVER
 	case "cronjob":
-		resp.Type = pb.ApplicationType_CRONJOB
+		app.Type = pb.ApplicationType_CRONJOB
 	default:
 		return nil, fmt.Errorf("unknown app type enum value %q", appType)
 	}

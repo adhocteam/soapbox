@@ -3,8 +3,8 @@ require 'application_services_pb'
 
 class ApplicationsController < ApplicationController
   def index
-    req = ListApplicationRequest.new
-    stub = Application::Stub.new('localhost:9090', :this_channel_is_insecure)
+    req = Soapbox::ListApplicationRequest.new
+    stub = Soapbox::Applications::Stub.new('localhost:9090', :this_channel_is_insecure)
     res = stub.list_applications(req)
     @applications = res.applications
   end
@@ -17,15 +17,15 @@ class ApplicationsController < ApplicationController
     @form = CreateApplicationForm.new(params[:application])
     if @form.valid?
       types = {
-        'server' => CreateApplicationRequest::Type::SERVER,
-        'cronjob' => CreateApplicationRequest::Type::CRONJOB
+        'server' => Soapbox::ApplicationType::SERVER,
+        'cronjob' => Soapbox::ApplicationType::CRONJOB
       }
       type = types[@form.type]
-      req = CreateApplicationRequest.new(name: @form.name,
-                                         description: @form.description,
-                                         githubRepoURL: @form.github_repo_url,
-                                         type: type)
-      stub = Application::Stub.new('localhost:9090', :this_channel_is_insecure)
+      req = Soapbox::CreateApplicationRequest.new(name: @form.name,
+                                                  description: @form.description,
+                                                  githubRepoURL: @form.github_repo_url,
+                                                  type: type)
+      stub = Soapbox::Applications::Stub.new('localhost:9090', :this_channel_is_insecure)
       stub.create_application(req)
       redirect_to applications_path
     else
@@ -34,8 +34,8 @@ class ApplicationsController < ApplicationController
   end
 
   def show
-    stub = Application::Stub.new('localhost:9090', :this_channel_is_insecure)
-    @app = stub.get_application(GetApplicationRequest.new(id: params[:id].to_i))
+    stub = Soapbox::Applications::Stub.new('localhost:9090', :this_channel_is_insecure)
+    req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
+    @app = stub.get_application(req).app
   end
 end
-

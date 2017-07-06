@@ -30,6 +30,6 @@ func main() {
 
 	gs := grpc.NewServer()
 	as := api.NewServer(db, nil)
-	pb.RegisterApplicationServer(gs, as)
+	pb.RegisterApplicationsServer(gs, as)
 	log.Fatal(gs.Serve(ln))
 }

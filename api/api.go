@@ -34,40 +34,40 @@ const (
 	createAppSQL = `
 INSERT INTO applications (name, slug, description, external_dns, github_repo_url, dockerfile_path, entrypoint_override, type)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id
+RETURNING id, created_at
 `
 )
 
-func (s *server) CreateApplication(ctx context.Context, req *pb.CreateApplicationRequest) (*pb.CreateApplicationResponse, error) {
+func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*pb.Application, error) {
 	// verify access to the GitHub repo (if private, then need
 	// OAuth2 token: this is not the responsibility of this
 	// module, the caller should supply this server with an HTTP
 	// client configured with the token)
-	err := canAccessURL(s.httpClient, req.GetGithubRepoURL())
+	err := canAccessURL(s.httpClient, app.GetGithubRepoURL())
 	if err != nil {
 		return nil, fmt.Errorf("couldn't connect to GitHub repo: %v", err)
 	}
 
 	// supply a default Dockerfile path ("Dockerfile")
-	dockerfilePath := req.GetDockerfilePath()
+	dockerfilePath := app.GetDockerfilePath()
 	if dockerfilePath == "" {
 		dockerfilePath = "Dockerfile"
 	}
 
 	args := []interface{}{
-		req.GetName(),
-		slugify(req.GetName()),
-		req.GetDescription(),
-		req.GetExternalDNS(),
-		req.GetGithubRepoURL(),
+		app.GetName(),
+		slugify(app.GetName()),
+		app.GetDescription(),
+		app.GetExternalDNS(),
+		app.GetGithubRepoURL(),
 		dockerfilePath,
-		req.GetEntrypointOverride(),
+		app.GetEntrypointOverride(),
 	}
 
 	// TODO(paulsmith): define an enum type
 	// the strings must stay in sync with app_type enum in /db/schema.sql
 	var appType string
-	switch req.GetType() {
+	switch app.GetType() {
 	case pb.ApplicationType_SERVER:
 		appType = "server"
 	case pb.ApplicationType_CRONJOB:
@@ -76,16 +76,18 @@ func (s *server) CreateApplication(ctx context.Context, req *pb.CreateApplicatio
 	args = append(args, appType)
 
 	var id int
+	dest := []interface{}{
+		&id,
+		&app.CreatedAt,
+	}
 
-	if err := s.db.QueryRow(createAppSQL, args...).Scan(&id); err != nil {
+	if err := s.db.QueryRow(createAppSQL, args...).Scan(dest...); err != nil {
 		return nil, fmt.Errorf("couldn't insert to database new application: %v", err)
 	}
 
-	appResp := &pb.CreateApplicationResponse{
-		Id: int32(id),
-	}
+	app.Id = int32(id)
 
-	return appResp, nil
+	return app, nil
 }
 
 type httpHead interface {
@@ -121,20 +123,20 @@ func slugify(s string) string {
 }
 
 const (
-	listAppsSQL = `SELECT id, name FROM applications ORDER BY created_at ASC`
+	listAppsSQL = `SELECT id, name, description, created_at FROM applications ORDER BY created_at ASC`
 )
 
-func (s *server) ListApplications(ctx context.Context, req *pb.ListApplicationRequest) (*pb.ListApplicationResponse, error) {
+func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApplicationResponse, error) {
 	rows, err := s.db.Query(listAppsSQL)
 	if err != nil {
 		return nil, fmt.Errorf("querying db for apps list: %v", err)
 	}
 
-	var apps []*pb.ApplicationSummary
+	var apps []*pb.Application
 
 	for rows.Next() {
-		var a pb.ApplicationSummary
-		dest := []interface{}{&a.Id, &a.Name}
+		var a pb.Application
+		dest := []interface{}{&a.Id, &a.Name, &a.Description, &a.CreatedAt}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, fmt.Errorf("scanning db row: %v", err)
 		}
@@ -160,10 +162,8 @@ WHERE id = $1
 `
 )
 
-func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.GetApplicationResponse, error) {
-	var resp pb.GetApplicationResponse
+func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
 	var app pb.Application
-	resp.App = &app
 	// TODO(paulsmith): implement interface for scanning to the Go type (pb.ApplicationType)
 	var appType string
 	dest := []interface{}{
@@ -188,5 +188,5 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	default:
 		return nil, fmt.Errorf("unknown app type enum value %q", appType)
 	}
-	return &resp, nil
+	return &app, nil
 }

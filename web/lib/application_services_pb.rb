@@ -14,9 +14,9 @@ module Soapbox
       self.unmarshal_class_method = :decode
       self.service_name = 'soapbox.Applications'
 
-      rpc :CreateApplication, CreateApplicationRequest, CreateApplicationResponse
-      rpc :ListApplications, ListApplicationRequest, ListApplicationResponse
-      rpc :GetApplication, GetApplicationRequest, GetApplicationResponse
+      rpc :ListApplications, Empty, ListApplicationResponse
+      rpc :CreateApplication, Application, Application
+      rpc :GetApplication, GetApplicationRequest, Application
     end
 
     Stub = Service.rpc_stub_class

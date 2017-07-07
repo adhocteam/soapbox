@@ -11,7 +11,7 @@ service Deployments {
 
 message StartDeploymentRequest {
     soapbox.Application application = 1;
-    string sha1OrTag = 2;
+    string sha1_or_tag = 2;
     map<string,string> env = 3;
 }
 

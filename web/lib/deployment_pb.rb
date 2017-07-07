@@ -7,7 +7,7 @@ require 'application_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.StartDeploymentRequest" do
     optional :application, :message, 1, "soapbox.Application"
-    optional :sha1OrTag, :string, 2
+    optional :sha1_or_tag, :string, 2
     map :env, :string, :string, 3
   end
   add_message "soapbox.StartDeploymentResponse" do

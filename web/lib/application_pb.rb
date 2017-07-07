@@ -10,12 +10,12 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :id, :int32, 1
     optional :name, :string, 2
     optional :description, :string, 3
-    optional :externalDNS, :string, 4
-    optional :githubRepoURL, :string, 5
-    optional :dockerfilePath, :string, 6
-    optional :entrypointOverride, :string, 7
+    optional :external_dns, :string, 4
+    optional :github_repo_url, :string, 5
+    optional :dockerfile_path, :string, 6
+    optional :entrypoint_override, :string, 7
     optional :type, :enum, 8, "soapbox.ApplicationType"
-    optional :createdAt, :string, 9
+    optional :created_at, :string, 9
   end
   add_message "soapbox.ListApplicationResponse" do
     repeated :applications, :message, 1, "soapbox.Application"

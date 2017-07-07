@@ -19,12 +19,12 @@ message Application {
     int32 id = 1;
     string name = 2;
     string description = 3;
-    string externalDNS = 4;
-    string githubRepoURL = 5;
-    string dockerfilePath = 6;
-    string entrypointOverride = 7;
+    string external_dns = 4;
+    string github_repo_url = 5;
+    string dockerfile_path = 6;
+    string entrypoint_override = 7;
     ApplicationType type = 8;
-    string createdAt = 9;
+    string created_at = 9;
 }
 
 message ListApplicationResponse {

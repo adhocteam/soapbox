@@ -1,0 +1,59 @@
+syntax = "proto3";
+package soapbox;
+option go_package = "soapboxpb";
+
+service Applications {
+    rpc CreateApplication (CreateApplicationRequest) returns (CreateApplicationResponse) {}
+    rpc ListApplications (ListApplicationRequest) returns (ListApplicationResponse) {}
+    rpc GetApplication (GetApplicationRequest) returns (GetApplicationResponse) {}
+}
+
+enum ApplicationType {
+    SERVER = 0;
+    CRONJOB = 1;
+}
+
+message CreateApplicationRequest {
+    string name = 1;
+    string description = 2;
+    string externalDNS = 3;
+    string githubRepoURL = 4;
+    string dockerfilePath = 5;
+    string entrypointOverride = 6;
+    ApplicationType type = 7;
+}
+
+message CreateApplicationResponse {
+    int32 id = 1;
+}
+
+message ListApplicationRequest {}
+
+message ApplicationSummary {
+    int32 id = 1;
+    string name = 2;
+}
+
+message ListApplicationResponse {
+    repeated ApplicationSummary applications = 1;
+}
+
+message GetApplicationRequest {
+    int32 id = 1;
+}
+
+message GetApplicationResponse {
+    Application app = 1;
+}
+
+message Application {
+    int32 id = 1;
+    string name = 2;
+    string description = 3;
+    string externalDNS = 4;
+    string githubRepoURL = 5;
+    string dockerfilePath = 6;
+    string entrypointOverride = 7;
+    ApplicationType type = 8;
+    string createdAt = 9;
+}

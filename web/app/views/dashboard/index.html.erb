@@ -1,0 +1,30 @@
+<div class="card">
+    <div class="card-block">
+	<h4 class="card-title">Dashboard</h4>
+	<div class="row">
+	    <div class="col-sm-6">
+		<div class="card bg-primary text-white">
+		    <div class="card-block">
+			<h5 class="card-title">Applications</h5>
+			<% if @num_applications == 0 %>
+			    <p class="card-text h1 mb-3"><i>None yet &hellip;</i></p>
+			    <%= link_to 'Create your first application!', new_application_path, class: 'btn bg-inverse text-white' %>
+			<% else  %>
+			    <p class="card-text h1 mb-3"><%= @num_applications %></p>
+			    <%= link_to 'Go to applications', applications_path, class: 'btn bg-inverse text-white' %>
+			<% end %>
+			</div>
+		</div>
+	    </div>
+	    <div class="col-sm-6">
+		<div class="card bg-success text-white">
+		    <div class="card-block">
+			<h5 class="card-title">Deployments</h5>
+			<p class="card-text h1 mb-3">N/A</p>
+			<a href="#" class="disabled btn bg-inverse text-white">Go to deployments</a>
+		    </div>
+		</div>
+	    </div>
+	</div>
+    </div>
+</div>

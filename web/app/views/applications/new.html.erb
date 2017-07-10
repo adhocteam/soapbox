@@ -1,0 +1,50 @@
+<div class="card" >
+    <div class="card-block" >
+	<h4 class="card-title">Create a new Soapbox application</h4>
+
+	<p class="card-text">Soapbox will build your application from your GitHub repository (as a Docker image), and run it in our managed infrastructure.</p>
+
+	<%= form_for :application, url: applications_path do |f| %>
+	    <% if @form.errors.any? %>
+		<div class="alert alert-danger" role="alert" >
+		    <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented
+		    this application from being created.
+		</div>
+	    <% end %>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:name) %>">
+		<%= f.label :name, class: "col-form-label" %>
+		<%= f.text_field :name, value: @form.name, class: "form-control form-control-lg" %>
+		<% @form.errors.full_messages_for(:name).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+	    <div class="form-group <%= ' has-danger' if @form.errors.include?(:description) %>">
+		<%= f.label :description, class: "col-form-label" %> (optional)
+		<%= f.text_area :description, value: @form.description, class: "form-control" %>
+		<% @form.errors.full_messages_for(:description).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:github_repo_url) %>">
+		<%= f.label :github_repo_url, 'GitHub repository URL', class: "col-form-label" %>
+		<%= f.text_field :github_repo_url, value: @form.github_repo_url, placeholder: "https://github.com/org/repo.git", class: "form-control" %>
+		<% @form.errors.full_messages_for(:github_repo_url).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:type) %>">
+		<%= f.label :type, class: "col-form-label" %>
+		<%= f.select :type, {}, {}, {class: "form-control"} do %>
+		    <%= options_for_select([['Server', 'server'], ['Cron job', 'cronjob']], @form.type) %>
+		<% end %>
+		<% @form.errors.full_messages_for(:type).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+	    <div>
+		<%= link_to 'Cancel', applications_path, class: "btn" %>
+		<%= f.submit "Create application", class: "btn btn-primary" %>
+	    </div>
+	<% end %>
+    </div>
+</div>

@@ -1,0 +1,28 @@
+syntax = "proto3";
+package soapbox;
+option go_package = "soapboxpb";
+
+import "application.proto";
+
+service Deployments {
+    rpc StartDeployment (StartDeploymentRequest) returns (StartDeploymentResponse) {}
+    rpc GetDeploymentStatus (GetDeploymentStatusRequest) returns (GetDeploymentStatusResponse) {}
+}
+
+message StartDeploymentRequest {
+    soapbox.Application application = 1;
+    string sha1OrTag = 2;
+    map<string,string> env = 3;
+}
+
+message StartDeploymentResponse {
+    int32 id = 1;
+}
+
+message GetDeploymentStatusRequest {
+    int32 id = 1;
+}
+
+message GetDeploymentStatusResponse {
+    string state = 1;
+}

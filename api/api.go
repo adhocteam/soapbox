@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/adhocteam/soapbox/models"
 	pb "github.com/adhocteam/soapbox/soapboxpb"
 	"golang.org/x/net/context"
 )
@@ -28,15 +30,9 @@ func NewServer(db *sql.DB, httpClient *http.Client) *server {
 	}
 }
 
-const (
-	// TODO(paulsmith): use codegen or other helper here for
-	// mapping columns and structs
-	createAppSQL = `
-INSERT INTO applications (name, slug, description, external_dns, github_repo_url, dockerfile_path, entrypoint_override, type)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, created_at
-`
-)
+func newNullString(s string) sql.NullString {
+	return sql.NullString{String: s, Valid: true}
+}
 
 func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*pb.Application, error) {
 	// verify access to the GitHub repo (if private, then need
@@ -54,38 +50,26 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 		dockerfilePath = "Dockerfile"
 	}
 
-	args := []interface{}{
-		app.GetName(),
-		slugify(app.GetName()),
-		app.GetDescription(),
-		app.GetExternalDns(),
-		app.GetGithubRepoUrl(),
-		dockerfilePath,
-		app.GetEntrypointOverride(),
+	model := &models.Application{
+		ID:                 int(app.Id),
+		Name:               app.Name,
+		Slug:               newNullString(slugify(app.Name)),
+		Description:        newNullString(app.Description),
+		ExternalDNS:        newNullString(app.ExternalDns),
+		GithubRepoURL:      newNullString(app.GithubRepoUrl),
+		DockerfilePath:     newNullString(app.DockerfilePath),
+		EntrypointOverride: newNullString(app.EntrypointOverride),
+		Type:               appTypePbToModel(app.Type),
+		InternalDNS:        newNullString(app.InternalDns),
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
 	}
 
-	// TODO(paulsmith): define an enum type
-	// the strings must stay in sync with app_type enum in /db/schema.sql
-	var appType string
-	switch app.GetType() {
-	case pb.ApplicationType_SERVER:
-		appType = "server"
-	case pb.ApplicationType_CRONJOB:
-		appType = "cronjob"
-	}
-	args = append(args, appType)
-
-	var id int
-	dest := []interface{}{
-		&id,
-		&app.CreatedAt,
+	if err := model.Insert(s.db); err != nil {
+		return nil, fmt.Errorf("inserting into db: %v", err)
 	}
 
-	if err := s.db.QueryRow(createAppSQL, args...).Scan(dest...); err != nil {
-		return nil, fmt.Errorf("couldn't insert to database new application: %v", err)
-	}
-
-	app.Id = int32(id)
+	app.Id = int32(model.ID)
 
 	return app, nil
 }
@@ -154,39 +138,63 @@ func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApp
 	return resp, nil
 }
 
-const (
-	getApplicationSQL = `
-SELECT id, name, description, external_dns, github_repo_url, dockerfile_path, entrypoint_override, type, created_at
-FROM applications
-WHERE id = $1
-`
-)
+func appTypeModelToPb(at models.AppType) pb.ApplicationType {
+	switch at {
+	case models.AppTypeServer:
+		return pb.ApplicationType_SERVER
+	case models.AppTypeCronjob:
+		return pb.ApplicationType_CRONJOB
+	}
+	panic("shouldn't reach here")
+}
+
+func appTypePbToModel(at pb.ApplicationType) models.AppType {
+	switch at {
+	case pb.ApplicationType_SERVER:
+		return models.AppTypeServer
+	case pb.ApplicationType_CRONJOB:
+		return models.AppTypeCronjob
+	}
+	panic("shouldn't reach here")
+}
 
 func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
-	var app pb.Application
-	// TODO(paulsmith): implement interface for scanning to the Go type (pb.ApplicationType)
-	var appType string
-	dest := []interface{}{
-		&app.Id,
-		&app.Name,
-		&app.Description,
-		&app.ExternalDns,
-		&app.GithubRepoUrl,
-		&app.DockerfilePath,
-		&app.EntrypointOverride,
-		&appType,
-		&app.CreatedAt,
+	model, err := models.ApplicationByID(s.db, int(req.Id))
+	if err != nil {
+		return nil, fmt.Errorf("getting application by ID from db: %v", err)
 	}
-	if err := s.db.QueryRow(getApplicationSQL, req.Id).Scan(dest...); err != nil {
-		return nil, fmt.Errorf("scanning query result: %v", err)
+
+	app := &pb.Application{
+		Id:   int32(model.ID),
+		Name: model.Name,
+		Type: appTypeModelToPb(model.Type),
 	}
-	switch appType {
-	case "server":
-		app.Type = pb.ApplicationType_SERVER
-	case "cronjob":
-		app.Type = pb.ApplicationType_CRONJOB
-	default:
-		return nil, fmt.Errorf("unknown app type enum value %q", appType)
+	if model.Slug.Valid {
+		app.Slug = model.Slug.String
 	}
-	return &app, nil
+	if model.Description.Valid {
+		app.Description = model.Description.String
+	}
+	if model.InternalDNS.Valid {
+		app.InternalDns = model.InternalDNS.String
+	}
+	if model.ExternalDNS.Valid {
+		app.ExternalDns = model.ExternalDNS.String
+	}
+	if model.GithubRepoURL.Valid {
+		app.GithubRepoUrl = model.GithubRepoURL.String
+	}
+	if model.DockerfilePath.Valid {
+		app.DockerfilePath = model.DockerfilePath.String
+	}
+	if model.EntrypointOverride.Valid {
+		app.EntrypointOverride = model.EntrypointOverride.String
+	}
+	// TODO(paulsmith): have a global timestamp format across the
+	// Go and Rails apps
+	app.CreatedAt = model.CreatedAt.Format(timestampFormat)
+
+	return app, nil
 }
+
+const timestampFormat = "2006-01-02T15:04:05"

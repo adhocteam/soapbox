@@ -25,11 +25,6 @@ variable "application_port" {
   default = "80"
 }
 
-variable "application_data_port" {
-  type    = "string"
-  default = "5433"
-}
-
 variable "public_ingress_cidrs" {
   type    = "list"
   default = ["0.0.0.0/0"]
@@ -44,7 +39,6 @@ variable "az_cidr_blocks" {
   type = "map"
   default = {
     "app"  = ["10.0.1.0/24", "10.0.2.0/24"]
-    "data" = ["10.0.3.0/24", "10.0.4.0/24"]
-    "dmz"  = ["10.0.5.0/24", "10.0.6.0/24"]
+    "dmz"  = ["10.0.3.0/24", "10.0.4.0/24"]
   }
 }

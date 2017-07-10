@@ -31,20 +31,6 @@ resource "aws_subnet" "app" {
   }
 }
 
-# Data subnets
-resource "aws_subnet" "data" {
-  count             = "${length(var.availability_zones)}"
-  vpc_id            = "${aws_vpc.application_vpc.id}"
-  cidr_block        = "${element(var.az_cidr_blocks["data"], count.index)}"
-  availability_zone = "${var.region}${element(var.availability_zones, count.index)}"
-
-  tags {
-    Name = "${var.application_name}: data subnet ${count.index}"
-    env  = "${var.environment}"
-    app  = "${var.application_name}"
-  }
-}
-
 # DMS subnets
 resource "aws_subnet" "dmz" {
   count             = "${length(var.availability_zones)}"
@@ -104,31 +90,6 @@ resource "aws_security_group" "application_app_sg" {
 
   tags {
     Name = "${var.application_name}: ${var.environment} application subnet security group"
-    env  = "${var.environment}"
-    app  = "${var.application_name}"
-  }
-}
-
-# Security group: app subnet <-> data subnet
-resource "aws_security_group" "application_data_sg" {
-  name = "${var.application_name}: ${var.environment} data subnet security group"
-
-  ingress {
-    from_port       = "${var.application_data_port}"
-    to_port         = "${var.application_data_port}"
-    protocol        = "tcp"
-    security_groups = ["${aws_security_group.application_app_sg.id}"]
-  }
-
-  egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "tcp"
-    security_groups = ["${aws_security_group.application_app_sg.id}"]
-  }
-
-  tags {
-    Name = "${var.application_name}: ${var.environment} data subnet security group"
     env  = "${var.environment}"
     app  = "${var.application_name}"
   }

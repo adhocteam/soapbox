@@ -10,6 +10,11 @@ variable "application_domain" {
   type = "string"
 }
 
+variable "application_acm_cert_arn" {
+  type = "string"
+  default = ""
+}
+
 variable "region" {
   type    = "string"
   default = "us-east-1"

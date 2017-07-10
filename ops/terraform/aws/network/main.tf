@@ -15,8 +15,6 @@ resource "aws_vpc" "application_vpc" {
   }
 }
 
-# Subnets
-
 # Application subnets
 resource "aws_subnet" "app" {
   count             = "${length(var.availability_zones)}"
@@ -50,8 +48,15 @@ resource "aws_security_group" "application_alb_sg" {
   name = "${var.application_name}: ${var.environment} public alb security group"
 
   ingress {
-    from_port   = "${var.application_port}"
-    to_port     = "${var.application_port}"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["${var.public_ingress_cidrs}"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["${var.public_ingress_cidrs}"]
   }
@@ -97,10 +102,10 @@ resource "aws_security_group" "application_app_sg" {
 
 # Public alb
 resource "aws_alb" "application_alb" {
-  name = "application-alb-${var.environment}"
-  internal = false
+  name            = "application-alb-${var.environment}"
+  internal        = false
   security_groups = ["${aws_security_group.application_alb_sg.id}"]
-  subnets = ["${aws_subnet.dmz.*.id}"]
+  subnets         = ["${aws_subnet.dmz.*.id}"]
 
   ip_address_type = "ipv4"
 
@@ -111,9 +116,55 @@ resource "aws_alb" "application_alb" {
   }
 }
 
+resource "aws_alb_target_group" "application_target_group" {
+  name     = "application-default"
+  port     = "${var.application_port}"
+  protocol = "HTTP"
+  vpc_id   = "${aws_vpc.application_vpc.id}"
+
+  health_check {
+    interval            = 60
+    path                = "/_health"
+    port                = "${var.application_port}"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+
+  tags {
+    Name = "${var.application_name}: ${var.environment} alb target group"
+    env  = "${var.environment}"
+    app  = "${var.application_name}"
+  }
+}
+
+resource "aws_alb_listener" "application_alb_http" {
+  load_balancer_arn = "${aws_alb.application_alb.arn}"
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = "${aws_alb_target_group.application_target_group.arn}"
+    type             = "forward"
+  }
+}
+
+resource "aws_alb_listener" "application_alb_https" {
+  count             = "${var.application_acm_cert_arn != "" ? 1 : 0}"
+  load_balancer_arn = "${aws_alb.application_alb.arn}"
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "${var.application_acm_cert_arn}"
+
+  default_action {
+    target_group_arn = "${aws_alb_target_group.application_target_group.arn}"
+    type             = "forward"
+  }
+}
+
 # Route53 zone
 resource "aws_route53_zone" "application_zone" {
-  name    = "${var.application_domain}"
+  name    = "${var.application_domain}."
   comment = "${var.application_name}: ${var.environment} domain"
   vpc_id  = "${aws_vpc.application_vpc.id}"
 

@@ -29,7 +29,7 @@ resource "aws_subnet" "app" {
   }
 }
 
-# DMS subnets
+# DMZ subnets
 resource "aws_subnet" "dmz" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${aws_vpc.application_vpc.id}"

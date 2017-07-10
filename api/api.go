@@ -43,7 +43,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	// OAuth2 token: this is not the responsibility of this
 	// module, the caller should supply this server with an HTTP
 	// client configured with the token)
-	err := canAccessURL(s.httpClient, app.GetGithubRepoURL())
+	err := canAccessURL(s.httpClient, app.GetGithubRepoUrl())
 	if err != nil {
 		return nil, fmt.Errorf("couldn't connect to GitHub repo: %v", err)
 	}
@@ -58,8 +58,8 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 		app.GetName(),
 		slugify(app.GetName()),
 		app.GetDescription(),
-		app.GetExternalDNS(),
-		app.GetGithubRepoURL(),
+		app.GetExternalDns(),
+		app.GetGithubRepoUrl(),
 		dockerfilePath,
 		app.GetEntrypointOverride(),
 	}
@@ -170,8 +170,8 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 		&app.Id,
 		&app.Name,
 		&app.Description,
-		&app.ExternalDNS,
-		&app.GithubRepoURL,
+		&app.ExternalDns,
+		&app.GithubRepoUrl,
 		&app.DockerfilePath,
 		&app.EntrypointOverride,
 		&appType,

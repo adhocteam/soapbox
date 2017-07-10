@@ -75,7 +75,7 @@ func createApplication(ctx context.Context, client pb.ApplicationsClient, args [
 	req := &pb.Application{
 		Name:          args[0],
 		Description:   args[1],
-		GithubRepoURL: args[2],
+		GithubRepoUrl: args[2],
 		Type:          appType,
 	}
 	app, err := client.CreateApplication(ctx, req)
@@ -116,7 +116,7 @@ func getApplication(ctx context.Context, client pb.ApplicationsClient, args []st
 	fmt.Printf("ID:                  %d\n", app.Id)
 	fmt.Printf("type:                %s\n", pb.ApplicationType_name[int32(app.Type)])
 	fmt.Printf("created at:          %s\n", app.CreatedAt)
-	fmt.Printf("external DNS:        %s\n", app.ExternalDNS)
+	fmt.Printf("external DNS:        %s\n", app.ExternalDns)
 	fmt.Printf("Dockerfile path:     %s\n", app.DockerfilePath)
 	fmt.Printf("entrypoint override: %s\n", app.EntrypointOverride)
 	fmt.Printf("description:\n%s\n", app.Description)

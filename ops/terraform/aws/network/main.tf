@@ -4,8 +4,10 @@ provider "aws" {
 
 # VPC
 resource "aws_vpc" "application_vpc" {
-  cidr_block       = "${var.vpc_cidr_block}"
-  instance_tenancy = "dedicated"
+  cidr_block           = "${var.vpc_cidr_block}"
+  instance_tenancy     = "dedicated"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
   tags {
     Name = "${var.application_name}: ${var.environment} vpc"
@@ -152,6 +154,7 @@ resource "aws_alb" "application_alb" {
 resource "aws_route53_zone" "application_zone" {
   name    = "${var.application_domain}"
   comment = "${var.application_name}: ${var.environment} domain"
+  vpc_id  = "${aws_vpc.application_vpc.id}"
 
   tags {
     Name = "${var.application_name}: ${var.environment} hosted zone"

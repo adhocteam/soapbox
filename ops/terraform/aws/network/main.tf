@@ -5,7 +5,7 @@ provider "aws" {
 # VPC
 resource "aws_vpc" "application_vpc" {
   cidr_block           = "${var.vpc_cidr_block}"
-  instance_tenancy     = "dedicated"
+  instance_tenancy     = "${var.instance_tenancy}"
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -126,7 +126,7 @@ resource "aws_alb_target_group" "application_target_group" {
 
   health_check {
     interval            = 60
-    path                = "/_health"
+    path                = "${var.health_check_path}"
     port                = "${var.application_port}"
     healthy_threshold   = 2
     unhealthy_threshold = 2

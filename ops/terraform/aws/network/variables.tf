@@ -10,6 +10,16 @@ variable "application_domain" {
   type = "string"
 }
 
+variable "instance_tenancy" {
+  type = "string"
+  default = "default"
+}
+
+variable "health_check_path" {
+  type = "string"
+  default = "/_health"
+}
+
 variable "application_acm_cert_arn" {
   type = "string"
   default = ""

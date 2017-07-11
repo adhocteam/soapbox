@@ -2,8 +2,6 @@ syntax = "proto3";
 package soapbox;
 option go_package = "soapboxpb";
 
-import "application.proto";
-
 service Environments {
     rpc ListEnvironments (ListEnvironmentRequest) returns (ListEnvironmentResponse) {}
     rpc GetEnvironment (GetEnvironmentRequest) returns (GetEnvironmentResponse) {}

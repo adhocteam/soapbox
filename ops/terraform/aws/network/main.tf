@@ -11,6 +11,7 @@ resource "aws_vpc" "application_vpc" {
 
   tags {
     Name = "${var.application_name}: ${var.environment} vpc"
+    app  = "${var.application_name}"
     env  = "${var.environment}"
   }
 }

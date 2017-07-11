@@ -45,7 +45,8 @@ resource "aws_subnet" "dmz" {
 
 # Security Group: world -> alb
 resource "aws_security_group" "application_alb_sg" {
-  name = "${var.application_name}: ${var.environment} public alb security group"
+  name   = "${var.application_name}: ${var.environment} public alb security group"
+  vpc_id = "${aws_vpc.application_vpc.id}"
 
   ingress {
     from_port   = 80
@@ -77,7 +78,8 @@ resource "aws_security_group" "application_alb_sg" {
 
 # Security group: alb -> app subnet
 resource "aws_security_group" "application_app_sg" {
-  name = "${var.application_name}: ${var.environment} application subnet security group"
+  name   = "${var.application_name}: ${var.environment} application subnet security group"
+  vpc_id = "${aws_vpc.application_vpc.id}"
 
   ingress {
     from_port       = "${var.application_port}"
@@ -117,7 +119,7 @@ resource "aws_alb" "application_alb" {
 }
 
 resource "aws_alb_target_group" "application_target_group" {
-  name     = "application-default"
+  name     = "${var.application_name}-${var.environment}"
   port     = "${var.application_port}"
   protocol = "HTTP"
   vpc_id   = "${aws_vpc.application_vpc.id}"

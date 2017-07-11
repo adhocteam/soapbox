@@ -104,7 +104,7 @@ resource "aws_security_group" "application_app_sg" {
 
 # Public alb
 resource "aws_alb" "application_alb" {
-  name            = "application-alb-${var.environment}"
+  name            = "${var.application_name}-${var.environment}"
   internal        = false
   security_groups = ["${aws_security_group.application_alb_sg.id}"]
   subnets         = ["${aws_subnet.dmz.*.id}"]

@@ -7,6 +7,7 @@ Package soapboxpb is a generated protocol buffer package.
 It is generated from these files:
 	application.proto
 	deployment.proto
+	environment.proto
 
 It has these top-level messages:
 	CreateApplicationRequest
@@ -21,6 +22,18 @@ It has these top-level messages:
 	StartDeploymentResponse
 	GetDeploymentStatusRequest
 	GetDeploymentStatusResponse
+	ListEnvironmentRequest
+	ListEnvironmentResponse
+	GetEnvironmentRequest
+	GetEnvironmentResponse
+	Environment
+	EnvironmentVariable
+	CreateEnvironmentRequest
+	CreateEnvironmentResponse
+	DestroyEnvironmentRequest
+	DestroyEnvironmentResponse
+	CopyEnvironmentRequest
+	CopyEnvironmentResponse
 */
 package soapboxpb
 

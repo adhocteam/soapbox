@@ -14,13 +14,8 @@ service Environments {
 
 message ListEnvironmentRequest {}
 
-message EnvironmentSummary {
-    int32 id = 1;
-    string name = 2;
-}
-
 message ListEnvironmentResponse {
-    repeated EnvironmentSummary environments = 1;
+    repeated Environment environments = 1;
 }
 
 message GetEnvironmentRequest {
@@ -35,21 +30,20 @@ message Environment {
     int32 id = 1;
     string name = 2;
     string slug = 3;
-    bool productionFlag = 4;
-    repeated EnvironmentVariable vars = 5;
+    repeated EnvironmentVariable vars = 4;
+    string createdAt = 5;
 }
 
 message EnvironmentVariable {
     int32 id = 1;
     string key = 2;
     string value = 3;
-    string type = 4;
-    string rate = 5;
 }
 
 message CreateEnvironmentRequest {
     string name = 1;
     string slug = 2;
+    repeated EnvironmentVariable vars = 3;
 }
 
 message CreateEnvironmentResponse {

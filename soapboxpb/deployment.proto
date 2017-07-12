@@ -6,8 +6,28 @@ import "application.proto";
 import "environment.proto";
 
 service Deployments {
+    rpc ListDeployments (ListDeploymentRequest) returns (ListDeploymentResponse) {}
+    rpc GetDeployment (GetDeploymentRequest) returns (Deployment) {}
     rpc StartDeployment (StartDeploymentRequest) returns (StartDeploymentResponse) {}
     rpc GetDeploymentStatus (GetDeploymentStatusRequest) returns (GetDeploymentStatusResponse) {}
+    rpc TeardownDeployment (TeardownDeploymentRequest) returns (TeardownDeploymentResponse) {}
+}
+
+message ListDeploymentRequest {}
+
+message ListDeploymentResponse {
+    repeated Deployment deployments = 1;
+}
+
+message GetDeploymentRequest {
+    int32 id = 1;
+}
+
+message Deployment {
+    int32 id = 1;
+    string state = 2;
+    soapbox.Environment env = 3;
+    string createdAt = 4;
 }
 
 message StartDeploymentRequest {
@@ -27,3 +47,9 @@ message GetDeploymentStatusRequest {
 message GetDeploymentStatusResponse {
     string state = 1;
 }
+
+message TeardownDeploymentRequest {
+    int32 id = 1;
+}
+
+message TeardownDeploymentResponse {}

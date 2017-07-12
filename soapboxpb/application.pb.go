@@ -18,10 +18,16 @@ It has these top-level messages:
 	GetApplicationRequest
 	GetApplicationResponse
 	Application
+	ListDeploymentRequest
+	ListDeploymentResponse
+	GetDeploymentRequest
+	Deployment
 	StartDeploymentRequest
 	StartDeploymentResponse
 	GetDeploymentStatusRequest
 	GetDeploymentStatusResponse
+	TeardownDeploymentRequest
+	TeardownDeploymentResponse
 	ListEnvironmentRequest
 	ListEnvironmentResponse
 	GetEnvironmentRequest

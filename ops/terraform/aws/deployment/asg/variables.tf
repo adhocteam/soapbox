@@ -6,8 +6,9 @@ variable "application_name" {
   type = "string"
 }
 
-variable "launch_config" {
-  type = "string"
+variable "release" {
+  type    = "string"
+  default = "latest"
 }
 
 variable "region" {

@@ -29,16 +29,24 @@ data "aws_subnet" "application_subnet" {
   }
 }
 
+# Launch configuration
+module "launch_config" {
+    source = "../lc"
+    application_name = "${var.application_name}"
+    environment      = "${var.environment}"
+    release          = "${var.release}"
+}
+
 # Blue-green autoscaling groups
 resource "aws_autoscaling_group" "asg_blue" {
-  availability_zones        = ["${var.az}"]
+  availability_zones        = ["${var.availability_zones}"]
   name                      = "${var.application_name}-${var.environment}-blue"
   max_size                  = 0
   min_size                  = 0
   desired_capacity          = 0
   health_check_grace_period = 300
   health_check_type         = "ELB"
-  launch_configuration      = "${var.launch_config}"
+  launch_configuration      = "${module.launch_config.name}"
   load_balancers            = ["${var.application_name}-${var.environment}"]
   vpc_zone_identifier       = ["${data.aws_subnet.application_subnet.*.id}"]
   enabled_metrics           = [
@@ -61,6 +69,10 @@ resource "aws_autoscaling_group" "asg_blue" {
     {
       key                 = "env"
       value               = "${var.environment}"
+      propagate_at_launch = true
+    },
+      key                 = "release"
+      value               = "latest"
       propagate_at_launch = true
     }
   ]
@@ -68,14 +80,14 @@ resource "aws_autoscaling_group" "asg_blue" {
 }
 
 resource "aws_autoscaling_group" "asg_green" {
-  availability_zones        = ["${var.az}"]
+  availability_zones        = ["${var.availability_zones}"]
   name                      = "${var.application_name}-${var.environment}-green"
   max_size                  = "${var.green_asg_max}"
   min_size                  = "${var.green_asg_min}"
   desired_capacity          = "${var.green_asg_desired}"
   health_check_grace_period = 300
   health_check_type         = "ELB"
-  launch_configuration      = "${var.launch_config}"
+  launch_configuration      = "${module.launch_config.name}"
   load_balancers            = ["${var.application_name}-${var.environment}"]
   vpc_zone_identifier       = ["${data.aws_subnet.application_subnet.*.id}"]
   enabled_metrics           = [
@@ -98,6 +110,10 @@ resource "aws_autoscaling_group" "asg_green" {
     {
       key                 = "env"
       value               = "${var.environment}"
+      propagate_at_launch = true
+    },
+      key                 = "release"
+      value               = "latest"
       propagate_at_launch = true
     }
   ]

@@ -1,0 +1,26 @@
+<div class="card" >
+    <div class="card-header">
+	<%= @app.name %>
+    </div>
+    <div class="card-block" >
+	<h4 class="card-title">Create a new environment</h4>
+	<%= form_for :environment, url: application_environments_path do |f| %>
+	    <% if @form.errors.any? %>
+		<div class="alert alert-danger" role="alert" >
+		    <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this environment from being created.
+		</div>
+	    <% end %>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:name) %>">
+		<%= f.label :name, class: "col-form-label" %>
+		<%= f.text_field :name, value: @form.name, class: "form-control form-control-lg" %>
+		<% @form.errors.full_messages_for(:name).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+	    <div>
+		<%= link_to 'Cancel', application_environments_path, class: "btn" %>
+		<%= f.submit "Create environment", class: "btn btn-primary" %>
+	    </div>
+	<% end %>
+    </div>
+</div>

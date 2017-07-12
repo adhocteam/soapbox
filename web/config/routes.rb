@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   get 'dashboard/index'
 
-  resources :applications
+  resources :applications do
+    resources :environments
+  end
 
   root 'dashboard#index'
 end

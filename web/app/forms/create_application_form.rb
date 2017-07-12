@@ -2,7 +2,7 @@ class CreateApplicationForm
   include ActiveModel::Validations
 
   attr_reader :name, :description, :github_repo_url, :type
-  
+
   validates :name, presence: true
   validates :github_repo_url, presence: true, format: { with: /\Ahttps:\/\/github\.com\/.+\/.+\z/ }
   # TODO(paulsmith): get these values from the protobuf generated code

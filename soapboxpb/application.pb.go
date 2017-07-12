@@ -21,7 +21,6 @@ It has these top-level messages:
 	ListDeploymentRequest
 	ListDeploymentResponse
 	GetDeploymentRequest
-	GetDeploymentResponse
 	Deployment
 	StartDeploymentRequest
 	StartDeploymentResponse

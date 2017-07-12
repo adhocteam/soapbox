@@ -7,7 +7,7 @@ import "environment.proto";
 
 service Deployments {
     rpc ListDeployments (ListDeploymentRequest) returns (ListDeploymentResponse) {}
-    rpc GetDeployment (GetDeploymentRequest) returns (GetDeploymentResponse) {}
+    rpc GetDeployment (GetDeploymentRequest) returns (Deployment) {}
     rpc StartDeployment (StartDeploymentRequest) returns (StartDeploymentResponse) {}
     rpc GetDeploymentStatus (GetDeploymentStatusRequest) returns (GetDeploymentStatusResponse) {}
     rpc TeardownDeployment (TeardownDeploymentRequest) returns (TeardownDeploymentResponse) {}
@@ -21,10 +21,6 @@ message ListDeploymentResponse {
 
 message GetDeploymentRequest {
     int32 id = 1;
-}
-
-message GetDeploymentResponse {
-    Deployment deployment = 1;
 }
 
 message Deployment {

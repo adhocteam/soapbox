@@ -8,10 +8,8 @@ class EnvironmentsController < ApplicationController
     res.environments = []
     res.environments[0] = OpenStruct.new
     res.environments[0].name = "Prod"
-    res.environments[0].productionFlag = true
     res.environments[1] = OpenStruct.new
     res.environments[1].name = "Staging 1"
-    res.environments[1].productionFlag = false
     @environments = res.environments
     # TODO: uncomment below (and make it work) and remove fake data above
     # req = Soapbox::ListEnvironmentRequest.new
@@ -31,8 +29,7 @@ class EnvironmentsController < ApplicationController
     @form = CreateEnvironmentForm.new(params[:environment])
     if @form.valid?
       # TODO: make this work
-      req = Soapbox::CreateEnvironmentRequest.new(name: @form.name,
-                                                  productionFlag: @form.productionFlag)
+      req = Soapbox::CreateEnvironmentRequest.new(name: @form.name)
       $api_client.create_environment(req)
       redirect_to application_environments_path
     else

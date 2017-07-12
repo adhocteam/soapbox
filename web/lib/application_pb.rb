@@ -16,6 +16,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :entrypoint_override, :string, 7
     optional :type, :enum, 8, "soapbox.ApplicationType"
     optional :created_at, :string, 9
+    optional :slug, :string, 10
+    optional :internal_dns, :string, 11
   end
   add_message "soapbox.ListApplicationResponse" do
     repeated :applications, :message, 1, "soapbox.Application"

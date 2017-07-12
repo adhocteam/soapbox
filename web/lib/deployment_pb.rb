@@ -4,11 +4,12 @@
 require 'google/protobuf'
 
 require 'application_pb'
+require 'environment_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.StartDeploymentRequest" do
     optional :application, :message, 1, "soapbox.Application"
     optional :sha1_or_tag, :string, 2
-    map :env, :string, :string, 3
+    optional :env, :message, 3, "soapbox.Environment"
   end
   add_message "soapbox.StartDeploymentResponse" do
     optional :id, :int32, 1

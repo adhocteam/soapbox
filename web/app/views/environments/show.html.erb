@@ -1,6 +1,7 @@
 <div class="card">
   <div class="card-header" >
-    Environments
+      <%= link_to @app.name, application_path(@app.id) %> <span style="color: rgba(0, 0, 0, 0.3)">/</span>
+      <%= link_to 'Environments', application_environments_path(@app.id) %>
   </div>
   <div class="card-block" >
     <h4 class="card-title"><%= @environment.name %></h4>
@@ -8,34 +9,23 @@
     <table class="table table-striped">
       <thead>
         <tr>
-          <th>Key</th>
+          <th>Name</th>
           <th>Value</th>
-          <th>Type</th>
-          <th>Rate</th>
         </tr>
       </thead>
       <tbody>
-        <% @environment_variables.each do |env_var| %>
+        <% @environment.environment_variables.each do |env_var| %>
           <tr scope="row">
             <td>
-              <%= env_var.key %>
+		<code><%= env_var.name %></code>
             </td>
             <td>
-              <%= env_var.value %>
-            </td>
-            <td>
-              <%= env_var.type %>
-            </td>
-            <td>
-              <%= env_var.rate %>
+		<code><%= env_var.value %></code>
             </td>
           </tr>
         <% end %>
       </tbody>
     </table>
-  <div class="text-right mb-3">
-    <a class="btn btn-primary" href="#">+ New Environment Variable</a>
-  </div>
-  <p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@environment.createdAt, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
+    <p class="card-text text-muted"><small>Created: FIXME</small></p>
   </div>
 </div>

@@ -1,6 +1,9 @@
 <div class="card">
-  <div class="card-block">
-    <h4 class="card-title">Environments for <%= @app.name =%></h4>
+    <div class="card-header">
+	<%= link_to @app.name, application_path(@app.id) %>
+    </div>
+    <div class="card-block">
+    <h4 class="card-title">Environments</h4>
     <div class="text-right mb-3">
       <%= link_to '+ New Environment', new_application_environment_path, class: "btn btn-primary" %>
     </div>
@@ -15,11 +18,11 @@
         <% @environments.each do |env| %>
         <tr scope="row">
           <td>
-            <%= link_to env.name, application_environment_path(@app, env) %>
+            <%= link_to env.name, application_environment_path(@app.id, env.id) %>
           </td>
           <td>
-            <button type="button" class="btn btn-secondary btn-sm">Copy</button>
-            <button type="button" class="btn btn-secondary btn-sm">Delete</button>
+            <button type="button" class="btn btn-secondary btn-sm disabled" disabled="disabled">Copy</button>
+            <button type="button" class="btn btn-secondary btn-sm disabled" disabled="disabled">Delete</button>
           </td>
         </tr>
       <% end %>

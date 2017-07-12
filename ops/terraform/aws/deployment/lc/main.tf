@@ -38,7 +38,7 @@ resource "aws_launch_configuration" "launch_config" {
   name                        = "${var.application_name}-${var.environment}-${var.release}"
   instance_type               = "${var.instance_type}"
   image_id                    = "${data.aws_ami.soapbox_ami.id}"
-  security_groups             = "${data.aws_security_group.application_app_sg.id}"
+  security_groups             = ["${data.aws_security_group.application_app_sg.id}"]
   associate_public_ip_address = false
   ebs_optimized               = false
 

@@ -35,3 +35,18 @@ variable "green_asg_desired" {
   type = "string"
   default = 1
 }
+
+variable "application_acm_cert_arn" {
+  type = "string"
+  default = ""
+}
+
+variable "application_port" {
+  type    = "string"
+  default = "80"
+}
+
+variable "health_check_path" {
+  type = "string"
+  default = "/_health"
+}

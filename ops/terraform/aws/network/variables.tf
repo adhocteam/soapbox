@@ -15,16 +15,6 @@ variable "instance_tenancy" {
   default = "default"
 }
 
-variable "health_check_path" {
-  type = "string"
-  default = "/_health"
-}
-
-variable "application_acm_cert_arn" {
-  type = "string"
-  default = ""
-}
-
 variable "region" {
   type    = "string"
   default = "us-east-1"

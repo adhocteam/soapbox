@@ -1,3 +1,10 @@
+/*
+NOTE: Tag values are used to perform lookups of resources
+in other terraform configuration files. The variable substitutions
+must be kept in sync with corresponding tags for data sources
+used in "aws/deployment" configurations.
+*/
+
 provider "aws" {
   region = "${var.region}"
 }

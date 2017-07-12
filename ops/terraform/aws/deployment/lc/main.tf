@@ -1,3 +1,10 @@
+/*
+NOTE: Tags are used to perform lookups of data sources
+in this configuration file. The variable substitutions
+must be kept in sync with corresponding tags for resources
+defined in "aws/network" configurations.
+*/
+
 data "aws_ami" "soapbox_ami" {
   most_recent = true
 

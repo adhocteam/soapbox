@@ -1,0 +1,31 @@
+<div class="card">
+  <div class="card-header" >
+      <%= link_to @app.name, application_path(@app.id) %> <span style="color: rgba(0, 0, 0, 0.3)">/</span>
+      <%= link_to 'Environments', application_environments_path(@app.id) %>
+  </div>
+  <div class="card-block" >
+    <h4 class="card-title"><%= @environment.name %></h4>
+    <h5>Environment Variables</h5>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @environment.environment_variables.each do |env_var| %>
+          <tr scope="row">
+            <td>
+		<code><%= env_var.name %></code>
+            </td>
+            <td>
+		<code><%= env_var.value %></code>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p class="card-text text-muted"><small>Created: FIXME</small></p>
+  </div>
+</div>

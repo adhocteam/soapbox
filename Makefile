@@ -1,0 +1,6 @@
+all:
+	go install ./...
+
+protobufs:
+	go generate ./...
+	make -C web

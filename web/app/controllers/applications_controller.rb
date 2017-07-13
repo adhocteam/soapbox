@@ -2,8 +2,7 @@ require 'application_pb'
 
 class ApplicationsController < ApplicationController
   def index
-    req = Soapbox::ListApplicationRequest.new
-    res = $api_client.list_applications(req)
+    res = $api_client.list_applications(Soapbox::Empty.new)
     if res.applications.count == 0
       redirect_to new_application_path
     else
@@ -23,12 +22,12 @@ class ApplicationsController < ApplicationController
         'cronjob' => Soapbox::ApplicationType::CRONJOB
       }
       type = types[@form.type]
-      req = Soapbox::CreateApplicationRequest.new(name: @form.name,
-                                                  description: @form.description,
-                                                  githubRepoURL: @form.github_repo_url,
-                                                  type: type)
-      $api_client.create_application(req)
-      redirect_to applications_path
+      app = Soapbox::Application.new(name: @form.name,
+                                     description: @form.description,
+                                     github_repo_url: @form.github_repo_url,
+                                     type: type)
+      app = $api_client.create_application(app)
+      redirect_to application_path(app.id)
     else
       render :new
     end
@@ -36,6 +35,6 @@ class ApplicationsController < ApplicationController
 
   def show
     req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
-    @app = $api_client.get_application(req).app
+    @app = $api_client.get_application(req)
   end
 end

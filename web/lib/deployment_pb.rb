@@ -3,12 +3,23 @@
 
 require 'google/protobuf'
 
+require 'soapbox_pb'
 require 'application_pb'
+require 'environment_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "soapbox.StartDeploymentRequest" do
-    optional :application, :message, 1, "soapbox.Application"
-    optional :sha1OrTag, :string, 2
-    map :env, :string, :string, 3
+  add_message "soapbox.ListDeploymentResponse" do
+    repeated :deployments, :message, 1, "soapbox.Deployment"
+  end
+  add_message "soapbox.GetDeploymentRequest" do
+    optional :id, :int32, 1
+  end
+  add_message "soapbox.Deployment" do
+    optional :id, :int32, 1
+    optional :application, :message, 2, "soapbox.Application"
+    optional :sha1_or_tag, :string, 3
+    optional :state, :string, 4
+    optional :env, :message, 5, "soapbox.Environment"
+    optional :created_at, :string, 6
   end
   add_message "soapbox.StartDeploymentResponse" do
     optional :id, :int32, 1
@@ -19,11 +30,17 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.GetDeploymentStatusResponse" do
     optional :state, :string, 1
   end
+  add_message "soapbox.TeardownDeploymentRequest" do
+    optional :id, :int32, 1
+  end
 end
 
 module Soapbox
-  StartDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.StartDeploymentRequest").msgclass
+  ListDeploymentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListDeploymentResponse").msgclass
+  GetDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentRequest").msgclass
+  Deployment = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Deployment").msgclass
   StartDeploymentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.StartDeploymentResponse").msgclass
   GetDeploymentStatusRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentStatusRequest").msgclass
   GetDeploymentStatusResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentStatusResponse").msgclass
+  TeardownDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.TeardownDeploymentRequest").msgclass
 end

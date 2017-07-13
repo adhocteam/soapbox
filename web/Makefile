@@ -1,2 +1,5 @@
+protobufdir = ../soapboxpb
+protobufs = $(wildcard $(protobufdir)/*.proto)
+
 all:
-	bundle exec grpc_tools_ruby_protoc -I ../soapboxpb --ruby_out=lib --grpc_out=lib ../soapboxpb/application.proto ../soapboxpb/deployment.proto
+	bundle exec grpc_tools_ruby_protoc -I $(protobufdir) --ruby_out=lib --grpc_out=lib $(protobufs)

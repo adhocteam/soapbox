@@ -2,10 +2,12 @@ syntax = "proto3";
 package soapbox;
 option go_package = "soapboxpb";
 
+import "soapbox.proto";
+
 service Applications {
-    rpc CreateApplication (CreateApplicationRequest) returns (CreateApplicationResponse) {}
-    rpc ListApplications (ListApplicationRequest) returns (ListApplicationResponse) {}
-    rpc GetApplication (GetApplicationRequest) returns (GetApplicationResponse) {}
+    rpc ListApplications (soapbox.Empty) returns (ListApplicationResponse) {}
+    rpc CreateApplication (Application) returns (Application) {}
+    rpc GetApplication (GetApplicationRequest) returns (Application) {}
 }
 
 enum ApplicationType {
@@ -13,47 +15,24 @@ enum ApplicationType {
     CRONJOB = 1;
 }
 
-message CreateApplicationRequest {
-    string name = 1;
-    string description = 2;
-    string externalDNS = 3;
-    string githubRepoURL = 4;
-    string dockerfilePath = 5;
-    string entrypointOverride = 6;
-    ApplicationType type = 7;
-}
-
-message CreateApplicationResponse {
-    int32 id = 1;
-}
-
-message ListApplicationRequest {}
-
-message ApplicationSummary {
-    int32 id = 1;
-    string name = 2;
-}
-
-message ListApplicationResponse {
-    repeated ApplicationSummary applications = 1;
-}
-
-message GetApplicationRequest {
-    int32 id = 1;
-}
-
-message GetApplicationResponse {
-    Application app = 1;
-}
-
 message Application {
     int32 id = 1;
     string name = 2;
     string description = 3;
-    string externalDNS = 4;
-    string githubRepoURL = 5;
-    string dockerfilePath = 6;
-    string entrypointOverride = 7;
+    string external_dns = 4;
+    string github_repo_url = 5;
+    string dockerfile_path = 6;
+    string entrypoint_override = 7;
     ApplicationType type = 8;
-    string createdAt = 9;
+    string created_at = 9;
+    string slug = 10;
+    string internal_dns = 11;
+}
+
+message ListApplicationResponse {
+    repeated Application applications = 1;
+}
+
+message GetApplicationRequest {
+    int32 id = 1;
 }

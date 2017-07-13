@@ -72,10 +72,10 @@ func createApplication(ctx context.Context, client pb.ApplicationsClient, args [
 		return fmt.Errorf("unknown app type %q, expecting either 'server' or 'cronjob'", args[3])
 	}
 
-	req := &pb.CreateApplicationRequest{
+	req := &pb.Application{
 		Name:          args[0],
 		Description:   args[1],
-		GithubRepoURL: args[2],
+		GithubRepoUrl: args[2],
 		Type:          appType,
 	}
 	app, err := client.CreateApplication(ctx, req)
@@ -88,8 +88,7 @@ func createApplication(ctx context.Context, client pb.ApplicationsClient, args [
 }
 
 func listApplications(ctx context.Context, client pb.ApplicationsClient, args []string) error {
-	req := &pb.ListApplicationRequest{}
-	apps, err := client.ListApplications(ctx, req)
+	apps, err := client.ListApplications(ctx, new(pb.Empty))
 	if err != nil {
 		return fmt.Errorf("error listing applications: %v", err)
 	}
@@ -109,17 +108,17 @@ func getApplication(ctx context.Context, client pb.ApplicationsClient, args []st
 		return fmt.Errorf("invalid ID: %v", err)
 	}
 	req := &pb.GetApplicationRequest{Id: int32(id)}
-	resp, err := client.GetApplication(ctx, req)
+	app, err := client.GetApplication(ctx, req)
 	if err != nil {
 		return fmt.Errorf("getting application: %v", err)
 	}
-	fmt.Printf("name:                %s\n", resp.App.Name)
-	fmt.Printf("ID:                  %d\n", resp.App.Id)
-	fmt.Printf("type:                %s\n", pb.ApplicationType_name[int32(resp.App.Type)])
-	fmt.Printf("created at:          %s\n", resp.App.CreatedAt)
-	fmt.Printf("external DNS:        %s\n", resp.App.ExternalDNS)
-	fmt.Printf("Dockerfile path:     %s\n", resp.App.DockerfilePath)
-	fmt.Printf("entrypoint override: %s\n", resp.App.EntrypointOverride)
-	fmt.Printf("description:\n%s\n", resp.App.Description)
+	fmt.Printf("name:                %s\n", app.Name)
+	fmt.Printf("ID:                  %d\n", app.Id)
+	fmt.Printf("type:                %s\n", pb.ApplicationType_name[int32(app.Type)])
+	fmt.Printf("created at:          %s\n", app.CreatedAt)
+	fmt.Printf("external DNS:        %s\n", app.ExternalDns)
+	fmt.Printf("Dockerfile path:     %s\n", app.DockerfilePath)
+	fmt.Printf("entrypoint override: %s\n", app.EntrypointOverride)
+	fmt.Printf("description:\n%s\n", app.Description)
 	return nil
 }

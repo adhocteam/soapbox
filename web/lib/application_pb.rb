@@ -3,44 +3,26 @@
 
 require 'google/protobuf'
 
+require 'soapbox_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "soapbox.CreateApplicationRequest" do
-    optional :name, :string, 1
-    optional :description, :string, 2
-    optional :externalDNS, :string, 3
-    optional :githubRepoURL, :string, 4
-    optional :dockerfilePath, :string, 5
-    optional :entrypointOverride, :string, 6
-    optional :type, :enum, 7, "soapbox.ApplicationType"
-  end
-  add_message "soapbox.CreateApplicationResponse" do
-    optional :id, :int32, 1
-  end
-  add_message "soapbox.ListApplicationRequest" do
-  end
-  add_message "soapbox.ApplicationSummary" do
-    optional :id, :int32, 1
-    optional :name, :string, 2
-  end
-  add_message "soapbox.ListApplicationResponse" do
-    repeated :applications, :message, 1, "soapbox.ApplicationSummary"
-  end
-  add_message "soapbox.GetApplicationRequest" do
-    optional :id, :int32, 1
-  end
-  add_message "soapbox.GetApplicationResponse" do
-    optional :app, :message, 1, "soapbox.Application"
-  end
   add_message "soapbox.Application" do
     optional :id, :int32, 1
     optional :name, :string, 2
     optional :description, :string, 3
-    optional :externalDNS, :string, 4
-    optional :githubRepoURL, :string, 5
-    optional :dockerfilePath, :string, 6
-    optional :entrypointOverride, :string, 7
+    optional :external_dns, :string, 4
+    optional :github_repo_url, :string, 5
+    optional :dockerfile_path, :string, 6
+    optional :entrypoint_override, :string, 7
     optional :type, :enum, 8, "soapbox.ApplicationType"
-    optional :createdAt, :string, 9
+    optional :created_at, :string, 9
+    optional :slug, :string, 10
+    optional :internal_dns, :string, 11
+  end
+  add_message "soapbox.ListApplicationResponse" do
+    repeated :applications, :message, 1, "soapbox.Application"
+  end
+  add_message "soapbox.GetApplicationRequest" do
+    optional :id, :int32, 1
   end
   add_enum "soapbox.ApplicationType" do
     value :SERVER, 0
@@ -49,13 +31,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
 end
 
 module Soapbox
-  CreateApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreateApplicationRequest").msgclass
-  CreateApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreateApplicationResponse").msgclass
-  ListApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationRequest").msgclass
-  ApplicationSummary = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ApplicationSummary").msgclass
+  Application = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Application").msgclass
   ListApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationResponse").msgclass
   GetApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetApplicationRequest").msgclass
-  GetApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetApplicationResponse").msgclass
-  Application = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Application").msgclass
   ApplicationType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ApplicationType").enummodule
 end

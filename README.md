@@ -46,6 +46,27 @@ $ bin/rails server &
 $ open http://localhost:3000/
 ```
 
+## Developing Soapbox
+
+### Making changes to protobufs
+
+Soapbox
+uses
+[Protocol Buffers](https://developers.google.com/protocol-buffers/)
+via [gRPC](https://grpc.io/) for clients and servers to exchange
+messages and call API methods. These definitions are stored in the
+`soapboxpb` directory in `.proto` files. If you change these files,
+you must re-generate the Go and Ruby code that the API server and the
+Rails app rely on, respectively.
+
+``` shell
+# Go code
+$ go generate ./...
+$ go install ./...
+# Ruby code
+$ make -C web
+```
+
 ## Design documentation
 
  * [Architecture document](https://docs.google.com/document/d/1hArh6EGNfa23O1mPKVeq_OjfA4AiCBEvc-k07xsb4t4/edit#)

@@ -16,11 +16,11 @@
 	    <tbody>
 		<tr>
 		    <th>GitHub repository</th>
-		    <td><a href="<%= @app.githubRepoURL %>"><code><%= @app.githubRepoURL %></code></a></td>
+		    <td><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
 		</tr>
 	    </tbody>
 	</table>
-	<p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.createdAt, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
+	<p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
 	<%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
     </div>
 </div>

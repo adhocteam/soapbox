@@ -3,7 +3,7 @@
         "aws_region": "us-east-1",
         "instance_type": "t2.micro",
         "ssh_username": "ec2-user",
-        "ami_name": "sopabox-aws-linux-ami"
+        "ami_name": "soapbox-aws-linux-ami"
     },
     "builders": [{
         "type": "amazon-ebs",

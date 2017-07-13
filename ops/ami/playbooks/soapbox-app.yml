@@ -3,22 +3,6 @@
   user: ec2-user
   become: True
   tasks:
-    - name: install docker
-      yum:
-        name: docker
-        state: latest
-
-    - name: start docker service
-      service:
-        name: docker
-        state: started
-
-    - name: add ec2-user to docker group
-      user:
-        name: ec2-user
-        append: yes
-        groups: docker
-
     - name: copy runit rpm to target
       copy:
         src: files/runit-2.1.2-1.amzn1.x86_64.rpm
@@ -29,11 +13,21 @@
         name: "{{ item }}"
         state: present
       with_items:
-        - /tmp/runit.rpm
+        - docker
         - nginx
+        - /tmp/runit.rpm
 
-    - name: start nginx
+    - name: start services
       service:
-        name: nginx
+        name: "{{ item }}"
         state: started
         enabled: yes
+      with_items:
+        - docker
+        - nginx
+
+    - name: add ec2-user to docker group
+      user:
+        name: ec2-user
+        append: yes
+        groups: docker

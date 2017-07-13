@@ -1,3 +1,10 @@
+/*
+NOTE: Tag values are used to perform lookups of resources
+in other terraform configuration files. The variable substitutions
+must be kept in sync with corresponding tags for data sources
+used in "aws/deployment" configurations.
+*/
+
 provider "aws" {
   region = "${var.region}"
 }
@@ -11,6 +18,7 @@ resource "aws_vpc" "application_vpc" {
 
   tags {
     Name = "${var.application_name}: ${var.environment} vpc"
+    app  = "${var.application_name}"
     env  = "${var.environment}"
   }
 }
@@ -115,52 +123,6 @@ resource "aws_alb" "application_alb" {
     Name = "${var.application_name}: ${var.environment} alb"
     env  = "${var.environment}"
     app  = "${var.application_name}"
-  }
-}
-
-resource "aws_alb_target_group" "application_target_group" {
-  name     = "${var.application_name}-${var.environment}"
-  port     = "${var.application_port}"
-  protocol = "HTTP"
-  vpc_id   = "${aws_vpc.application_vpc.id}"
-
-  health_check {
-    interval            = 60
-    path                = "${var.health_check_path}"
-    port                = "${var.application_port}"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-
-  tags {
-    Name = "${var.application_name}: ${var.environment} alb target group"
-    env  = "${var.environment}"
-    app  = "${var.application_name}"
-  }
-}
-
-resource "aws_alb_listener" "application_alb_http" {
-  load_balancer_arn = "${aws_alb.application_alb.arn}"
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    target_group_arn = "${aws_alb_target_group.application_target_group.arn}"
-    type             = "forward"
-  }
-}
-
-resource "aws_alb_listener" "application_alb_https" {
-  count             = "${var.application_acm_cert_arn != "" ? 1 : 0}"
-  load_balancer_arn = "${aws_alb.application_alb.arn}"
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = "${var.application_acm_cert_arn}"
-
-  default_action {
-    target_group_arn = "${aws_alb_target_group.application_target_group.arn}"
-    type             = "forward"
   }
 }
 

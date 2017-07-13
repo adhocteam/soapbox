@@ -2,15 +2,15 @@ syntax = "proto3";
 package soapbox;
 option go_package = "soapboxpb";
 
-service Environments {
-    rpc ListEnvironments (ListEnvironmentRequest) returns (ListEnvironmentResponse) {}
-    rpc GetEnvironment (GetEnvironmentRequest) returns (GetEnvironmentResponse) {}
-    rpc CreateEnvironment (CreateEnvironmentRequest) returns (CreateEnvironmentResponse) {}
-    rpc DestroyEnvironment (DestroyEnvironmentRequest) returns (DestroyEnvironmentResponse) {}
-    rpc CopyEnvironment (CopyEnvironmentRequest) returns (CopyEnvironmentResponse) {}
-}
+import "soapbox.proto";
 
-message ListEnvironmentRequest {}
+service Environments {
+    rpc ListEnvironments (soapbox.Empty) returns (ListEnvironmentResponse) {}
+    rpc GetEnvironment (GetEnvironmentRequest) returns (Environment) {}
+    rpc CreateEnvironment (Environment) returns (Environment) {}
+    rpc DestroyEnvironment (DestroyEnvironmentRequest) returns (soapbox.Empty) {}
+    rpc CopyEnvironment (CopyEnvironmentRequest) returns (Environment) {}
+}
 
 message ListEnvironmentResponse {
     repeated Environment environments = 1;
@@ -18,10 +18,6 @@ message ListEnvironmentResponse {
 
 message GetEnvironmentRequest {
     int32 id = 1;
-}
-
-message GetEnvironmentResponse {
-    Environment env = 1;
 }
 
 message Environment {
@@ -38,26 +34,10 @@ message EnvironmentVariable {
     string value = 3;
 }
 
-message CreateEnvironmentRequest {
-    string name = 1;
-    string slug = 2;
-    repeated EnvironmentVariable vars = 3;
-}
-
-message CreateEnvironmentResponse {
-    int32 id = 1;
-}
-
 message DestroyEnvironmentRequest {
     int32 id = 1;
 }
 
-message DestroyEnvironmentResponse {}
-
 message CopyEnvironmentRequest {
-    int32 id = 1;
-}
-
-message CopyEnvironmentResponse {
     int32 id = 1;
 }

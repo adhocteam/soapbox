@@ -17,14 +17,6 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-type ListEnvironmentRequest struct {
-}
-
-func (m *ListEnvironmentRequest) Reset()                    { *m = ListEnvironmentRequest{} }
-func (m *ListEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListEnvironmentRequest) ProtoMessage()               {}
-func (*ListEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
-
 type ListEnvironmentResponse struct {
 	Environments []*Environment `protobuf:"bytes,1,rep,name=environments" json:"environments,omitempty"`
 }
@@ -32,7 +24,7 @@ type ListEnvironmentResponse struct {
 func (m *ListEnvironmentResponse) Reset()                    { *m = ListEnvironmentResponse{} }
 func (m *ListEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListEnvironmentResponse) ProtoMessage()               {}
-func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 func (m *ListEnvironmentResponse) GetEnvironments() []*Environment {
 	if m != nil {
@@ -48,29 +40,13 @@ type GetEnvironmentRequest struct {
 func (m *GetEnvironmentRequest) Reset()                    { *m = GetEnvironmentRequest{} }
 func (m *GetEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*GetEnvironmentRequest) ProtoMessage()               {}
-func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
 
 func (m *GetEnvironmentRequest) GetId() int32 {
 	if m != nil {
 		return m.Id
 	}
 	return 0
-}
-
-type GetEnvironmentResponse struct {
-	Env *Environment `protobuf:"bytes,1,opt,name=env" json:"env,omitempty"`
-}
-
-func (m *GetEnvironmentResponse) Reset()                    { *m = GetEnvironmentResponse{} }
-func (m *GetEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetEnvironmentResponse) ProtoMessage()               {}
-func (*GetEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
-
-func (m *GetEnvironmentResponse) GetEnv() *Environment {
-	if m != nil {
-		return m.Env
-	}
-	return nil
 }
 
 type Environment struct {
@@ -84,7 +60,7 @@ type Environment struct {
 func (m *Environment) Reset()                    { *m = Environment{} }
 func (m *Environment) String() string            { return proto.CompactTextString(m) }
 func (*Environment) ProtoMessage()               {}
-func (*Environment) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+func (*Environment) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
 
 func (m *Environment) GetId() int32 {
 	if m != nil {
@@ -130,7 +106,7 @@ type EnvironmentVariable struct {
 func (m *EnvironmentVariable) Reset()                    { *m = EnvironmentVariable{} }
 func (m *EnvironmentVariable) String() string            { return proto.CompactTextString(m) }
 func (*EnvironmentVariable) ProtoMessage()               {}
-func (*EnvironmentVariable) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
+func (*EnvironmentVariable) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
 
 func (m *EnvironmentVariable) GetId() int32 {
 	if m != nil {
@@ -153,54 +129,6 @@ func (m *EnvironmentVariable) GetValue() string {
 	return ""
 }
 
-type CreateEnvironmentRequest struct {
-	Name string                 `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Slug string                 `protobuf:"bytes,2,opt,name=slug" json:"slug,omitempty"`
-	Vars []*EnvironmentVariable `protobuf:"bytes,3,rep,name=vars" json:"vars,omitempty"`
-}
-
-func (m *CreateEnvironmentRequest) Reset()                    { *m = CreateEnvironmentRequest{} }
-func (m *CreateEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateEnvironmentRequest) ProtoMessage()               {}
-func (*CreateEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{6} }
-
-func (m *CreateEnvironmentRequest) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *CreateEnvironmentRequest) GetSlug() string {
-	if m != nil {
-		return m.Slug
-	}
-	return ""
-}
-
-func (m *CreateEnvironmentRequest) GetVars() []*EnvironmentVariable {
-	if m != nil {
-		return m.Vars
-	}
-	return nil
-}
-
-type CreateEnvironmentResponse struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-}
-
-func (m *CreateEnvironmentResponse) Reset()                    { *m = CreateEnvironmentResponse{} }
-func (m *CreateEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateEnvironmentResponse) ProtoMessage()               {}
-func (*CreateEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{7} }
-
-func (m *CreateEnvironmentResponse) GetId() int32 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
 type DestroyEnvironmentRequest struct {
 	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
 }
@@ -208,7 +136,7 @@ type DestroyEnvironmentRequest struct {
 func (m *DestroyEnvironmentRequest) Reset()                    { *m = DestroyEnvironmentRequest{} }
 func (m *DestroyEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*DestroyEnvironmentRequest) ProtoMessage()               {}
-func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{8} }
+func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
 
 func (m *DestroyEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -217,14 +145,6 @@ func (m *DestroyEnvironmentRequest) GetId() int32 {
 	return 0
 }
 
-type DestroyEnvironmentResponse struct {
-}
-
-func (m *DestroyEnvironmentResponse) Reset()                    { *m = DestroyEnvironmentResponse{} }
-func (m *DestroyEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
-func (*DestroyEnvironmentResponse) ProtoMessage()               {}
-func (*DestroyEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{9} }
-
 type CopyEnvironmentRequest struct {
 	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
 }
@@ -232,7 +152,7 @@ type CopyEnvironmentRequest struct {
 func (m *CopyEnvironmentRequest) Reset()                    { *m = CopyEnvironmentRequest{} }
 func (m *CopyEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*CopyEnvironmentRequest) ProtoMessage()               {}
-func (*CopyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{10} }
+func (*CopyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
 
 func (m *CopyEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -241,35 +161,13 @@ func (m *CopyEnvironmentRequest) GetId() int32 {
 	return 0
 }
 
-type CopyEnvironmentResponse struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-}
-
-func (m *CopyEnvironmentResponse) Reset()                    { *m = CopyEnvironmentResponse{} }
-func (m *CopyEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
-func (*CopyEnvironmentResponse) ProtoMessage()               {}
-func (*CopyEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{11} }
-
-func (m *CopyEnvironmentResponse) GetId() int32 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
 func init() {
-	proto.RegisterType((*ListEnvironmentRequest)(nil), "soapbox.ListEnvironmentRequest")
 	proto.RegisterType((*ListEnvironmentResponse)(nil), "soapbox.ListEnvironmentResponse")
 	proto.RegisterType((*GetEnvironmentRequest)(nil), "soapbox.GetEnvironmentRequest")
-	proto.RegisterType((*GetEnvironmentResponse)(nil), "soapbox.GetEnvironmentResponse")
 	proto.RegisterType((*Environment)(nil), "soapbox.Environment")
 	proto.RegisterType((*EnvironmentVariable)(nil), "soapbox.EnvironmentVariable")
-	proto.RegisterType((*CreateEnvironmentRequest)(nil), "soapbox.CreateEnvironmentRequest")
-	proto.RegisterType((*CreateEnvironmentResponse)(nil), "soapbox.CreateEnvironmentResponse")
 	proto.RegisterType((*DestroyEnvironmentRequest)(nil), "soapbox.DestroyEnvironmentRequest")
-	proto.RegisterType((*DestroyEnvironmentResponse)(nil), "soapbox.DestroyEnvironmentResponse")
 	proto.RegisterType((*CopyEnvironmentRequest)(nil), "soapbox.CopyEnvironmentRequest")
-	proto.RegisterType((*CopyEnvironmentResponse)(nil), "soapbox.CopyEnvironmentResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -283,11 +181,11 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for Environments service
 
 type EnvironmentsClient interface {
-	ListEnvironments(ctx context.Context, in *ListEnvironmentRequest, opts ...grpc.CallOption) (*ListEnvironmentResponse, error)
-	GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*GetEnvironmentResponse, error)
-	CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*CreateEnvironmentResponse, error)
-	DestroyEnvironment(ctx context.Context, in *DestroyEnvironmentRequest, opts ...grpc.CallOption) (*DestroyEnvironmentResponse, error)
-	CopyEnvironment(ctx context.Context, in *CopyEnvironmentRequest, opts ...grpc.CallOption) (*CopyEnvironmentResponse, error)
+	ListEnvironments(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListEnvironmentResponse, error)
+	GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error)
+	CreateEnvironment(ctx context.Context, in *Environment, opts ...grpc.CallOption) (*Environment, error)
+	DestroyEnvironment(ctx context.Context, in *DestroyEnvironmentRequest, opts ...grpc.CallOption) (*Empty, error)
+	CopyEnvironment(ctx context.Context, in *CopyEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error)
 }
 
 type environmentsClient struct {
@@ -298,7 +196,7 @@ func NewEnvironmentsClient(cc *grpc.ClientConn) EnvironmentsClient {
 	return &environmentsClient{cc}
 }
 
-func (c *environmentsClient) ListEnvironments(ctx context.Context, in *ListEnvironmentRequest, opts ...grpc.CallOption) (*ListEnvironmentResponse, error) {
+func (c *environmentsClient) ListEnvironments(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListEnvironmentResponse, error) {
 	out := new(ListEnvironmentResponse)
 	err := grpc.Invoke(ctx, "/soapbox.Environments/ListEnvironments", in, out, c.cc, opts...)
 	if err != nil {
@@ -307,8 +205,8 @@ func (c *environmentsClient) ListEnvironments(ctx context.Context, in *ListEnvir
 	return out, nil
 }
 
-func (c *environmentsClient) GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*GetEnvironmentResponse, error) {
-	out := new(GetEnvironmentResponse)
+func (c *environmentsClient) GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error) {
+	out := new(Environment)
 	err := grpc.Invoke(ctx, "/soapbox.Environments/GetEnvironment", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -316,8 +214,8 @@ func (c *environmentsClient) GetEnvironment(ctx context.Context, in *GetEnvironm
 	return out, nil
 }
 
-func (c *environmentsClient) CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*CreateEnvironmentResponse, error) {
-	out := new(CreateEnvironmentResponse)
+func (c *environmentsClient) CreateEnvironment(ctx context.Context, in *Environment, opts ...grpc.CallOption) (*Environment, error) {
+	out := new(Environment)
 	err := grpc.Invoke(ctx, "/soapbox.Environments/CreateEnvironment", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -325,8 +223,8 @@ func (c *environmentsClient) CreateEnvironment(ctx context.Context, in *CreateEn
 	return out, nil
 }
 
-func (c *environmentsClient) DestroyEnvironment(ctx context.Context, in *DestroyEnvironmentRequest, opts ...grpc.CallOption) (*DestroyEnvironmentResponse, error) {
-	out := new(DestroyEnvironmentResponse)
+func (c *environmentsClient) DestroyEnvironment(ctx context.Context, in *DestroyEnvironmentRequest, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := grpc.Invoke(ctx, "/soapbox.Environments/DestroyEnvironment", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -334,8 +232,8 @@ func (c *environmentsClient) DestroyEnvironment(ctx context.Context, in *Destroy
 	return out, nil
 }
 
-func (c *environmentsClient) CopyEnvironment(ctx context.Context, in *CopyEnvironmentRequest, opts ...grpc.CallOption) (*CopyEnvironmentResponse, error) {
-	out := new(CopyEnvironmentResponse)
+func (c *environmentsClient) CopyEnvironment(ctx context.Context, in *CopyEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error) {
+	out := new(Environment)
 	err := grpc.Invoke(ctx, "/soapbox.Environments/CopyEnvironment", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
@@ -346,11 +244,11 @@ func (c *environmentsClient) CopyEnvironment(ctx context.Context, in *CopyEnviro
 // Server API for Environments service
 
 type EnvironmentsServer interface {
-	ListEnvironments(context.Context, *ListEnvironmentRequest) (*ListEnvironmentResponse, error)
-	GetEnvironment(context.Context, *GetEnvironmentRequest) (*GetEnvironmentResponse, error)
-	CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*CreateEnvironmentResponse, error)
-	DestroyEnvironment(context.Context, *DestroyEnvironmentRequest) (*DestroyEnvironmentResponse, error)
-	CopyEnvironment(context.Context, *CopyEnvironmentRequest) (*CopyEnvironmentResponse, error)
+	ListEnvironments(context.Context, *Empty) (*ListEnvironmentResponse, error)
+	GetEnvironment(context.Context, *GetEnvironmentRequest) (*Environment, error)
+	CreateEnvironment(context.Context, *Environment) (*Environment, error)
+	DestroyEnvironment(context.Context, *DestroyEnvironmentRequest) (*Empty, error)
+	CopyEnvironment(context.Context, *CopyEnvironmentRequest) (*Environment, error)
 }
 
 func RegisterEnvironmentsServer(s *grpc.Server, srv EnvironmentsServer) {
@@ -358,7 +256,7 @@ func RegisterEnvironmentsServer(s *grpc.Server, srv EnvironmentsServer) {
 }
 
 func _Environments_ListEnvironments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListEnvironmentRequest)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -370,7 +268,7 @@ func _Environments_ListEnvironments_Handler(srv interface{}, ctx context.Context
 		FullMethod: "/soapbox.Environments/ListEnvironments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EnvironmentsServer).ListEnvironments(ctx, req.(*ListEnvironmentRequest))
+		return srv.(EnvironmentsServer).ListEnvironments(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -394,7 +292,7 @@ func _Environments_GetEnvironment_Handler(srv interface{}, ctx context.Context, 
 }
 
 func _Environments_CreateEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateEnvironmentRequest)
+	in := new(Environment)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -406,7 +304,7 @@ func _Environments_CreateEnvironment_Handler(srv interface{}, ctx context.Contex
 		FullMethod: "/soapbox.Environments/CreateEnvironment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(EnvironmentsServer).CreateEnvironment(ctx, req.(*CreateEnvironmentRequest))
+		return srv.(EnvironmentsServer).CreateEnvironment(ctx, req.(*Environment))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -479,33 +377,28 @@ var _Environments_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("environment.proto", fileDescriptor3) }
 
 var fileDescriptor3 = []byte{
-	// 436 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xc1, 0x6e, 0xda, 0x40,
-	0x10, 0xc5, 0x36, 0xb4, 0x62, 0x40, 0x14, 0xb6, 0x14, 0x16, 0x0b, 0x15, 0x77, 0x2b, 0xb5, 0xae,
-	0x90, 0x50, 0x45, 0x2f, 0x3d, 0xb6, 0xa5, 0x51, 0x2e, 0xc9, 0xc5, 0x48, 0x44, 0x8a, 0x22, 0x45,
-	0x76, 0x58, 0x45, 0x56, 0xc0, 0xeb, 0x78, 0x17, 0x2b, 0x7c, 0x48, 0xbe, 0x2c, 0x3f, 0x14, 0xd9,
-	0x38, 0xc6, 0xd8, 0x6b, 0xc4, 0x6d, 0x3d, 0xfb, 0xe6, 0xbd, 0x99, 0x79, 0xb3, 0x86, 0x0e, 0xf5,
-	0x42, 0x37, 0x60, 0xde, 0x9a, 0x7a, 0x62, 0xe2, 0x07, 0x4c, 0x30, 0xf4, 0x9e, 0x33, 0xdb, 0x77,
-	0xd8, 0x13, 0xc1, 0xd0, 0xbb, 0x70, 0xb9, 0x38, 0xdb, 0x23, 0x2c, 0xfa, 0xb8, 0xa1, 0x5c, 0x90,
-	0x39, 0xf4, 0x0b, 0x37, 0xdc, 0x67, 0x1e, 0xa7, 0xe8, 0x37, 0x34, 0x33, 0x94, 0x1c, 0x2b, 0x86,
-	0x66, 0x36, 0xa6, 0xdd, 0x49, 0x42, 0x3a, 0xc9, 0xe6, 0x1c, 0x20, 0xc9, 0x77, 0xf8, 0x74, 0x4e,
-	0x25, 0x6a, 0xa8, 0x05, 0xaa, 0xbb, 0xc4, 0x8a, 0xa1, 0x98, 0x35, 0x4b, 0x75, 0x97, 0xe4, 0x0f,
-	0xf4, 0xf2, 0xc0, 0x44, 0xfc, 0x1b, 0x68, 0xd4, 0x0b, 0x63, 0x68, 0x99, 0x66, 0x04, 0x20, 0xcf,
-	0x0a, 0x34, 0x32, 0xc1, 0xbc, 0x02, 0x42, 0x50, 0xf5, 0xec, 0x35, 0xc5, 0xaa, 0xa1, 0x98, 0x75,
-	0x2b, 0x3e, 0x47, 0x31, 0xbe, 0xda, 0xdc, 0x63, 0x6d, 0x17, 0x8b, 0xce, 0xe8, 0x27, 0x54, 0x43,
-	0x3b, 0xe0, 0xb8, 0x1a, 0x37, 0x39, 0x94, 0x09, 0x2e, 0xec, 0xc0, 0xb5, 0x9d, 0x15, 0xb5, 0x62,
-	0x24, 0x1a, 0x42, 0xfd, 0x2e, 0xa0, 0xb6, 0xa0, 0xcb, 0xbf, 0x02, 0xd7, 0x62, 0xaa, 0x7d, 0x80,
-	0x5c, 0xc2, 0x47, 0x49, 0x6a, 0xa1, 0xbc, 0x36, 0x68, 0x0f, 0x74, 0x9b, 0x54, 0x17, 0x1d, 0x51,
-	0x17, 0x6a, 0xa1, 0xbd, 0xda, 0xd0, 0xa4, 0xba, 0xdd, 0x07, 0x11, 0x80, 0x67, 0x31, 0xb7, 0x64,
-	0xa8, 0x6f, 0x2d, 0x2a, 0x92, 0x16, 0x55, 0x49, 0x8b, 0xda, 0xa9, 0x2d, 0x92, 0x31, 0x0c, 0x24,
-	0xaa, 0x89, 0x43, 0x79, 0x2f, 0xc7, 0x30, 0xf8, 0x4f, 0xb9, 0x08, 0xd8, 0xf6, 0x04, 0xe3, 0x87,
-	0xa0, 0xcb, 0xc0, 0x3b, 0x6a, 0x62, 0x42, 0x6f, 0xc6, 0xfc, 0x53, 0x78, 0x7e, 0x40, 0xbf, 0x80,
-	0x94, 0xd7, 0x37, 0x7d, 0xd1, 0xa0, 0x99, 0xc1, 0x71, 0x74, 0x05, 0xed, 0xdc, 0xea, 0x73, 0x34,
-	0x4a, 0xa7, 0x22, 0x7f, 0x2f, 0xba, 0x51, 0x0e, 0x48, 0x8a, 0xaf, 0xa0, 0x39, 0xb4, 0x0e, 0xb7,
-	0x1a, 0x7d, 0x4e, 0xb3, 0xa4, 0xef, 0x42, 0x1f, 0x95, 0xde, 0xa7, 0xa4, 0x37, 0xd0, 0x29, 0x78,
-	0x81, 0xbe, 0xa4, 0x79, 0x65, 0xdb, 0xa1, 0x93, 0x63, 0x90, 0x94, 0xfd, 0x16, 0x50, 0xd1, 0x0f,
-	0xb4, 0xcf, 0x2d, 0x75, 0x56, 0xff, 0x7a, 0x14, 0x93, 0x0a, 0x2c, 0xe0, 0x43, 0xce, 0xa8, 0xcc,
-	0xac, 0xe5, 0x66, 0x67, 0x66, 0x5d, 0xe2, 0x31, 0xa9, 0xfc, 0x6b, 0x5c, 0xd7, 0x13, 0x90, 0xef,
-	0x38, 0xef, 0xe2, 0xdf, 0xde, 0xaf, 0xd7, 0x00, 0x00, 0x00, 0xff, 0xff, 0x8a, 0x16, 0x51, 0x21,
-	0x0b, 0x05, 0x00, 0x00,
+	// 362 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0x4f, 0x4f, 0xf2, 0x40,
+	0x10, 0xc6, 0x69, 0x81, 0xf7, 0x0d, 0x03, 0x22, 0x8c, 0xa8, 0xb5, 0x21, 0xda, 0xec, 0xc5, 0x26,
+	0x26, 0xc4, 0xe0, 0xc5, 0x2b, 0xe2, 0xbf, 0x18, 0xbd, 0xd4, 0xc4, 0x83, 0xb7, 0x56, 0x26, 0xa6,
+	0x11, 0xba, 0xb5, 0xbb, 0x10, 0xf9, 0x20, 0x7e, 0x5a, 0x2f, 0x86, 0xa5, 0x96, 0x52, 0xda, 0x84,
+	0xdb, 0xec, 0xec, 0x6f, 0x9e, 0x3c, 0x7d, 0xa6, 0x0b, 0x6d, 0x0a, 0x66, 0x7e, 0xc4, 0x83, 0x09,
+	0x05, 0xb2, 0x17, 0x46, 0x5c, 0x72, 0xfc, 0x2f, 0xb8, 0x1b, 0x7a, 0xfc, 0xcb, 0xdc, 0x89, 0x8b,
+	0x65, 0x9f, 0x3d, 0xc3, 0xe1, 0xa3, 0x2f, 0xe4, 0xcd, 0x6a, 0xc0, 0x21, 0x11, 0xf2, 0x40, 0x10,
+	0x5e, 0x42, 0x23, 0xa5, 0x23, 0x0c, 0xcd, 0x2a, 0xdb, 0xf5, 0x7e, 0xa7, 0xf7, 0x27, 0x90, 0x9e,
+	0x59, 0x23, 0xd9, 0x29, 0xec, 0xdf, 0xd1, 0xba, 0xe6, 0xe7, 0x94, 0x84, 0xc4, 0x26, 0xe8, 0xfe,
+	0xc8, 0xd0, 0x2c, 0xcd, 0xae, 0x3a, 0xba, 0x3f, 0x62, 0xdf, 0x1a, 0xd4, 0x53, 0x58, 0xf6, 0x1e,
+	0x11, 0x2a, 0x81, 0x3b, 0x21, 0x43, 0xb7, 0x34, 0xbb, 0xe6, 0xa8, 0x7a, 0xd1, 0x13, 0xe3, 0xe9,
+	0xbb, 0x51, 0x5e, 0xf6, 0x16, 0x35, 0x9e, 0x43, 0x65, 0xe6, 0x46, 0xc2, 0xa8, 0x28, 0x8b, 0xdd,
+	0x3c, 0x8b, 0x2f, 0x6e, 0xe4, 0xbb, 0xde, 0x98, 0x1c, 0x45, 0x62, 0x17, 0x6a, 0x6f, 0x11, 0xb9,
+	0x92, 0x46, 0x03, 0x69, 0x54, 0x95, 0xd4, 0xaa, 0xc1, 0x9e, 0x60, 0x2f, 0x67, 0x74, 0xc3, 0x5e,
+	0x0b, 0xca, 0x1f, 0x34, 0x8f, 0xdd, 0x2d, 0x4a, 0xec, 0x40, 0x75, 0xe6, 0x8e, 0xa7, 0x14, 0xbb,
+	0x5b, 0x1e, 0xd8, 0x19, 0x1c, 0x5d, 0x93, 0x90, 0x11, 0x9f, 0x6f, 0x91, 0x89, 0x0d, 0x07, 0x43,
+	0x1e, 0x6e, 0x41, 0xf6, 0x7f, 0x74, 0x68, 0xa4, 0x30, 0x81, 0xb7, 0xd0, 0xca, 0x2c, 0x53, 0x60,
+	0x73, 0x15, 0xc6, 0x24, 0x94, 0x73, 0xd3, 0x4a, 0xce, 0x05, 0x7b, 0x67, 0x25, 0xbc, 0x87, 0xe6,
+	0xfa, 0xfe, 0xf0, 0x38, 0x99, 0xca, 0x5d, 0xac, 0x99, 0xfb, 0x57, 0xb0, 0x12, 0x0e, 0xa0, 0x3d,
+	0x54, 0xa9, 0xa6, 0xc5, 0x72, 0xe1, 0x42, 0x89, 0x07, 0xc0, 0xcd, 0xf0, 0x90, 0x25, 0x74, 0x61,
+	0xb2, 0x66, 0xe6, 0xd3, 0x95, 0xd6, 0x6e, 0x26, 0x5b, 0x3c, 0x49, 0xa0, 0xfc, 0xd4, 0x8b, 0x7c,
+	0x5d, 0xd5, 0x5f, 0x6b, 0xf1, 0x45, 0xe8, 0x79, 0xff, 0xd4, 0x6b, 0xba, 0xf8, 0x0d, 0x00, 0x00,
+	0xff, 0xff, 0xae, 0xd0, 0x08, 0xfc, 0x7a, 0x03, 0x00, 0x00,
 }

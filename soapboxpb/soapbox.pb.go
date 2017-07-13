@@ -22,18 +22,12 @@ It has these top-level messages:
 	GetDeploymentStatusRequest
 	GetDeploymentStatusResponse
 	TeardownDeploymentRequest
-	ListEnvironmentRequest
 	ListEnvironmentResponse
 	GetEnvironmentRequest
-	GetEnvironmentResponse
 	Environment
 	EnvironmentVariable
-	CreateEnvironmentRequest
-	CreateEnvironmentResponse
 	DestroyEnvironmentRequest
-	DestroyEnvironmentResponse
 	CopyEnvironmentRequest
-	CopyEnvironmentResponse
 */
 package soapboxpb
 

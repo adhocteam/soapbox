@@ -23,7 +23,7 @@ type ListEnvironmentRequest struct {
 func (m *ListEnvironmentRequest) Reset()                    { *m = ListEnvironmentRequest{} }
 func (m *ListEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*ListEnvironmentRequest) ProtoMessage()               {}
-func (*ListEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*ListEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 type ListEnvironmentResponse struct {
 	Environments []*Environment `protobuf:"bytes,1,rep,name=environments" json:"environments,omitempty"`
@@ -32,7 +32,7 @@ type ListEnvironmentResponse struct {
 func (m *ListEnvironmentResponse) Reset()                    { *m = ListEnvironmentResponse{} }
 func (m *ListEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
 func (*ListEnvironmentResponse) ProtoMessage()               {}
-func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
 
 func (m *ListEnvironmentResponse) GetEnvironments() []*Environment {
 	if m != nil {
@@ -48,7 +48,7 @@ type GetEnvironmentRequest struct {
 func (m *GetEnvironmentRequest) Reset()                    { *m = GetEnvironmentRequest{} }
 func (m *GetEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*GetEnvironmentRequest) ProtoMessage()               {}
-func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
 
 func (m *GetEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -64,7 +64,7 @@ type GetEnvironmentResponse struct {
 func (m *GetEnvironmentResponse) Reset()                    { *m = GetEnvironmentResponse{} }
 func (m *GetEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
 func (*GetEnvironmentResponse) ProtoMessage()               {}
-func (*GetEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (*GetEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
 
 func (m *GetEnvironmentResponse) GetEnv() *Environment {
 	if m != nil {
@@ -84,7 +84,7 @@ type Environment struct {
 func (m *Environment) Reset()                    { *m = Environment{} }
 func (m *Environment) String() string            { return proto.CompactTextString(m) }
 func (*Environment) ProtoMessage()               {}
-func (*Environment) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (*Environment) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
 
 func (m *Environment) GetId() int32 {
 	if m != nil {
@@ -130,7 +130,7 @@ type EnvironmentVariable struct {
 func (m *EnvironmentVariable) Reset()                    { *m = EnvironmentVariable{} }
 func (m *EnvironmentVariable) String() string            { return proto.CompactTextString(m) }
 func (*EnvironmentVariable) ProtoMessage()               {}
-func (*EnvironmentVariable) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
+func (*EnvironmentVariable) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
 
 func (m *EnvironmentVariable) GetId() int32 {
 	if m != nil {
@@ -162,7 +162,7 @@ type CreateEnvironmentRequest struct {
 func (m *CreateEnvironmentRequest) Reset()                    { *m = CreateEnvironmentRequest{} }
 func (m *CreateEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateEnvironmentRequest) ProtoMessage()               {}
-func (*CreateEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
+func (*CreateEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{6} }
 
 func (m *CreateEnvironmentRequest) GetName() string {
 	if m != nil {
@@ -192,7 +192,7 @@ type CreateEnvironmentResponse struct {
 func (m *CreateEnvironmentResponse) Reset()                    { *m = CreateEnvironmentResponse{} }
 func (m *CreateEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
 func (*CreateEnvironmentResponse) ProtoMessage()               {}
-func (*CreateEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
+func (*CreateEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{7} }
 
 func (m *CreateEnvironmentResponse) GetId() int32 {
 	if m != nil {
@@ -208,7 +208,7 @@ type DestroyEnvironmentRequest struct {
 func (m *DestroyEnvironmentRequest) Reset()                    { *m = DestroyEnvironmentRequest{} }
 func (m *DestroyEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*DestroyEnvironmentRequest) ProtoMessage()               {}
-func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{8} }
+func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{8} }
 
 func (m *DestroyEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -223,7 +223,7 @@ type DestroyEnvironmentResponse struct {
 func (m *DestroyEnvironmentResponse) Reset()                    { *m = DestroyEnvironmentResponse{} }
 func (m *DestroyEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
 func (*DestroyEnvironmentResponse) ProtoMessage()               {}
-func (*DestroyEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{9} }
+func (*DestroyEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{9} }
 
 type CopyEnvironmentRequest struct {
 	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
@@ -232,7 +232,7 @@ type CopyEnvironmentRequest struct {
 func (m *CopyEnvironmentRequest) Reset()                    { *m = CopyEnvironmentRequest{} }
 func (m *CopyEnvironmentRequest) String() string            { return proto.CompactTextString(m) }
 func (*CopyEnvironmentRequest) ProtoMessage()               {}
-func (*CopyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{10} }
+func (*CopyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{10} }
 
 func (m *CopyEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -248,7 +248,7 @@ type CopyEnvironmentResponse struct {
 func (m *CopyEnvironmentResponse) Reset()                    { *m = CopyEnvironmentResponse{} }
 func (m *CopyEnvironmentResponse) String() string            { return proto.CompactTextString(m) }
 func (*CopyEnvironmentResponse) ProtoMessage()               {}
-func (*CopyEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{11} }
+func (*CopyEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{11} }
 
 func (m *CopyEnvironmentResponse) GetId() int32 {
 	if m != nil {
@@ -476,9 +476,9 @@ var _Environments_serviceDesc = grpc.ServiceDesc{
 	Metadata: "environment.proto",
 }
 
-func init() { proto.RegisterFile("environment.proto", fileDescriptor2) }
+func init() { proto.RegisterFile("environment.proto", fileDescriptor3) }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor3 = []byte{
 	// 436 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xc1, 0x6e, 0xda, 0x40,
 	0x10, 0xc5, 0x36, 0xb4, 0x62, 0x40, 0x14, 0xb6, 0x14, 0x16, 0x0b, 0x15, 0x77, 0x2b, 0xb5, 0xae,

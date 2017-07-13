@@ -3,9 +3,8 @@
 
 require 'google/protobuf'
 
+require 'soapbox_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "soapbox.Empty" do
-  end
   add_message "soapbox.Application" do
     optional :id, :int32, 1
     optional :name, :string, 2
@@ -32,7 +31,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
 end
 
 module Soapbox
-  Empty = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Empty").msgclass
   Application = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Application").msgclass
   ListApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationResponse").msgclass
   GetApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetApplicationRequest").msgclass

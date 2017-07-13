@@ -2,18 +2,33 @@ syntax = "proto3";
 package soapbox;
 option go_package = "soapboxpb";
 
+import "soapbox.proto";
 import "application.proto";
 import "environment.proto";
 
 service Deployments {
-    rpc StartDeployment (StartDeploymentRequest) returns (StartDeploymentResponse) {}
+    rpc ListDeployments (soapbox.Empty) returns (ListDeploymentResponse) {}
+    rpc GetDeployment (GetDeploymentRequest) returns (Deployment) {}
+    rpc StartDeployment (Deployment) returns (StartDeploymentResponse) {}
     rpc GetDeploymentStatus (GetDeploymentStatusRequest) returns (GetDeploymentStatusResponse) {}
+    rpc TeardownDeployment (TeardownDeploymentRequest) returns (soapbox.Empty) {}
 }
 
-message StartDeploymentRequest {
-    soapbox.Application application = 1;
-    string sha1_or_tag = 2;
-    soapbox.Environment env = 3;
+message ListDeploymentResponse {
+    repeated Deployment deployments = 1;
+}
+
+message GetDeploymentRequest {
+    int32 id = 1;
+}
+
+message Deployment {
+    int32 id = 1;
+    soapbox.Application application = 2;
+    string sha1_or_tag = 3;
+    string state = 4;
+    soapbox.Environment env = 5;
+    string created_at = 6;
 }
 
 message StartDeploymentResponse {
@@ -26,4 +41,8 @@ message GetDeploymentStatusRequest {
 
 message GetDeploymentStatusResponse {
     string state = 1;
+}
+
+message TeardownDeploymentRequest {
+    int32 id = 1;
 }

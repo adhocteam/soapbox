@@ -2,13 +2,13 @@ syntax = "proto3";
 package soapbox;
 option go_package = "soapboxpb";
 
+import "soapbox.proto";
+
 service Applications {
-    rpc ListApplications (Empty) returns (ListApplicationResponse) {}
+    rpc ListApplications (soapbox.Empty) returns (ListApplicationResponse) {}
     rpc CreateApplication (Application) returns (Application) {}
     rpc GetApplication (GetApplicationRequest) returns (Application) {}
 }
-
-message Empty {};
 
 enum ApplicationType {
     SERVER = 0;

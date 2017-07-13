@@ -14,7 +14,7 @@ type Application struct {
 	ID                 int            `json:"id"`                  // id
 	Name               string         `json:"name"`                // name
 	Type               AppType        `json:"type"`                // type
-	Slug               sql.NullString `json:"slug"`                // slug
+	Slug               string         `json:"slug"`                // slug
 	Description        sql.NullString `json:"description"`         // description
 	InternalDNS        sql.NullString `json:"internal_dns"`        // internal_dns
 	ExternalDNS        sql.NullString `json:"external_dns"`        // external_dns

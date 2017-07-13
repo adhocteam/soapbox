@@ -1,4 +1,4 @@
-require 'application_pb'
+require 'environment_pb'
 
 # Dummy test data
 EnvVar = Struct.new(:name, :value)
@@ -38,9 +38,13 @@ class EnvironmentsController < ApplicationController
   def create
     @form = CreateEnvironmentForm.new(params[:environment])
     if @form.valid?
-      # TODO: make this work
-      req = Soapbox::CreateEnvironmentRequest.new(name: @form.name)
-      $api_client.create_environment(req)
+      vars = []
+      @form.environment_variables.each do |pair|
+        name, value = pair
+        vars << Soapbox::EnvironmentVariable.new(name: name, value: value)
+      end
+      env = Soapbox::Environment.new(app_id: params[:application_id].to_i, name: @form.name, vars: vars)
+      $api_environment_client.create_environment(env)
       redirect_to application_environments_path
     else
       render :new

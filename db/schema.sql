@@ -21,6 +21,7 @@ create table environments (
        application_id integer references applications on delete cascade,
        name text not null,
        slug text not null,
+       vars jsonb not null default '[]',
        created_at timestamp with time zone not null default now()
 );
 

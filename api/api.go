@@ -1,7 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -53,7 +55,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	model := &models.Application{
 		ID:                 int(app.Id),
 		Name:               app.Name,
-		Slug:               newNullString(slugify(app.Name)),
+		Slug:               slugify(app.Name),
 		Description:        newNullString(app.Description),
 		ExternalDNS:        newNullString(app.ExternalDns),
 		GithubRepoURL:      newNullString(app.GithubRepoUrl),
@@ -167,11 +169,10 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	app := &pb.Application{
 		Id:   int32(model.ID),
 		Name: model.Name,
+		Slug: model.Slug,
 		Type: appTypeModelToPb(model.Type),
 	}
-	if model.Slug.Valid {
-		app.Slug = model.Slug.String
-	}
+
 	if model.Description.Valid {
 		app.Description = model.Description.String
 	}
@@ -198,3 +199,46 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 }
 
 const timestampFormat = "2006-01-02T15:04:05"
+
+func (s *server) ListEnvironments(context.Context, *pb.Empty) (*pb.ListEnvironmentResponse, error) {
+	return nil, nil
+}
+
+func (s *server) GetEnvironment(context.Context, *pb.GetEnvironmentRequest) (*pb.Environment, error) {
+	return nil, nil
+}
+
+func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*pb.Environment, error) {
+	// TODO(paulsmith): can we even do this in XO??
+	insertSQL := "INSERT INTO environments (application_id, name, slug, vars) VALUES ($1, $2, $3, $4) RETURNING id, created_at"
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(req.Vars); err != nil {
+		return nil, fmt.Errorf("encoding env vars as JSON: %v", err)
+	}
+
+	args := []interface{}{
+		req.GetAppId(),
+		req.GetName(),
+		slugify(req.GetName()),
+		buf.String(),
+	}
+
+	var id int
+
+	if err := s.db.QueryRow(insertSQL, args...).Scan(&id, &req.CreatedAt); err != nil {
+		return nil, fmt.Errorf("inserting in to db: %v", err)
+	}
+
+	req.Id = int32(id)
+
+	return req, nil
+}
+
+func (s *server) DestroyEnvironment(context.Context, *pb.DestroyEnvironmentRequest) (*pb.Empty, error) {
+	return nil, nil
+}
+
+func (s *server) CopyEnvironment(context.Context, *pb.CopyEnvironmentRequest) (*pb.Environment, error) {
+	return nil, nil
+}

@@ -16,9 +16,9 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.Deployment" do
     optional :id, :int32, 1
     optional :application, :message, 2, "soapbox.Application"
-    optional :sha1_or_tag, :string, 3
-    optional :state, :string, 4
-    optional :env, :message, 5, "soapbox.Environment"
+    optional :env, :message, 3, "soapbox.Environment"
+    optional :committish, :string, 4
+    optional :state, :string, 5
     optional :created_at, :string, 6
   end
   add_message "soapbox.StartDeploymentResponse" do

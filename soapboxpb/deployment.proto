@@ -25,9 +25,9 @@ message GetDeploymentRequest {
 message Deployment {
     int32 id = 1;
     soapbox.Application application = 2;
-    string sha1_or_tag = 3;
-    string state = 4;
-    soapbox.Environment env = 5;
+    soapbox.Environment env = 3;
+    string committish = 4;
+    string state = 5;
     string created_at = 6;
 }
 

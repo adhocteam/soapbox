@@ -21,8 +21,8 @@
             <%= link_to env.name, application_environment_path(@app.id, env.id) %>
           </td>
           <td>
-            <button type="button" class="btn btn-secondary btn-sm disabled" disabled="disabled">Copy</button>
-            <button type="button" class="btn btn-secondary btn-sm disabled" disabled="disabled">Delete</button>
+	    <%= link_to "Copy", copy_application_environment_path(id: env.id), class: "btn btn-secondary btn-sm" %>
+	    <%= link_to "Delete", application_environment_path(id: env.id), method: :delete, class: "btn btn-secondary btn-sm", onclick: "confirm('Are you sure?')" %>
           </td>
         </tr>
       <% end %>

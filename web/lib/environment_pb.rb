@@ -3,8 +3,10 @@
 
 require 'google/protobuf'
 
+require 'soapbox_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.ListEnvironmentRequest" do
+    optional :application_id, :int32, 1
   end
   add_message "soapbox.ListEnvironmentResponse" do
     repeated :environments, :message, 1, "soapbox.Environment"
@@ -12,38 +14,22 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.GetEnvironmentRequest" do
     optional :id, :int32, 1
   end
-  add_message "soapbox.GetEnvironmentResponse" do
-    optional :env, :message, 1, "soapbox.Environment"
-  end
   add_message "soapbox.Environment" do
     optional :id, :int32, 1
-    optional :name, :string, 2
-    optional :slug, :string, 3
-    repeated :vars, :message, 4, "soapbox.EnvironmentVariable"
-    optional :createdAt, :string, 5
+    optional :application_id, :int32, 2
+    optional :name, :string, 3
+    optional :slug, :string, 4
+    repeated :vars, :message, 5, "soapbox.EnvironmentVariable"
+    optional :created_at, :string, 6
   end
   add_message "soapbox.EnvironmentVariable" do
-    optional :id, :int32, 1
-    optional :key, :string, 2
-    optional :value, :string, 3
-  end
-  add_message "soapbox.CreateEnvironmentRequest" do
     optional :name, :string, 1
-    optional :slug, :string, 2
-    repeated :vars, :message, 3, "soapbox.EnvironmentVariable"
-  end
-  add_message "soapbox.CreateEnvironmentResponse" do
-    optional :id, :int32, 1
+    optional :value, :string, 2
   end
   add_message "soapbox.DestroyEnvironmentRequest" do
     optional :id, :int32, 1
   end
-  add_message "soapbox.DestroyEnvironmentResponse" do
-  end
   add_message "soapbox.CopyEnvironmentRequest" do
-    optional :id, :int32, 1
-  end
-  add_message "soapbox.CopyEnvironmentResponse" do
     optional :id, :int32, 1
   end
 end
@@ -52,13 +38,8 @@ module Soapbox
   ListEnvironmentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListEnvironmentRequest").msgclass
   ListEnvironmentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListEnvironmentResponse").msgclass
   GetEnvironmentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetEnvironmentRequest").msgclass
-  GetEnvironmentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetEnvironmentResponse").msgclass
   Environment = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Environment").msgclass
   EnvironmentVariable = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.EnvironmentVariable").msgclass
-  CreateEnvironmentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreateEnvironmentRequest").msgclass
-  CreateEnvironmentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreateEnvironmentResponse").msgclass
   DestroyEnvironmentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.DestroyEnvironmentRequest").msgclass
-  DestroyEnvironmentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.DestroyEnvironmentResponse").msgclass
   CopyEnvironmentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CopyEnvironmentRequest").msgclass
-  CopyEnvironmentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CopyEnvironmentResponse").msgclass
 end

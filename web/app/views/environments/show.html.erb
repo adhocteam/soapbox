@@ -14,7 +14,7 @@
         </tr>
       </thead>
       <tbody>
-        <% @environment.environment_variables.each do |env_var| %>
+        <% @environment.vars.each do |env_var| %>
           <tr scope="row">
             <td>
 		<code><%= env_var.name %></code>

@@ -37,6 +37,7 @@ func main() {
 	gs := grpc.NewServer()
 	as := api.NewServer(db, nil)
 	pb.RegisterApplicationsServer(gs, as)
+	pb.RegisterEnvironmentsServer(gs, as)
 	log.Fatal(gs.Serve(ln))
 }
 

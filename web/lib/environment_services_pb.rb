@@ -15,10 +15,10 @@ module Soapbox
       self.service_name = 'soapbox.Environments'
 
       rpc :ListEnvironments, ListEnvironmentRequest, ListEnvironmentResponse
-      rpc :GetEnvironment, GetEnvironmentRequest, GetEnvironmentResponse
-      rpc :CreateEnvironment, CreateEnvironmentRequest, CreateEnvironmentResponse
-      rpc :DestroyEnvironment, DestroyEnvironmentRequest, DestroyEnvironmentResponse
-      rpc :CopyEnvironment, CopyEnvironmentRequest, CopyEnvironmentResponse
+      rpc :GetEnvironment, GetEnvironmentRequest, Environment
+      rpc :CreateEnvironment, Environment, Environment
+      rpc :DestroyEnvironment, DestroyEnvironmentRequest, Empty
+      rpc :CopyEnvironment, CopyEnvironmentRequest, Environment
     end
 
     Stub = Service.rpc_stub_class

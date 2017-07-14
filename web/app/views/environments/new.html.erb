@@ -1,10 +1,10 @@
-<div class="card" >
+<div class="card">
     <div class="card-header">
 	<%= @app.name %>
     </div>
     <div class="card-block" >
 	<h4 class="card-title">Create a new environment</h4>
-	<%= form_for :environment, url: application_environments_path do |f| %>
+	<%= form_for :environment, url: application_environments_path, html: {class: "environment"} do |f| %>
 	    <% if @form.errors.any? %>
 		<div class="alert alert-danger" role="alert" >
 		    <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this environment from being created.
@@ -17,6 +17,8 @@
 		    <div class="form-control-feedback"><%= msg %></div>
 		<% end %>
 	    </div>
+	    <div id="env-vars-app">
+	    </div>
 	    <div>
 		<%= link_to 'Cancel', application_environments_path, class: "btn" %>
 		<%= f.submit "Create environment", class: "btn btn-primary" %>
@@ -24,3 +26,11 @@
 	<% end %>
     </div>
 </div>
+
+<script>
+ document.addEventListener("DOMContentLoaded", () => {
+     let el = document.getElementById("env-vars-app");
+     let initial = <%= @form.environment_variables.to_json.html_safe %>;
+     new EnvironmentVariablesApp(el, initial);
+ });
+</script>

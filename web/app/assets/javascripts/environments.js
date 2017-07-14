@@ -1,15 +1,5 @@
-(function() {
+(function(window) {
     "use strict";
-
-    document.addEventListener("turbolinks:load", () => {
-	var data = document.body.dataset;
-	var controller = data.controller;
-	var action = data.action;
-	if (controller === "environments" &&
-	    (action === "new" || action == "create")) {
-	    environmentsNew();
-	}
-    });
 
     const Name = props => {
 	return input({
@@ -50,7 +40,7 @@
 
 	const handleClick = e => {
 	    e.preventDefault();
-	    props.onAdd(state.name, state.value);
+	    props.onAdd([state.name, state.value]);
 	    const div = e.target.parentElement;
 	    const input = div.querySelector("input");
 	    input.value = "";
@@ -76,8 +66,8 @@
 	const list = props.pairs.map((pair, i) => {
 	    return (
 		div({className: "env-var-pair form-inline mb-2"},
-		    Name({name: "environment[names][]", value: pair.name, readOnly: true}), 
-		    Value({name: "environment[values][]", value: pair.value, readOnly: true}),
+		    Name({name: "environment[names][]", value: pair[0], readOnly: true}),
+		    Value({name: "environment[values][]", value: pair[1], readOnly: true}),
 		    DeleteButton({onclick: () => handleDelete(i)})
 		   )
 	    );
@@ -104,21 +94,21 @@
 	}
     }
 
-    function environmentsNew() {
+    function EnvironmentVariablesApp(el, initial) {
 	let pairs = [];
 	let props = {
 	    pairs: pairs,
-	    onAdd: (name, value) => {
+	    onAdd: pair => {
 		let found = false;
 		for (let i = 0; i < pairs.length; i++) {
-		    if (pairs[i].name === name) {
-			pairs[i].value = value;
+		    if (pairs[i][0] === pair[0]) {
+			pairs[i][1] = pair[1];
 			found = true;
 			break;
 		    }
 		}
 		if (!found) {
-		    pairs.push({name: name, value: value});
+		    pairs.push(pair);
 		}
 		render();
 	    },
@@ -127,11 +117,15 @@
 		render();
 	    }
 	};
-	let app = document.getElementById("env-vars-app");
+	(initial || []).forEach(pair => {
+	    props.pairs.push(pair);
+	});
 	const render = () => {
-	    empty(app);
-	    app.appendChild(EnvironmentVariables(props));
+	    empty(el);
+	    el.appendChild(EnvironmentVariables(props));
 	};
 	render();
     }
-})();
+
+    window.EnvironmentVariablesApp = EnvironmentVariablesApp;
+})(window);

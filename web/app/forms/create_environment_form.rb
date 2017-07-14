@@ -8,7 +8,7 @@ class CreateEnvironmentForm
   def initialize(attributes = {})
     @name = attributes[:name]
     @environment_variables = []
-    attributes[:names].each_with_index do |name, i|
+    (attributes[:names] || []).each_with_index do |name, i|
       value = attributes[:values][i]
       @environment_variables << [name, value]
     end

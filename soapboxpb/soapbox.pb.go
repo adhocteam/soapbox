@@ -22,6 +22,7 @@ It has these top-level messages:
 	GetDeploymentStatusRequest
 	GetDeploymentStatusResponse
 	TeardownDeploymentRequest
+	ListEnvironmentRequest
 	ListEnvironmentResponse
 	GetEnvironmentRequest
 	Environment

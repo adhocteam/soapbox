@@ -5,11 +5,15 @@ option go_package = "soapboxpb";
 import "soapbox.proto";
 
 service Environments {
-    rpc ListEnvironments (soapbox.Empty) returns (ListEnvironmentResponse) {}
+    rpc ListEnvironments (ListEnvironmentRequest) returns (ListEnvironmentResponse) {}
     rpc GetEnvironment (GetEnvironmentRequest) returns (Environment) {}
     rpc CreateEnvironment (Environment) returns (Environment) {}
     rpc DestroyEnvironment (DestroyEnvironmentRequest) returns (soapbox.Empty) {}
     rpc CopyEnvironment (CopyEnvironmentRequest) returns (Environment) {}
+}
+
+message ListEnvironmentRequest{
+    int32 application_id = 1;
 }
 
 message ListEnvironmentResponse {
@@ -22,7 +26,7 @@ message GetEnvironmentRequest {
 
 message Environment {
     int32 id = 1;
-    int32 app_id = 2;
+    int32 application_id = 2;
     string name = 3;
     string slug = 4;
     repeated EnvironmentVariable vars = 5;

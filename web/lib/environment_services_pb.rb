@@ -14,7 +14,7 @@ module Soapbox
       self.unmarshal_class_method = :decode
       self.service_name = 'soapbox.Environments'
 
-      rpc :ListEnvironments, Empty, ListEnvironmentResponse
+      rpc :ListEnvironments, ListEnvironmentRequest, ListEnvironmentResponse
       rpc :GetEnvironment, GetEnvironmentRequest, Environment
       rpc :CreateEnvironment, Environment, Environment
       rpc :DestroyEnvironment, DestroyEnvironmentRequest, Empty

@@ -22,7 +22,9 @@ create table environments (
        name text not null,
        slug text not null,
        vars jsonb not null default '[]',
-       created_at timestamp with time zone not null default now()
+       created_at timestamp with time zone not null default now(),
+       unique (application_id, name),
+       unique (application_id, slug)
 );
 
 create table deployments (

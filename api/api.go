@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/adhocteam/soapbox/models"
@@ -21,7 +22,10 @@ import (
 type server struct {
 	db         *sql.DB
 	httpClient *http.Client
+	jobs       map[int32]*deploymentStatus
 }
+
+type state string
 
 func NewServer(db *sql.DB, httpClient *http.Client) *server {
 	if httpClient == nil {
@@ -293,4 +297,119 @@ func (s *server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironm
 
 func (s *server) CopyEnvironment(context.Context, *pb.CopyEnvironmentRequest) (*pb.Environment, error) {
 	return nil, nil
+}
+
+func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
+	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
+	rows, err := s.db.Query(listSQL, req.GetApplicationId())
+	if err != nil {
+		return nil, fmt.Errorf("querying db: %v", err)
+	}
+	var deployments []*pb.Deployment
+	for rows.Next() {
+		var d pb.Deployment
+		d.Application = &pb.Application{}
+		d.Env = &pb.Environment{}
+		dest := []interface{}{
+			&d.Id,
+			&d.Application.Id,
+			&d.Env.Id,
+			&d.Committish,
+			&d.State,
+			&d.CreatedAt,
+			&d.Env.Name,
+		}
+		if err := rows.Scan(dest...); err != nil {
+			return nil, fmt.Errorf("scanning db row: %v", err)
+		}
+		deployments = append(deployments, &d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iteration over result set: %v", err)
+	}
+	res := &pb.ListDeploymentResponse{
+		Deployments: deployments,
+	}
+	return res, nil
+}
+
+func (s *server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest) (*pb.Deployment, error) {
+	return nil, nil
+
+}
+
+func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
+	insertSQL := "INSERT INTO deployments (application_id, environment_id, committish) VALUES ($1, $2, $3) RETURNING id, current_state, created_at"
+	args := []interface{}{
+		req.GetApplication().Id,
+		req.GetEnv().Id,
+		req.GetCommittish(),
+	}
+	dest := []interface{}{
+		&req.Id,
+		&req.State,
+		&req.CreatedAt,
+	}
+	if err := s.db.QueryRow(insertSQL, args...).Scan(dest...); err != nil {
+		return nil, fmt.Errorf("inserting new row into db: %v", err)
+	}
+	go startDeployment(s, req)
+	res := &pb.StartDeploymentResponse{
+		Id: req.GetId(),
+	}
+	return res, nil
+}
+
+func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentStatusRequest) (*pb.GetDeploymentStatusResponse, error) {
+	if s.jobs == nil {
+		s.jobs = make(map[int32]*deploymentStatus)
+	}
+	status, ok := s.jobs[req.GetId()]
+	if ok {
+		status.Lock()
+		state := status.currentState
+		status.Unlock()
+		res := &pb.GetDeploymentStatusResponse{
+			State: string(state),
+		}
+		return res, nil
+	}
+	return nil, fmt.Errorf("unknown deployment %d", req.GetId())
+}
+
+func (s *server) TeardownDeployment(ctx context.Context, req *pb.TeardownDeploymentRequest) (*pb.Empty, error) {
+	return nil, nil
+}
+
+type deploymentStatus struct {
+	currentState state
+	sync.Mutex
+}
+
+func startDeployment(s *server, req *pb.Deployment) {
+	status := deploymentStatus{
+		currentState: "initial",
+	}
+	setState := func(newState state) {
+		status.Lock()
+		defer status.Unlock()
+		status.currentState = newState
+	}
+	if s.jobs == nil {
+		s.jobs = make(map[int32]*deploymentStatus)
+	}
+	s.jobs[req.GetId()] = &status
+	for i := 0; i < 60; i++ {
+		switch {
+		case i < 15:
+			setState("rollout-wait")
+		case i < 30:
+			setState("evaluate-wait")
+		case i < 45:
+			setState("rollforward")
+		default:
+			setState("success")
+		}
+		time.Sleep(1 * time.Second)
+	}
 }

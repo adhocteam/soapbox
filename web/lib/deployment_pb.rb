@@ -7,6 +7,9 @@ require 'soapbox_pb'
 require 'application_pb'
 require 'environment_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
+  add_message "soapbox.ListDeploymentRequest" do
+    optional :application_id, :int32, 1
+  end
   add_message "soapbox.ListDeploymentResponse" do
     repeated :deployments, :message, 1, "soapbox.Deployment"
   end
@@ -36,6 +39,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
 end
 
 module Soapbox
+  ListDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListDeploymentRequest").msgclass
   ListDeploymentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListDeploymentResponse").msgclass
   GetDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentRequest").msgclass
   Deployment = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Deployment").msgclass

@@ -37,6 +37,7 @@ data "aws_alb" "application_alb" {
 module "launch_config" {
     source = "../lc"
     application_name = "${var.application_name}"
+    application_port = "${var.application_port}"
     environment      = "${var.environment}"
     release          = "${var.release}"
 }
@@ -44,14 +45,14 @@ module "launch_config" {
 # ALB target group and listeners
 resource "aws_alb_target_group" "application_target_group" {
   name     = "${var.application_name}-${var.environment}"
-  port     = "${var.application_port}"
+  port     = 80
   protocol = "HTTP"
   vpc_id   = "${data.aws_vpc.application_vpc.id}"
 
   health_check {
     interval            = 60
     path                = "${var.health_check_path}"
-    port                = "${var.application_port}"
+    port                = 80
     healthy_threshold   = 2
     unhealthy_threshold = 2
   }
@@ -65,7 +66,7 @@ resource "aws_alb_target_group" "application_target_group" {
 
 resource "aws_alb_listener" "application_alb_http" {
   load_balancer_arn = "${data.aws_alb.application_alb.arn}"
-  port              = "80"
+  port              = 80
   protocol          = "HTTP"
 
   default_action {
@@ -77,7 +78,7 @@ resource "aws_alb_listener" "application_alb_http" {
 resource "aws_alb_listener" "application_alb_https" {
   count             = "${var.application_acm_cert_arn != "" ? 1 : 0}"
   load_balancer_arn = "${data.aws_alb.application_alb.arn}"
-  port              = "443"
+  port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
   certificate_arn   = "${var.application_acm_cert_arn}"

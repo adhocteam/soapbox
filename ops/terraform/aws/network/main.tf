@@ -90,10 +90,17 @@ resource "aws_security_group" "application_app_sg" {
   vpc_id = "${aws_vpc.application_vpc.id}"
 
   ingress {
-    from_port       = "${var.application_port}"
-    to_port         = "${var.application_port}"
+    from_port       = 80
+    to_port         = 80
     protocol        = "tcp"
     security_groups = ["${aws_security_group.application_alb_sg.id}"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["${aws_subnet.dmz.*.cidr_block}"]
   }
 
   egress {
@@ -156,6 +163,25 @@ resource "aws_eip" "application_eip" {
   vpc   = true
 }
 
+resource "aws_route_table" "dmz_subnet_route_table" {
+  vpc_id = "${aws_vpc.application_vpc.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.application_igw.id}"
+  }
+
+  tags {
+    Name = "DMZ subnet route table"
+  }
+}
+
+resource "aws_route_table_association" "dmz_route_table_assoc" {
+  count          = "${length(var.availability_zones)}"
+  subnet_id      = "${element(aws_subnet.dmz.*.id, count.index)}"
+  route_table_id = "${aws_route_table.dmz_subnet_route_table.id}"
+}
+
 # NAT gateways for DMZ subnets
 resource "aws_nat_gateway" "dmz" {
   count         = "${length(var.availability_zones)}"
@@ -163,4 +189,24 @@ resource "aws_nat_gateway" "dmz" {
   subnet_id     = "${element(aws_subnet.dmz.*.id, count.index)}"
 
   depends_on = ["aws_internet_gateway.application_igw"]
+}
+
+resource "aws_route_table" "app_subnet_route_table" {
+  count  = "${length(var.availability_zones)}"
+  vpc_id = "${aws_vpc.application_vpc.id}"
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    nat_gateway_id = "${element(aws_nat_gateway.dmz.*.id, count.index)}"
+  }
+
+  tags = {
+    Name = "App subnet route table: ${format("%s%s", var.region, element(var.availability_zones, count.index))}"
+  }
+}
+
+resource "aws_route_table_association" "app_route_table_assoc" {
+  count          = "${length(var.availability_zones)}"
+  subnet_id      = "${element(aws_subnet.app.*.id, count.index)}"
+  route_table_id = "${element(aws_route_table.app_subnet_route_table.*.id, count.index)}"
 }

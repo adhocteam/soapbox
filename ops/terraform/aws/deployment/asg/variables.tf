@@ -43,7 +43,7 @@ variable "application_acm_cert_arn" {
 
 variable "application_port" {
   type    = "string"
-  default = "80"
+  default = "8080"
 }
 
 variable "health_check_path" {

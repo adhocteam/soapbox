@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -xeuo pipefail
+
+# log all script output
+exec > >(tee /var/log/user-data.log) 2>&1
+
+AWS=/usr/bin/aws
+DOCKER=/usr/bin/docker
+
+APP_NAME="${application_name}"
+PORT="${application_port}"
+RELEASE_BUCKET="${release_bucket}"
+ENV="${environment}"
+
+# Retrieve the release from s3
+$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME.tar.gz /tmp/$APP_NAME.tar.gz
+
+# Install the docker image
+$DOCKER image load -i /tmp/$APP_NAME.tar.gz
+
+# Set up the runit dirs
+mkdir -p "/etc/sv/$APP_NAME"
+
+# TODO: Create env var dir
+mkdir -p "/etc/sv/$APP_NAME/env"
+
+# TODO: Fetch env vars to above dir
+
+# TODO: logging configuration
+#mkdir -p "/etc/sv/$APP_NAME/log"
+#mkdir -p "/var/log/$APP_NAME"
+
+# Create the run script for the app
+cat << EOF > /etc/sv/$APP_NAME/run
+#!/bin/bash
+exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run --rm --name $APP_NAME-run -p 9090:$PORT $APP_NAME:latest
+EOF
+
+# Mark the run file executable
+chmod +x /etc/sv/$APP_NAME/run
+
+# Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
+ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
+
+# Restart the service
+sv restart $APP_NAME

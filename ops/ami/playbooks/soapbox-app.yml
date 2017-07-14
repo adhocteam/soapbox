@@ -31,3 +31,14 @@
         name: ec2-user
         append: yes
         groups: docker
+
+    - name: install nginx config
+      copy:
+        src: files/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        mode: "0644"
+
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted

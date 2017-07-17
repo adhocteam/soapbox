@@ -20,27 +20,32 @@ $ psql -f db/schema.sql -d soapbox_dev
 
 2. **Build and install the Soapbox API server (soapboxd) and CLI client (soapboxcli):**
 ``` shell
+$ go get -d -v ./...
 $ go install ./...
 ```
 
-3. **Run the API server:**
+3. **Install Terraform**
+
+Download and install Terraform from [here](https://www.terraform.io/downloads.html).
+
+4. **Run the API server:**
 ``` shell
 $ PGDATABASE=soapbox_dev PGSSLMODE=disable soapboxd &
 ```
 
-4. **Try out the CLI client:**
+5. **Try out the CLI client:**
 ``` shell
 $ soapboxcli list-applications
 ```
 
-5. **Install the web client:**
+6. **Install the web client:**
 ``` shell
 $ cd web
 $ gem install bundler
 $ bundle install
 ```
 
-6. **Run the web client and try it out:**
+7. **Run the web client and try it out:**
 ``` shell
 $ bin/rails server &
 $ open http://localhost:3000/

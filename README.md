@@ -9,6 +9,7 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
  - Go 1.8 or greater
  - Ruby 2.2 or greater
  - PostgreSQL 9.5 or greater
+ - Terraform 0.9.11 or greater
 
 ### Running the server and client locally
 

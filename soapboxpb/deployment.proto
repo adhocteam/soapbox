@@ -7,11 +7,15 @@ import "application.proto";
 import "environment.proto";
 
 service Deployments {
-    rpc ListDeployments (soapbox.Empty) returns (ListDeploymentResponse) {}
+    rpc ListDeployments (ListDeploymentRequest) returns (ListDeploymentResponse) {}
     rpc GetDeployment (GetDeploymentRequest) returns (Deployment) {}
     rpc StartDeployment (Deployment) returns (StartDeploymentResponse) {}
     rpc GetDeploymentStatus (GetDeploymentStatusRequest) returns (GetDeploymentStatusResponse) {}
     rpc TeardownDeployment (TeardownDeploymentRequest) returns (soapbox.Empty) {}
+}
+
+message ListDeploymentRequest {
+    int32 application_id = 1;
 }
 
 message ListDeploymentResponse {

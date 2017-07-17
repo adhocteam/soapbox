@@ -14,7 +14,7 @@ module Soapbox
       self.unmarshal_class_method = :decode
       self.service_name = 'soapbox.Deployments'
 
-      rpc :ListDeployments, Empty, ListDeploymentResponse
+      rpc :ListDeployments, ListDeploymentRequest, ListDeploymentResponse
       rpc :GetDeployment, GetDeploymentRequest, Deployment
       rpc :StartDeployment, Deployment, StartDeploymentResponse
       rpc :GetDeploymentStatus, GetDeploymentStatusRequest, GetDeploymentStatusResponse

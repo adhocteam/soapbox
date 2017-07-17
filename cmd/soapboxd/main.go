@@ -34,11 +34,12 @@ func main() {
 		log.Fatalf("couldn't listen on port %d: %v", *port, err)
 	}
 
-	gs := grpc.NewServer()
-	as := api.NewServer(db, nil)
-	pb.RegisterApplicationsServer(gs, as)
-	pb.RegisterEnvironmentsServer(gs, as)
-	log.Fatal(gs.Serve(ln))
+	server := grpc.NewServer()
+	apiServer := api.NewServer(db, nil)
+	pb.RegisterApplicationsServer(server, apiServer)
+	pb.RegisterEnvironmentsServer(server, apiServer)
+	pb.RegisterDeploymentsServer(server, apiServer)
+	log.Fatal(server.Serve(ln))
 }
 
 func checkJobDependencies() error {

@@ -19,7 +19,7 @@
         },
         "instance_type": "{{user `instance_type`}}",
         "ssh_username": "{{user `ssh_username`}}",
-        "ami_name": "{{user `ami_name`}}-{{isotime \"2016-01-02 03-04-05\"}}",
+        "ami_name": "{{user `ami_name`}}-{{isotime \"2006-01-02T03-04-05\"}}",
         "ami_description": "Soapbox application AMI (based on the standard AWS Linux AMI)",
         "tags": {
             "app": "soapbox"

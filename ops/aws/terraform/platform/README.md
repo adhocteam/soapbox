@@ -44,7 +44,6 @@ above.
 
 ```
 $ cd aws/terraform/platform
-$ terraform get
 $ terraform init -backend-config=backend.tfvars
 ```
 

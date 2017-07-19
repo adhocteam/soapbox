@@ -60,4 +60,4 @@ Default: `{"app" = ["10.0.0.0/20", "10.0.16.0/20"], "dmz"  = ["10.0.32.0/20", "1
 
 The breakdown of address spaces for each of the zones specified for `availability_zones`.
 
-Using the default values of `region=us-east-1`, `availability_zones = ["a", "b"]` and `app = ["10.0.0.0/20", "10.0.16.0/20"]`, this means that the app subnet in availability zone "us-east-1" would have allocation "10.0.0.0/20".
+Using the default values of `region=us-east-1`, `availability_zones = ["a", "b"]` and `app = ["10.0.0.0/20", "10.0.16.0/20"]`, this means that the app subnet in availability zone "us-east-1a" would have allocation "10.0.0.0/20".

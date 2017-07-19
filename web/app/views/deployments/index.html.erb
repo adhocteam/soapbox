@@ -1,32 +1,54 @@
 <div class="card">
-    <div class="card-header">
-	<%= link_to @app.name, application_path(@app.id) %>
-    </div>
-    <div class="card-block">
-	<h4 class="card-title">Deployments</h4>
-	<div class="text-right mb-3">
-	    <%= link_to '+ New Deployment', new_application_deployment_path, class: "btn btn-primary" %>
-	</div>
-	<table class="table table-striped">
-	    <thead>
-		<tr>
-		    <th>Deployment</th>
-		    <th>State</th>
-		</tr>
-	    </thead>
-	    <tbody>
-		<% @deployments.each do |deployment| %>
-		    <tr scope="row">
-			<td>	
-			    <code><%= deployment.committish %></code> /
-			    <%= deployment.env.name %>
-			</td>
-			<td>
-			    <%= deployment.state %>
-			</td>
-		    </tr>
-		<% end %>
-	    </tbody>
-	</table>
-    </div>
+  <div class="card-header">
+    <%= link_to @app.name, application_path(@app.id) %>
+  </div>
+  <div class="card-block">
+  	<h4 class="card-title">Deployments</h4>
+  	<div class="text-right mb-3">
+  	    <%= link_to '+ New Deployment', new_application_deployment_path, class: "btn btn-primary" %>
+  	</div>
+  	<table class="table">
+      <thead>
+    		<tr>
+    	    <th>ID</th>
+    	    <th>Deployment</th>
+    	    <th>State</th>
+    	    <th>Created At</th>
+    		</tr>
+      </thead>
+      <tbody>
+    		<% @deployments.each_with_index do |deployment, index| %>
+          <% deployment_classname = 'latest' if (index == 0 && deployment.state == 'success') || index > 0 %>
+          <% deployment_classname = 'active' if index == 0 && deployment.state != 'success' %>
+    	    <tr
+            scope="row"
+            class="deployment <%= deployment_classname %>"
+            id="deployment-<%= index == 0 ? 'first' : deployment.id %>"
+            data-state="<%= deployment.state %>"
+            data-id="<%= deployment.id %>">
+            <td><%= deployment.id %></td>
+      			<td>
+      			  <code><%= deployment.committish %></code> /
+      			  <%= deployment.env.name %>
+      			</td>
+      			<td>
+              <%= deployment.state == 'success' || index != 0 ? nil : render("shared/spinner") %>
+              <span name="deployment-state"><%= deployment.state %></span>
+      			</td>
+            <td>
+      			  <%= Time.parse(deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
+      			</td>
+    	    </tr>
+    		<% end %>
+  	  </tbody>
+  	</table>
+  </div>
 </div>
+
+<script>
+ document.addEventListener("DOMContentLoaded", () => {
+   let el = document.getElementById("deployment-first");
+   const app = new DeploymentsApp(el);
+   app.start();
+ });
+</script>

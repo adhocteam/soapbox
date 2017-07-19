@@ -10,7 +10,7 @@ class DeploymentsController < ApplicationController
     if res.deployments.count == 0
       redirect_to new_application_deployment_path
     else
-      @deployments = res.deployments
+      @deployments = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }
     end
   end
 
@@ -35,8 +35,13 @@ class DeploymentsController < ApplicationController
     req = Soapbox::GetDeploymentStatusRequest.new(id: params[:id].to_i)
     res = $api_deployment_client.get_deployment_status(req)
     @state = res.state
+
+    respond_to do |format|
+      format.html
+      format.json { render plain: @state }
+    end
   end
-    
+
   private
 
   def list_environments(application_id)
@@ -48,7 +53,7 @@ class DeploymentsController < ApplicationController
     req = Soapbox::GetApplicationRequest.new(id: params[:application_id].to_i)
     @app = $api_client.get_application(req)
   end
-  
+
   def set_environments
     @environments = list_environments(params[:application_id].to_i)
   end

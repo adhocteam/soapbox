@@ -18,10 +18,6 @@
           <th>GitHub repository</th>
           <td><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
         </tr>
-        <tr>
-          <th>Current deployment</th>
-          <td><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
-        </tr>
       </tbody>
     </table>
     <p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>

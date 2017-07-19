@@ -1,6 +1,8 @@
 (function(window) {
     "use strict";
 
+
+
     class DeploymentsApp {
       constructor(element) {
         this.element = element;
@@ -29,9 +31,9 @@
             if (req.status == 200) {
               const deploymentStatus = req.responseText;
               if (deploymentStatus === 'success') {
-                element.classList.add('complete');
+                element.classList.add('latest');
+                element.classList.remove('active');
               }
-              element.classList.remove('active');
               element.dataset.state = req.responseText;
               element.getElementsByTagName("span")[0].innerHTML = req.responseText;
             } else {

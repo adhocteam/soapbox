@@ -367,7 +367,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 		return nil, fmt.Errorf("querying for env slug: %v", err)
 	}
 	req.Env = env
-	go startDeployment(s, req)
+	go s.startDeployment(req)
 	res := &pb.StartDeploymentResponse{
 		Id: req.GetId(),
 	}
@@ -400,7 +400,7 @@ type deploymentStatus struct {
 	sync.Mutex
 }
 
-func startDeployment(s *server, req *pb.Deployment) {
+func (s *server) startDeployment(req *pb.Deployment) {
 	status := deploymentStatus{
 		currentState: "rollout-wait",
 	}
@@ -627,16 +627,16 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		return
 	}
 
-	// TODO(paulsmith): un-hardcode
-	const iamInstanceProfile = "arn:aws:iam::968246069280:instance-profile/soapbox-app"
+	// TODO(paulsmith): get from Soapbox platform config
+	const iamInstanceProfile = "soapbox-app"
 	const appAmi = "ami-ef545cf9"
 	const instanceType = "t2.micro"
 	const keyName = "soapbox-app"
+	// TODO(paulsmith): get from AWS SDK
 	securityGroupIds := []*string{aws.String("sg-436f1332")}
 	const subnetId = "subnet-118c193d"
 
 	asSvc := autoscaling.New(sess)
-	//   name                        = "${var.application_name}-${var.environment}-${var.release}"
 	committish := req.GetCommittish()
 	sha1Re := regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 	if sha1Re.MatchString(committish) {
@@ -690,11 +690,14 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	log.Printf("blue ASG is currently: %s", blueAsgName)
 	log.Printf("green ASG is currently: %s", greenAsgName)
 
+	const nAZs = 2 // number of availability zones
+
 	blueAsgInput := &autoscaling.UpdateAutoScalingGroupInput{
 		AutoScalingGroupName:    aws.String(blueAsgName),
 		LaunchConfigurationName: aws.String(lcName),
-		MaxSize:                 aws.Int64(1),
-		MinSize:                 aws.Int64(1),
+		DesiredCapacity:         aws.Int64(nAZs),
+		MaxSize:                 aws.Int64(nAZs),
+		MinSize:                 aws.Int64(nAZs),
 	}
 	log.Printf("updating blue ASG")
 	if _, err := asSvc.UpdateAutoScalingGroup(blueAsgInput); err != nil {
@@ -702,20 +705,6 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		setState("failed")
 		return
 	}
-
-	// wait for blue ASG to be in service
-	log.Printf("waiting for blue ASG to be in service")
-	if err := asSvc.WaitUntilGroupInService(&autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: []*string{aws.String(blueAsgName)},
-	}); err != nil {
-		log.Printf("waiting for blue ASG in service: %v", err)
-		setState("failed")
-		return
-	}
-
-	log.Printf("blue ASG in service")
-
-	setState("rollforward")
 
 	// TODO(paulsmith): get this value dynamically from SDK or
 	// construct from well-known params
@@ -734,6 +723,20 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		return
 	}
 
+	// wait for blue ASG to be in service
+	log.Printf("waiting for blue ASG to be in service")
+	if err := asSvc.WaitUntilGroupInService(&autoscaling.DescribeAutoScalingGroupsInput{
+		AutoScalingGroupNames: []*string{aws.String(blueAsgName)},
+	}); err != nil {
+		log.Printf("waiting for blue ASG in service: %v", err)
+		setState("failed")
+		return
+	}
+
+	log.Printf("blue ASG in service")
+
+	setState("rollforward")
+
 	greentgi := &autoscaling.DetachLoadBalancerTargetGroupsInput{
 		AutoScalingGroupName: aws.String(greenAsgName),
 		TargetGroupARNs: []*string{
@@ -749,6 +752,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 
 	greenAsgInput := &autoscaling.UpdateAutoScalingGroupInput{
 		AutoScalingGroupName: aws.String(greenAsgName),
+		DesiredCapacity:      aws.Int64(0),
 		MaxSize:              aws.Int64(0),
 		MinSize:              aws.Int64(0),
 	}

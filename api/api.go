@@ -555,7 +555,7 @@ func (s *server) startDeployment(req *pb.Deployment) {
 
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
-	userDataTmpl := `#!/usr/bin/env bash
+	userDataTmpl := `#!/bin/bash
 
 set -xeuo pipefail
 
@@ -569,6 +569,7 @@ APP_NAME="{{.Slug}}"
 PORT="{{.ListenPort}}"
 RELEASE_BUCKET="{{.Bucket}}"
 ENV="{{.Environment}}"
+IMAGE="{{.Image}}"
 
 # Retrieve the release from s3
 $AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME.tar.gz /tmp/$APP_NAME.tar.gz
@@ -591,7 +592,7 @@ mkdir -p "/etc/sv/$APP_NAME/env"
 # Create the run script for the app
 cat << EOF > /etc/sv/$APP_NAME/run
 #!/bin/bash
-exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run --rm --name $APP_NAME-run -p 9090:$PORT {{.Image}}
+exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run --rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
 EOF
 
 # Mark the run file executable
@@ -706,6 +707,14 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		return
 	}
 
+	log.Printf("waiting for blue ASG instances to be ready")
+	if err := waitUntilAsgInstancesReady(asSvc, blueAsgName, nAZs); err != nil {
+		log.Printf("waiting for blue ASG instances to be ready: %v", err)
+		setState("failed")
+		return
+	}
+	log.Printf("blue ASG instances ready")
+
 	// TODO(paulsmith): get this value dynamically from SDK or
 	// construct from well-known params
 	const targetGroupARN = "arn:aws:elasticloadbalancing:us-east-1:968246069280:targetgroup/paul-example-test/975a4c377b2fa113"
@@ -722,18 +731,6 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		setState("failed")
 		return
 	}
-
-	// wait for blue ASG to be in service
-	log.Printf("waiting for blue ASG to be in service")
-	if err := asSvc.WaitUntilGroupInService(&autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: []*string{aws.String(blueAsgName)},
-	}); err != nil {
-		log.Printf("waiting for blue ASG in service: %v", err)
-		setState("failed")
-		return
-	}
-
-	log.Printf("blue ASG in service")
 
 	setState("rollforward")
 
@@ -804,4 +801,39 @@ func updateTag(svc *autoscaling.AutoScaling, tagName string, asgName string, val
 		return fmt.Errorf("updating ASG tags: %v", err)
 	}
 	return nil
+}
+
+func waitUntilAsgInstancesReady(svc *autoscaling.AutoScaling, name string, n int) error {
+	deadline := time.Now().Add(5 * 60 * time.Second) // fail after 5 minutes
+	for {
+		count, err := inService(svc, name)
+		if err != nil {
+			return err
+		}
+		if count == n {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timeout waiting for ASG instances to be ready)")
+		}
+		time.Sleep(5 * time.Second)
+	}
+}
+
+func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
+	out, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
+		AutoScalingGroupNames: []*string{aws.String(name)},
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	count := 0
+	group := out.AutoScalingGroups[0]
+	for _, inst := range group.Instances {
+		if *inst.LifecycleState == "InService" {
+			count++
+		}
+	}
+	return count, nil
 }

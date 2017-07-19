@@ -1,0 +1,41 @@
+{
+    "variables": {
+        "aws_region": "us-east-1",
+        "instance_type": "t2.micro",
+        "ssh_username": "ec2-user",
+        "ami_name": "soapbox-aws-linux-ami"
+    },
+    "builders": [{
+        "type": "amazon-ebs",
+        "region": "{{user `aws_region`}}",
+        "source_ami_filter": {
+          "filters": {
+            "name": "amzn-ami-hvm-*",
+            "root-device-type": "ebs",
+            "virtualization-type": "hvm"
+          },
+          "owners": ["amazon"],
+          "most_recent": true
+        },
+        "instance_type": "{{user `instance_type`}}",
+        "ssh_username": "{{user `ssh_username`}}",
+        "ami_name": "{{user `ami_name`}}-{{isotime \"2006-01-02T03-04-05\"}}",
+        "ami_description": "Soapbox application AMI (based on the standard AWS Linux AMI)",
+        "tags": {
+            "app": "soapbox"
+        }
+    }],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "sudo pip install ansible"
+            ]
+        },
+        {
+            "type": "ansible-local",
+            "playbook_file": "playbooks/soapbox-app.yml",
+            "playbook_dir": "playbooks"
+        }
+    ]
+}

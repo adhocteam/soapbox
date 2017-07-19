@@ -1,6 +1,6 @@
 <div class="card">
     <div class="card-header">
-	<%= @app.name %>
+	    <%= @app.name %>
     </div>
     <div class="card-block" >
 	<h4 class="card-title">Start a new deployment</h4>
@@ -19,7 +19,7 @@
 		<%= f.select :environment_id, @environments.map {|e| [e.name, e.id]}, {selected: @form.environment_id, include_blank: true} %>
 	    </div>
 	    <div>
-		<%= link_to 'Cancel', application_deployments_path, class: "btn" %>
+		<%= link_to 'Cancel', application_path(@app.id), class: "btn" %>
 		<%= f.submit "Start deployment", class: "btn btn-primary" %>
 	    </div>
 	<% end %>

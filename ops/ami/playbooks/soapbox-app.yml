@@ -1,0 +1,44 @@
+---
+- hosts: all
+  user: ec2-user
+  become: True
+  tasks:
+    - name: copy runit rpm to target
+      copy:
+        src: files/runit-2.1.2-1.amzn1.x86_64.rpm
+        dest: /tmp/runit.rpm
+
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - docker
+        - nginx
+        - /tmp/runit.rpm
+
+    - name: start services
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      with_items:
+        - docker
+        - nginx
+
+    - name: add ec2-user to docker group
+      user:
+        name: ec2-user
+        append: yes
+        groups: docker
+
+    - name: install nginx config
+      copy:
+        src: files/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        mode: "0644"
+
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted

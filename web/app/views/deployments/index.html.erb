@@ -7,7 +7,7 @@
   	<div class="text-right mb-3">
   	    <%= link_to '+ New Deployment', new_application_deployment_path, class: "btn btn-primary" %>
   	</div>
-  	<table class="table table-striped">
+  	<table class="table">
       <thead>
     		<tr>
     	    <th>ID</th>
@@ -18,8 +18,11 @@
       </thead>
       <tbody>
     		<% @deployments.each_with_index do |deployment, index| %>
+          <% deployment_classname = 'latest' if (index == 0 && deployment.state == 'success') || index > 0 %>
+          <% deployment_classname = 'active' if index == 0 && deployment.state != 'success' %>
     	    <tr
             scope="row"
+            class="deployment <%= deployment_classname %>"
             id="deployment-<%= index == 0 ? 'first' : deployment.id %>"
             data-state="<%= deployment.state %>"
             data-id="<%= deployment.id %>">

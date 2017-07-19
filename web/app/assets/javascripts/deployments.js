@@ -31,6 +31,7 @@
               if (deploymentStatus === 'Success') {
                 element.classList.add('complete');
               }
+              element.classList.remove('active');
               element.getElementsByTagName("span")[0].innerHTML = req.responseText;
             } else {
               console.log('error occurred while polling');

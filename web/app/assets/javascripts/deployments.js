@@ -28,7 +28,7 @@
            if (req.readyState == XMLHttpRequest.DONE ) {
             if (req.status == 200) {
               const deploymentStatus = req.responseText;
-              if (deploymentStatus === 'Success') {
+              if (deploymentStatus === 'success') {
                 element.classList.add('complete');
               }
               element.classList.remove('active');

@@ -1,4 +1,4 @@
-    # Soapbox application network configuration
+# Soapbox application network configuration
 
 ## Usage
 

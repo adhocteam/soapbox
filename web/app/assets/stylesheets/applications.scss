@@ -9,3 +9,7 @@ tr.deployment.active {
 tr.deployment.latest {
   background: aliceblue;
 }
+
+tr.deployment.latest + .latest {
+  background: white;
+}

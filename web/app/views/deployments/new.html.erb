@@ -1,27 +1,27 @@
 <div class="card">
-    <div class="card-header">
-	<%= @app.name %>
-    </div>
-    <div class="card-block" >
-	<h4 class="card-title">Start a new deployment</h4>
-	<%= form_for :deployment, url: application_deployments_path, html: {class: "deployment"} do |f| %>
-	    <% if @form.errors.any? %>
-		<div class="alert alert-danger" role="alert" >
-		    <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this deployment from being started.
-		</div>
-	    <% end %>
-	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:committish) %>">
-		<%= f.label :committish, class: "col-form-label" %>
-		<%= f.text_field :committish, value: @form.committish, class: "form-control" %>
-	    </div>
-	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:environment_id) %>">
-		<%= f.label :environment_id, class: "col-form-label" %>
-		<%= f.select :environment_id, @environments.map {|e| [e.name, e.id]}, {selected: @form.environment_id, include_blank: true} %>
-	    </div>
-	    <div>
-		<%= link_to 'Cancel', application_deployments_path, class: "btn" %>
-		<%= f.submit "Start deployment", class: "btn btn-primary" %>
-	    </div>
-	<% end %>
-    </div>
+  <div class="card-header">
+    <%= @app.name %>
+  </div>
+  <div class="card-block" >
+    <h4 class="card-title">Start a new deployment</h4>
+    <%= form_for :deployment, url: application_deployments_path, html: {class: "deployment"} do |f| %>
+      <% if @form.errors.any? %>
+        <div class="alert alert-danger" role="alert" >
+          <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this deployment from being started.
+        </div>
+      <% end %>
+      <div class="form-group required<%= ' has-danger' if @form.errors.include?(:committish) %>">
+        <%= f.label :committish, class: "col-form-label" %>
+        <%= f.text_field :committish, value: @form.committish, class: "form-control" %>
+      </div>
+      <div class="form-group required<%= ' has-danger' if @form.errors.include?(:environment_id) %>">
+        <%= f.label :environment_id, class: "col-form-label" %>
+        <%= f.select :environment_id, @environments.map {|e| [e.name, e.id]}, {selected: @form.environment_id, include_blank: true} %>
+      </div>
+      <div>
+        <%= link_to 'Cancel', application_path(@app.id), class: "btn" %>
+        <%= f.submit "Start deployment", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
 </div>

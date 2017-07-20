@@ -1,4 +1,5 @@
 require 'application_pb'
+require 'deployment_pb'
 
 class ApplicationsController < ApplicationController
   def index
@@ -36,5 +37,9 @@ class ApplicationsController < ApplicationController
   def show
     req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
     @app = $api_client.get_application(req)
+
+    req = Soapbox::ListDeploymentRequest.new(application_id: params[:id].to_i)
+    res = $api_deployment_client.list_deployments(req)
+    @deployment = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }.first
   end
 end

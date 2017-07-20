@@ -25,7 +25,7 @@ class DeploymentsController < ApplicationController
       app = Soapbox::Application.new(id: params[:application_id].to_i)
       req = Soapbox::Deployment.new(committish: @form.committish, application: app, env: env)
       res = $api_deployment_client.start_deployment(req)
-      redirect_to application_deployment_path(id: res.id)
+      redirect_to application_deployments_path(application_id: params[:application_id].to_i)
     else
       render :new
     end

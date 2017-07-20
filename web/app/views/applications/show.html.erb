@@ -1,27 +1,51 @@
 <div class="card">
-    <div class="card-header" >
-	Applications
-    </div>
-    <div class="card-block" >
-	<h4 class="card-title"><%= @app.name %></h4>
-	<h6 class="card-subtitle mb-2 text-muted">ID: <%= @app.id %></h6>
-	<p class="card-text">
-	    <% if !@app.description.blank? %>
-		<%= @app.description %>
-	    <% else %>
-		<i>No description.</i>
-	    <% end %>
-	</p>
-	<table class="table">
-	    <tbody>
-		<tr>
-		    <th>GitHub repository</th>
-		    <td><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
-		</tr>
-	    </tbody>
-	</table>
-	<p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
-	<%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
-	<%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
-    </div>
+  <div class="card-header" >
+    Applications
+  </div>
+  <div class="card-block" >
+    <h4 class="card-title"><%= @app.name %></h4>
+    <h6 class="card-subtitle mb-2 text-muted">ID: <%= @app.id %></h6>
+    <p class="card-text">
+      <% if !@app.description.blank? %>
+      <%= @app.description %>
+      <% else %>
+      <i>No description.</i>
+      <% end %>
+    </p>
+    <table class="table">
+      <tbody>
+        <tr>
+          <th>GitHub repository</th>
+          <td colspan="3"><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
+        </tr>
+        <tr id="current-deployment"
+          data-state="<%= @deployment.state %>"
+          data-id="<%= @deployment.id %>">
+          <th>Current deployment</th>
+          <td>
+            <%= @deployment.state == 'success'?  nil : render("shared/spinner") %>
+            <span name="deployment-state"><%= @deployment.state %></span>
+          </td>
+          <td>
+            <code><%= @deployment.committish %></code> /
+            <%= @deployment.env.name %>
+          </td>
+          <td>
+            <%= Time.parse(@deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
+    <%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
+    <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
+  </div>
 </div>
+
+<script>
+ document.addEventListener("DOMContentLoaded", () => {
+   let el = document.getElementById("current-deployment");
+   const app = new DeploymentsApp(el, <%= @app.id %>);
+   app.start();
+ });
+</script>

@@ -35,7 +35,6 @@ class DeploymentsController < ApplicationController
     req = Soapbox::GetDeploymentStatusRequest.new(id: params[:id].to_i)
     res = $api_deployment_client.get_deployment_status(req)
     @state = res.state
-    @deployment = res
 
     respond_to do |format|
       format.html

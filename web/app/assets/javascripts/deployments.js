@@ -1,10 +1,13 @@
 (function(window) {
     "use strict";
 
-
-
+    // this component requires that
+    // the element passed in have two data attributes
+    // data-id and data-state. Also, the element needs to have
+    // a child span to display the deployment state.
     class DeploymentsApp {
-      constructor(element) {
+      constructor(element, appId) {
+        this.appId = appId;
         this.element = element;
         this.poll = this.poll.bind(this);
       }
@@ -19,6 +22,7 @@
 
       poll() {
         const element = this.element;
+        const appId = this.appId;
         const { state, id } = element.dataset;
         console.log('polling', state, id)
         if (state === 'success') {
@@ -42,7 +46,7 @@
            }
          };
 
-        req.open("GET", `deployments/${id}.json`, true);
+        req.open("GET", `/applications/${appId}/deployments/${id}.json`, true);
         req.send();
       }
     }

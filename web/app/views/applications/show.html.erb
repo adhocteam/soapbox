@@ -18,6 +18,15 @@
           <th>GitHub repository</th>
           <td><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
         </tr>
+        <tr id="current-deployment"
+          data-state="<%= @latest_deployment.state %>"
+          data-id="<%= @latest_deployment.id %>">
+          <th>Current deployment</th>
+          <td>
+            <%= @latest_deployment.state == 'success'?  nil : render("shared/spinner") %>
+            <span name="deployment-state"><%= @latest_deployment.state %></span>
+          </td>
+        </tr>
       </tbody>
     </table>
     <p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
@@ -25,3 +34,11 @@
     <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
   </div>
 </div>
+
+<script>
+ document.addEventListener("DOMContentLoaded", () => {
+   let el = document.getElementById("current-deployment");
+   const app = new DeploymentsApp(el, <%= @app.id %>);
+   app.start();
+ });
+</script>

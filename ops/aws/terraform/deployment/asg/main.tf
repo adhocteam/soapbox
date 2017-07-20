@@ -89,10 +89,10 @@ resource "aws_alb_listener" "application_alb_https" {
   }
 }
 
-# Blue-green autoscaling groups
+# Blue-green (a-b) autoscaling groups
 resource "aws_autoscaling_group" "asg_blue" {
   availability_zones        = ["${formatlist("%s%s", var.region, var.availability_zones)}"]
-  name                      = "${var.application_name}-${var.environment}-blue"
+  name                      = "${var.application_name}-${var.environment}-a"
   max_size                  = 0
   min_size                  = 0
   desired_capacity          = 0
@@ -131,9 +131,13 @@ resource "aws_autoscaling_group" "asg_blue" {
     },
     {
       key                 = "release"
-      value               = "latest"
+      value               = "${var.release}"
       propagate_at_launch = true
     },
+    {
+      key                 = "deploystate"
+      value               = "blue"
+    }
   ]
 
   lifecycle {
@@ -143,7 +147,7 @@ resource "aws_autoscaling_group" "asg_blue" {
 
 resource "aws_autoscaling_group" "asg_green" {
   availability_zones        = ["${formatlist("%s%s", var.region, var.availability_zones)}"]
-  name                      = "${var.application_name}-${var.environment}-green"
+  name                      = "${var.application_name}-${var.environment}-b"
   max_size                  = "${var.green_asg_max}"
   min_size                  = "${var.green_asg_min}"
   desired_capacity          = "${var.green_asg_desired}"
@@ -182,9 +186,13 @@ resource "aws_autoscaling_group" "asg_green" {
     },
     {
       key                 = "release"
-      value               = "latest"
+      value               = "${var.release}"
       propagate_at_launch = true
     },
+    {
+      key                 = "deploystate"
+      value               = "green"
+    }
   ]
 
   lifecycle {
@@ -204,12 +212,12 @@ resource "aws_autoscaling_policy" "highcpu" {
 resource "aws_cloudwatch_metric_alarm" "highcpu" {
   alarm_name          = "${var.application_name}-${var.environment}-high-cpu"
   comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = "2"
+  evaluation_periods  = 2
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "120"
+  period              = 120
   statistic           = "Average"
-  threshold           = "60"
+  threshold           = 60
 
   dimensions {
     AutoScalingGroupName = "${aws_autoscaling_group.asg_green.name}"
@@ -230,12 +238,12 @@ resource "aws_autoscaling_policy" "lowcpu" {
 resource "aws_cloudwatch_metric_alarm" "lowcpu" {
   alarm_name          = "${var.application_name}-${var.environment}-low-cpu"
   comparison_operator = "LessThanOrEqualToThreshold"
-  evaluation_periods  = "2"
+  evaluation_periods  = 2
   metric_name         = "CPUUtilization"
   namespace           = "AWS/EC2"
-  period              = "120"
+  period              = 120
   statistic           = "Average"
-  threshold           = "20"
+  threshold           = 20
 
   dimensions {
     AutoScalingGroupName = "${aws_autoscaling_group.asg_green.name}"

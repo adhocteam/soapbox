@@ -18,22 +18,29 @@
           <th>GitHub repository</th>
           <td colspan="3"><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
         </tr>
-        <tr id="current-deployment"
-          data-state="<%= @deployment.state %>"
-          data-id="<%= @deployment.id %>">
-          <th>Current deployment</th>
-          <td>
-            <%= @deployment.state == 'success'?  nil : render("shared/spinner") %>
-            <span name="deployment-state"><%= @deployment.state %></span>
-          </td>
-          <td>
-            <code><%= @deployment.committish %></code> /
-            <%= @deployment.env.name %>
-          </td>
-          <td>
-            <%= Time.parse(@deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
-          </td>
-        </tr>
+        <% if @deployment %>
+          <tr id="current-deployment"
+            data-state="<%= @deployment.state %>"
+            data-id="<%= @deployment.id %>">
+            <th>Current deployment</th>
+              <td>
+                <%= @deployment.state == 'success'?  nil : render("shared/spinner") %>
+                <span name="deployment-state"><%= @deployment.state %></span>
+              </td>
+              <td>
+                <code><%= @deployment.committish %></code> /
+                <%= @deployment.env.name %>
+              </td>
+              <td>
+                <%= Time.parse(@deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
+              </td>
+          </tr>
+        <% else %>
+          <tr>
+            <th>Current deployment</th>
+            <td><%= link_to "Create your first deployment", new_application_deployment_path(@app.id) %></td>
+          </tr>
+        <% end %>
       </tbody>
     </table>
     <p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>

@@ -1,4 +1,8 @@
 create type app_type as enum ('server', 'cronjob');
+create type creation_state_type as enum (
+       'CREATE_INFRASTRUCTURE_WAIT',
+       'SUCCEEDED',
+       'FAILED');
 
 create table applications (
        -- TODO(paulsmith): use app generated ID
@@ -12,6 +16,7 @@ create table applications (
        github_repo_url text,
        dockerfile_path text,
        entrypoint_override text,
+       creation_state creation_state_type not null default 'CREATE_INFRASTRUCTURE_WAIT',
        created_at timestamp with time zone not null default now(),
        updated_at timestamp with time zone not null default now()
 );

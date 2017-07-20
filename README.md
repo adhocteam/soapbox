@@ -73,6 +73,15 @@ $ go install ./...
 $ make -C web
 ```
 
+### Go dependencies
+
+Soapbox uses [dep](https://github.com/golang/dep) for dependency management. Follow the below flow to add imports:
+
+- Add the import to the code
+- Run `dep ensure` to make sure that the manifest, lock file, and vendor folder are updated
+
+Running these steps will clone the repo under the vendor directory, and remembers the revision used so that everyone who works on the project is guaranteed to be using the same version of dependencies.
+
 ## Design documentation
 
  * [Architecture document](https://docs.google.com/document/d/1hArh6EGNfa23O1mPKVeq_OjfA4AiCBEvc-k07xsb4t4/edit#)

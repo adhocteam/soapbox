@@ -14,7 +14,7 @@
 
       start() {
         this.poll(); // initial request
-        this.poller = setInterval(this.poll, 3000);
+        this.poller = setInterval(this.poll, 1000);
       }
 
       stop() {

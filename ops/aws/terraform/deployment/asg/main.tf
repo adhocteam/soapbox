@@ -35,11 +35,11 @@ data "aws_alb" "application_alb" {
 
 # Launch configuration
 module "launch_config" {
-    source = "../lc"
-    application_name = "${var.application_name}"
-    application_port = "${var.application_port}"
-    environment      = "${var.environment}"
-    release          = "${var.release}"
+  source           = "../lc"
+  application_name = "${var.application_name}"
+  application_port = "${var.application_port}"
+  environment      = "${var.environment}"
+  release          = "${var.release}"
 }
 
 # ALB target group and listeners
@@ -101,10 +101,16 @@ resource "aws_autoscaling_group" "asg_blue" {
   launch_configuration      = "${module.launch_config.name}"
   target_group_arns         = ["${aws_alb_target_group.application_target_group.arn}"]
   vpc_zone_identifier       = ["${data.aws_subnet.application_subnet.*.id}"]
-  enabled_metrics           = [
-    "GroupMinSize", "GroupMaxSize", "GroupDesiredCapacity",
-    "GroupInServiceInstances", "GroupPendingInstances", "GroupStandbyInstances",
-    "GroupTerminatingInstances", "GroupTotalInstances"
+
+  enabled_metrics = [
+    "GroupMinSize",
+    "GroupMaxSize",
+    "GroupDesiredCapacity",
+    "GroupInServiceInstances",
+    "GroupPendingInstances",
+    "GroupStandbyInstances",
+    "GroupTerminatingInstances",
+    "GroupTotalInstances",
   ]
 
   tags = [
@@ -127,7 +133,7 @@ resource "aws_autoscaling_group" "asg_blue" {
       key                 = "release"
       value               = "latest"
       propagate_at_launch = true
-    }
+    },
   ]
 
   lifecycle {
@@ -146,10 +152,16 @@ resource "aws_autoscaling_group" "asg_green" {
   launch_configuration      = "${module.launch_config.name}"
   target_group_arns         = ["${aws_alb_target_group.application_target_group.arn}"]
   vpc_zone_identifier       = ["${data.aws_subnet.application_subnet.*.id}"]
-  enabled_metrics           = [
-    "GroupMinSize", "GroupMaxSize", "GroupDesiredCapacity",
-    "GroupInServiceInstances", "GroupPendingInstances", "GroupStandbyInstances",
-    "GroupTerminatingInstances", "GroupTotalInstances"
+
+  enabled_metrics = [
+    "GroupMinSize",
+    "GroupMaxSize",
+    "GroupDesiredCapacity",
+    "GroupInServiceInstances",
+    "GroupPendingInstances",
+    "GroupStandbyInstances",
+    "GroupTerminatingInstances",
+    "GroupTotalInstances",
   ]
 
   tags = [
@@ -172,7 +184,7 @@ resource "aws_autoscaling_group" "asg_green" {
       key                 = "release"
       value               = "latest"
       propagate_at_launch = true
-    }
+    },
   ]
 
   lifecycle {
@@ -182,49 +194,53 @@ resource "aws_autoscaling_group" "asg_green" {
 
 # Autoscaling policies
 resource "aws_autoscaling_policy" "highcpu" {
-    name = "${var.application_name}-${var.environment}-high-cpu-scaleup"
-    scaling_adjustment = 2
-    adjustment_type = "ChangeInCapacity"
-    cooldown = 300
-    autoscaling_group_name = "${aws_autoscaling_group.asg_green.name}"
+  name                   = "${var.application_name}-${var.environment}-high-cpu-scaleup"
+  scaling_adjustment     = 2
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+  autoscaling_group_name = "${aws_autoscaling_group.asg_green.name}"
 }
 
 resource "aws_cloudwatch_metric_alarm" "highcpu" {
-    alarm_name = "${var.application_name}-${var.environment}-high-cpu"
-    comparison_operator = "GreaterThanOrEqualToThreshold"
-    evaluation_periods = "2"
-    metric_name = "CPUUtilization"
-    namespace = "AWS/EC2"
-    period = "120"
-    statistic = "Average"
-    threshold = "60"
-    dimensions {
-        AutoScalingGroupName = "${aws_autoscaling_group.asg_green.name}"
-    }
-    alarm_description = "Watch CPU usage for ${aws_autoscaling_group.asg_green.name} ASG"
-    alarm_actions = ["${aws_autoscaling_policy.highcpu.arn}"]
+  alarm_name          = "${var.application_name}-${var.environment}-high-cpu"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "120"
+  statistic           = "Average"
+  threshold           = "60"
+
+  dimensions {
+    AutoScalingGroupName = "${aws_autoscaling_group.asg_green.name}"
+  }
+
+  alarm_description = "Watch CPU usage for ${aws_autoscaling_group.asg_green.name} ASG"
+  alarm_actions     = ["${aws_autoscaling_policy.highcpu.arn}"]
 }
 
 resource "aws_autoscaling_policy" "lowcpu" {
-    name = "${var.application_name}-${var.environment}-low-cpu-scaledown"
-    scaling_adjustment = -1
-    adjustment_type = "ChangeInCapacity"
-    cooldown = 300
-    autoscaling_group_name = "${aws_autoscaling_group.asg_green.name}"
+  name                   = "${var.application_name}-${var.environment}-low-cpu-scaledown"
+  scaling_adjustment     = -1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+  autoscaling_group_name = "${aws_autoscaling_group.asg_green.name}"
 }
 
 resource "aws_cloudwatch_metric_alarm" "lowcpu" {
-    alarm_name = "${var.application_name}-${var.environment}-low-cpu"
-    comparison_operator = "LessThanOrEqualToThreshold"
-    evaluation_periods = "2"
-    metric_name = "CPUUtilization"
-    namespace = "AWS/EC2"
-    period = "120"
-    statistic = "Average"
-    threshold = "20"
-    dimensions {
-        AutoScalingGroupName = "${aws_autoscaling_group.asg_green.name}"
-    }
-    alarm_description = "Watch CPU usage for ${aws_autoscaling_group.asg_green.name} ASG"
-    alarm_actions = ["${aws_autoscaling_policy.lowcpu.arn}"]
+  alarm_name          = "${var.application_name}-${var.environment}-low-cpu"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "120"
+  statistic           = "Average"
+  threshold           = "20"
+
+  dimensions {
+    AutoScalingGroupName = "${aws_autoscaling_group.asg_green.name}"
+  }
+
+  alarm_description = "Watch CPU usage for ${aws_autoscaling_group.asg_green.name} ASG"
+  alarm_actions     = ["${aws_autoscaling_policy.lowcpu.arn}"]
 }

@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"text/template"
 	"time"
 
@@ -32,7 +31,6 @@ import (
 type server struct {
 	db         *sql.DB
 	httpClient *http.Client
-	jobs       map[int32]*deploymentStatus
 }
 
 type state string
@@ -49,6 +47,13 @@ func NewServer(db *sql.DB, httpClient *http.Client) *server {
 
 func newNullString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: true}
+}
+
+func nullString(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
 }
 
 func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*pb.Application, error) {
@@ -107,7 +112,6 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 	}
 
 	do := func(f func() error) {
-		log.Printf("doing command, current state is %v", app.CreationState)
 		if app.CreationState != pb.CreationState_FAILED {
 			if err := f(); err != nil {
 				log.Printf("failed: %v", err)
@@ -479,22 +483,32 @@ func (s *server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest
 }
 
 func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
-	insertSQL := "INSERT INTO deployments (application_id, environment_id, committish) VALUES ($1, $2, $3) RETURNING id, current_state, created_at"
+	req.State = "rollout-wait"
+	query := `INSERT INTO deployments (application_id, environment_id, committish, current_state) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
+	appId := int(req.GetApplication().GetId())
 	args := []interface{}{
-		req.GetApplication().Id,
-		req.GetEnv().Id,
+		appId,
+		req.GetEnv().GetId(),
 		req.GetCommittish(),
+		req.GetState(),
 	}
 	dest := []interface{}{
 		&req.Id,
-		&req.State,
 		&req.CreatedAt,
 	}
-	if err := s.db.QueryRow(insertSQL, args...).Scan(dest...); err != nil {
+	if err := s.db.QueryRow(query, args...).Scan(dest...); err != nil {
 		return nil, fmt.Errorf("inserting new row into db: %v", err)
 	}
 	env := req.GetEnv()
 	// TODO(paulsmith): hydrate fields for app and env
+	app, err := models.ApplicationByID(s.db, appId)
+	if err != nil {
+		return nil, fmt.Errorf("getting application model from db: %v", err)
+	}
+	req.Application.Name = app.Name
+	req.Application.Description = nullString(app.Description)
+	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
+	req.Application.Slug = app.Slug
 	if err := s.db.QueryRow("SELECT slug FROM environments WHERE id = $1", env.Id).Scan(&env.Slug); err != nil {
 		return nil, fmt.Errorf("querying for env slug: %v", err)
 	}
@@ -507,107 +521,91 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 }
 
 func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentStatusRequest) (*pb.GetDeploymentStatusResponse, error) {
-	if s.jobs == nil {
-		s.jobs = make(map[int32]*deploymentStatus)
+	var state string
+	query := `SELECT current_state FROM deployments WHERE id = $1`
+	if err := s.db.QueryRow(query, req.GetId()).Scan(&state); err != nil {
+		return nil, fmt.Errorf("querying db for deploy state: %v", err)
 	}
-	status, ok := s.jobs[req.GetId()]
-	if ok {
-		status.Lock()
-		state := status.currentState
-		status.Unlock()
-		res := &pb.GetDeploymentStatusResponse{
-			State: string(state),
-		}
-		return res, nil
+	res := &pb.GetDeploymentStatusResponse{
+		State: state,
 	}
-	return nil, fmt.Errorf("unknown deployment %d", req.GetId())
+	return res, nil
 }
 
 func (s *server) TeardownDeployment(ctx context.Context, req *pb.TeardownDeploymentRequest) (*pb.Empty, error) {
 	return nil, nil
 }
 
-type deploymentStatus struct {
-	currentState state
-	sync.Mutex
-}
+var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 
-func (s *server) startDeployment(req *pb.Deployment) {
-	status := deploymentStatus{
-		currentState: "rollout-wait",
+func (s *server) startDeployment(dep *pb.Deployment) {
+	setState := func(state string) {
+		dep.State = state
+		updateSQL := "UPDATE deployments SET current_state = $1 WHERE id = $2"
+		if _, err := s.db.Exec(updateSQL, state, dep.GetId()); err != nil {
+			log.Printf("updating deployments table: %v", err)
+		}
 	}
-	setState := func(newState state) {
-		status.Lock()
-		defer status.Unlock()
-		status.currentState = newState
+
+	do := func(f func() error) {
+		if dep.State != "failed" {
+			if err := f(); err != nil {
+				log.Printf("error: %v", err)
+				setState("failed")
+			}
+		}
 	}
-	if s.jobs == nil {
-		s.jobs = make(map[int32]*deploymentStatus)
+
+	doCmd := func(cmd string, args ...string) {
+		do(func() error {
+			out, err := exec.Command(cmd, args...).CombinedOutput()
+			if err != nil {
+				log.Printf("command %s %s:\n%s", cmd, args, out)
+			}
+			return err
+		})
 	}
-	s.jobs[req.GetId()] = &status
 
 	// get a temp dir to work in
-	tempdir, err := ioutil.TempDir("", "sandbox")
-	log.Printf("temp dir: %s", tempdir)
-	if err != nil {
-		log.Printf("creating temp dir: %v", err)
-		setState("failed")
-		return
-	}
-	defer os.RemoveAll(tempdir)
+	var tempdir string
+	do(func() error {
+		var err error
+		tempdir, err = ioutil.TempDir("", "sandbox")
+		return err
+	})
 
-	if err := os.Chdir(tempdir); err != nil {
-		log.Printf("changing to temp dir: %v", err)
-		setState("failed")
-		return
+	if tempdir != "" {
+		log.Printf("temporary directory: %s", tempdir)
+		defer os.RemoveAll(tempdir)
 	}
+
+	do(func() error { return os.Chdir(tempdir) })
+
+	app := dep.GetApplication()
 
 	// clone the repo at the committish
 	const appdir = "appdir"
-	appId := int(req.GetApplication().GetId())
-	app, err := models.ApplicationByID(s.db, appId)
-	if err != nil {
-		log.Printf("getting application by ID from db: %v", err)
-		setState("failed")
-		return
-	}
+	log.Printf("cloning repo")
+	doCmd("git", "clone", app.GithubRepoUrl, appdir)
 
-	log.Println("cloning repo")
-	out, err := exec.Command("git", "clone", app.GithubRepoURL.String, appdir).CombinedOutput()
-	if err != nil {
-		log.Printf("cloning repo: %v %s", err, string(out))
-		setState("failed")
-	}
-
-	if err := os.Chdir(appdir); err != nil {
-		log.Printf("changing to app dir: %v", err)
-		setState("failed")
-		return
-	}
+	do(func() error {
+		return os.Chdir(appdir)
+	})
 
 	log.Println("checking out committish")
-	out, err = exec.Command("git", "checkout", req.GetCommittish()).CombinedOutput()
-	if err != nil {
-		log.Printf("checking out committish: %v %s", err, string(out))
-		setState("failed")
-		return
-	}
+	doCmd("git", "checkout", dep.GetCommittish())
 
 	slug := app.Slug
 	image := fmt.Sprintf("soapbox/%s:latest", slug)
 
 	// build the docker image from the repo
 	log.Printf("building docker image: %s", image)
-	out, err = exec.Command("docker", "build", "-t", image, ".").CombinedOutput()
-	if err != nil {
-		log.Printf("building docker image: %v %s", err, string(out))
-		setState("failed")
-		return
-	}
+	doCmd("docker", "build", "-t", image, ".")
 
 	// export the docker image to a file
 	filename := fmt.Sprintf("%s.tar.gz", slug)
 	log.Printf("saving docker image %s to file: %s", image, filename)
+
 	ds := exec.Command("docker", "save", image)
 	gzip := exec.Command("gzip")
 
@@ -619,68 +617,68 @@ func (s *server) startDeployment(req *pb.Deployment) {
 	ds.Stderr = &buf
 	gzip.Stderr = &buf
 
-	f, err := os.Create(filename)
-	if err != nil {
-		log.Printf("opening file: %v", err)
-		setState("failed")
-		return
-	}
+	var f *os.File
+	do(func() error {
+		var err error
+		f, err = os.Create(filename)
+		return err
+	})
 	gzip.Stdout = f
 
-	if err := ds.Start(); err != nil {
-		log.Printf("starting docker save: %v", err)
-		setState("failed")
-		return
-	}
-	if err := gzip.Start(); err != nil {
-		log.Printf("starting gzip: %v", err)
-		setState("failed")
-		return
-	}
+	do(func() error { return ds.Start() })
 
-	var dockerSaveErr, gzipErr error
+	do(func() error { return gzip.Start() })
 
-	go func() {
-		dockerSaveErr = ds.Wait()
-		pw.Close()
-	}()
+	do(func() error {
+		var dockerSaveErr, gzipErr error
 
-	gzipErr = gzip.Wait()
+		go func() {
+			dockerSaveErr = ds.Wait()
+			pw.Close()
+		}()
 
-	if dockerSaveErr != nil || gzipErr != nil {
-		log.Printf("docker save / gzip pipeline: %v %v %s", dockerSaveErr, gzipErr, buf.String())
-		setState("failed")
-		return
-	}
+		gzipErr = gzip.Wait()
 
-	f.Close()
+		if dockerSaveErr != nil || gzipErr != nil {
+			return fmt.Errorf("docker save / gzip pipeline: %v %v %s", dockerSaveErr, gzipErr, buf.String())
+		}
+
+		return nil
+	})
+
+	do(func() error { return f.Close() })
+
+	var sess *session.Session
+	do(func() error {
+		var err error
+		sess, err = session.NewSession()
+		return err
+	})
+
+	const soapboxImageBucket = "soapbox-app-images"
 
 	// upload docker image to S3 bucket
 	log.Println("upload docker image to S3")
-	sess, err := session.NewSession()
-	if err != nil {
-		log.Printf("new AWS session: %v", err)
-		setState("failed")
-		return
-	}
-	svc := s3.New(sess)
-	f, err = os.Open(filename)
-	if err != nil {
-		log.Printf("opening file for reading: %v", err)
-		setState("failed")
-		return
-	}
-	const soapboxImageBucket = "soapbox-app-images"
-	objectKey := fmt.Sprintf("%s/%s.tar.gz", slug, slug)
-	input := &s3.PutObjectInput{
-		Body:   f,
-		Bucket: aws.String(soapboxImageBucket),
-		Key:    aws.String(objectKey),
-	}
-	if _, err = svc.PutObject(input); err != nil {
-		log.Printf("putting object to S3: %v", err)
-		setState("failed")
-		return
+	{
+		svc := s3.New(sess)
+		var f *os.File
+		do(func() error {
+			var err error
+			f, err = os.Open(filename)
+			return err
+		})
+		objectKey := fmt.Sprintf("%s/%s.tar.gz", slug, slug)
+		input := &s3.PutObjectInput{
+			Body:   f,
+			Bucket: aws.String(soapboxImageBucket),
+			Key:    aws.String(objectKey),
+		}
+		do(func() error {
+			var err error
+			_, err = svc.PutObject(input)
+			return err
+		})
+		do(func() error { return f.Close() })
 	}
 
 	setState("evaluate-wait")
@@ -733,32 +731,30 @@ chmod +x /etc/sv/$APP_NAME/run
 # Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
 ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 `
-	tmpl, err := template.New("user-data.tmpl").Parse(userDataTmpl)
-	if err != nil {
-		log.Printf("parsing user data template: %v", err)
-		setState("failed")
-		return
-	}
+	var tmpl *template.Template
+	do(func() error {
+		var err error
+		tmpl, err = template.New("user-data.tmpl").Parse(userDataTmpl)
+		return err
+	})
 	var userData bytes.Buffer
-	if err := tmpl.Execute(&userData, struct {
-		Slug        string
-		ListenPort  int
-		Bucket      string
-		Environment string
-		Image       string
-	}{
-		slug,
-		// TODO(paulsmith): un-hardcode
-		8080,
-		soapboxImageBucket,
-		// TODO(paulsmith): unused in user-data script atm
-		"",
-		image,
-	}); err != nil {
-		log.Printf("executing user-data template: %v", err)
-		setState("failed")
-		return
-	}
+	do(func() error {
+		return tmpl.Execute(&userData, struct {
+			Slug        string
+			ListenPort  int
+			Bucket      string
+			Environment string
+			Image       string
+		}{
+			slug,
+			// TODO(paulsmith): un-hardcode
+			8080,
+			soapboxImageBucket,
+			// TODO(paulsmith): unused in user-data script atm
+			"",
+			image,
+		})
+	})
 
 	// TODO(paulsmith): get from Soapbox platform config
 	const iamInstanceProfile = "soapbox-app"
@@ -766,50 +762,51 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	const instanceType = "t2.micro"
 	const keyName = "soapbox-app"
 
-	env := req.GetEnv().Slug
+	env := dep.GetEnv().Slug
 
-	// ${var.application_name}: ${var.environment} application subnet security group
 	sgname := fmt.Sprintf("%s: %s application subnet security group", slug, env)
-	ec2svc := ec2.New(sess)
-	sgid, err := getSecurityGroupId(ec2svc, sgname)
-	if err != nil {
-		log.Printf("getting security group ID from name %q: %v", err)
-		setState("failed")
-		return
+	var sgid string
+	{
+		svc := ec2.New(sess)
+		do(func() error {
+			var err error
+			sgid, err = getSecurityGroupId(svc, sgname)
+			return err
+		})
 	}
 
-	asSvc := autoscaling.New(sess)
-	committish := req.GetCommittish()
-	sha1Re := regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
+	svc := autoscaling.New(sess)
+	committish := dep.GetCommittish()
 	if sha1Re.MatchString(committish) {
 		committish = committish[:8]
 	}
 	lcName := fmt.Sprintf("%s-%s-%s-%d", slug, env, committish, time.Now().Unix())
-	lcInput := &autoscaling.CreateLaunchConfigurationInput{
-		IamInstanceProfile:      aws.String(iamInstanceProfile),
-		ImageId:                 aws.String(appAmi),
-		InstanceType:            aws.String(instanceType),
-		KeyName:                 aws.String(keyName),
-		LaunchConfigurationName: aws.String(lcName),
-		SecurityGroups:          []*string{aws.String(sgid)},
-		UserData:                aws.String(base64.StdEncoding.EncodeToString(userData.Bytes())),
-	}
-	log.Printf("creating launch config")
-	if _, err := asSvc.CreateLaunchConfiguration(lcInput); err != nil {
-		log.Printf("creating launch config: %v", err)
-		setState("failed")
-		return
+	{
+		input := &autoscaling.CreateLaunchConfigurationInput{
+			IamInstanceProfile:      aws.String(iamInstanceProfile),
+			ImageId:                 aws.String(appAmi),
+			InstanceType:            aws.String(instanceType),
+			KeyName:                 aws.String(keyName),
+			LaunchConfigurationName: aws.String(lcName),
+			SecurityGroups:          []*string{aws.String(sgid)},
+			UserData:                aws.String(base64.StdEncoding.EncodeToString(userData.Bytes())),
+		}
+		log.Printf("creating launch config")
+		do(func() error {
+			_, err := svc.CreateLaunchConfiguration(input)
+			return err
+		})
 	}
 	log.Printf("created launch config: %s", lcName)
 
 	const deployStateTagName = "deploystate"
 	// get a list of all ASGs and iterate over until find "deploystate" tag
-	asgs, err := asSvc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{})
-	if err != nil {
-		log.Printf("describe ASGs: %v", err)
-		setState("failed")
-		return
-	}
+	var asgs *autoscaling.DescribeAutoScalingGroupsOutput
+	do(func() error {
+		var err error
+		asgs, err = svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{})
+		return err
+	})
 
 	var blueAsgName, greenAsgName string
 	for _, asg := range asgs.AutoScalingGroups {
@@ -842,66 +839,64 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		MinSize:                 aws.Int64(nAZs),
 	}
 	log.Printf("updating blue ASG")
-	if _, err := asSvc.UpdateAutoScalingGroup(blueAsgInput); err != nil {
-		log.Printf("updating blue ASG: %v", err)
-		setState("failed")
-		return
-	}
+	do(func() error {
+		_, err := svc.UpdateAutoScalingGroup(blueAsgInput)
+		return err
+	})
 
 	log.Printf("waiting for blue ASG instances to be ready")
-	if err := waitUntilAsgInstancesReady(asSvc, blueAsgName, nAZs); err != nil {
-		log.Printf("waiting for blue ASG instances to be ready: %v", err)
-		setState("failed")
-		return
-	}
+	do(func() error { return waitUntilAsgInstancesReady(svc, blueAsgName, nAZs) })
 	log.Printf("blue ASG instances ready")
 
-	targetGroupARN, err := getTargetGroupARN(asSvc, greenAsgName)
-	if err != nil {
-		log.Printf("getting target group ARN from ASG name %q: %v", greenAsgName, err)
-		setState("failed")
-		return
-	}
+	var targetGroupARN string
+	do(func() error {
+		var err error
+		targetGroupARN, err = getTargetGroupARN(svc, greenAsgName)
+		return err
+	})
 
-	bluetgi := &autoscaling.AttachLoadBalancerTargetGroupsInput{
-		AutoScalingGroupName: aws.String(blueAsgName),
-		TargetGroupARNs: []*string{
-			aws.String(targetGroupARN),
-		},
-	}
-	log.Printf("putting blue ASG into load")
-	if _, err := asSvc.AttachLoadBalancerTargetGroups(bluetgi); err != nil {
-		log.Printf("attaching blue ASG to ALB target group: %v", err)
-		setState("failed")
-		return
+	{
+		input := &autoscaling.AttachLoadBalancerTargetGroupsInput{
+			AutoScalingGroupName: aws.String(blueAsgName),
+			TargetGroupARNs: []*string{
+				aws.String(targetGroupARN),
+			},
+		}
+		log.Printf("putting blue ASG into load")
+		do(func() error {
+			_, err := svc.AttachLoadBalancerTargetGroups(input)
+			return err
+		})
 	}
 
 	setState("rollforward")
 
-	greentgi := &autoscaling.DetachLoadBalancerTargetGroupsInput{
-		AutoScalingGroupName: aws.String(greenAsgName),
-		TargetGroupARNs: []*string{
-			aws.String(targetGroupARN),
-		},
-	}
-	log.Printf("removing stale green ASG from load")
-	if _, err := asSvc.DetachLoadBalancerTargetGroups(greentgi); err != nil {
-		log.Printf("detaching green ASG from ALB target group: %v", err)
-		setState("failed")
-		return
+	{
+		input := &autoscaling.DetachLoadBalancerTargetGroupsInput{
+			AutoScalingGroupName: aws.String(greenAsgName),
+			TargetGroupARNs: []*string{
+				aws.String(targetGroupARN),
+			},
+		}
+		log.Printf("removing stale green ASG from load")
+		do(func() error {
+			_, err := svc.DetachLoadBalancerTargetGroups(input)
+			return err
+		})
 	}
 
-	greenAsgInput := &autoscaling.UpdateAutoScalingGroupInput{
-		AutoScalingGroupName: aws.String(greenAsgName),
-		DesiredCapacity:      aws.Int64(0),
-		MaxSize:              aws.Int64(0),
-		MinSize:              aws.Int64(0),
-	}
-	log.Printf("scaling down stale green ASG")
-	if _, err := asSvc.UpdateAutoScalingGroup(greenAsgInput); err != nil {
-		log.Printf("updating green ASG: %v", err)
-		setState("failed")
-		return
+	{
+		input := &autoscaling.UpdateAutoScalingGroupInput{
+			AutoScalingGroupName: aws.String(greenAsgName),
+			DesiredCapacity:      aws.Int64(0),
+			MaxSize:              aws.Int64(0),
+			MinSize:              aws.Int64(0),
+		}
+		log.Printf("scaling down stale green ASG")
+		do(func() error {
+			_, err := svc.UpdateAutoScalingGroup(input)
+			return err
+		})
 	}
 
 	// TODO(paulsmith): there is a race condition because we can't
@@ -909,17 +904,13 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	// groups as green, or blue, or some indeterminate combination
 	// ... risk is pretty low ATM but we should address this
 	// somehow later.
-	if err := updateTag(asSvc, deployStateTagName, greenAsgName, "blue"); err != nil {
-		log.Printf("retagging green ASG: %v", err)
-		setState("failed")
-		return
-	}
+	do(func() error {
+		return updateTag(svc, deployStateTagName, greenAsgName, "blue")
+	})
 
-	if err := updateTag(asSvc, deployStateTagName, blueAsgName, "green"); err != nil {
-		log.Printf("retagging blue ASG: %v", err)
-		setState("failed")
-		return
-	}
+	do(func() error {
+		return updateTag(svc, deployStateTagName, blueAsgName, "green")
+	})
 
 	log.Printf("done")
 

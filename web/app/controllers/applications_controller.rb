@@ -40,6 +40,6 @@ class ApplicationsController < ApplicationController
 
     req = Soapbox::ListDeploymentRequest.new(application_id: params[:id].to_i)
     res = $api_deployment_client.list_deployments(req)
-    @latest_deployment = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }.first
+    @deployment = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }.first
   end
 end

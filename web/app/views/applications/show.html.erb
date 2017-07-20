@@ -16,15 +16,22 @@
       <tbody>
         <tr>
           <th>GitHub repository</th>
-          <td><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
+          <td colspan="3"><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
         </tr>
         <tr id="current-deployment"
-          data-state="<%= @latest_deployment.state %>"
-          data-id="<%= @latest_deployment.id %>">
+          data-state="<%= @deployment.state %>"
+          data-id="<%= @deployment.id %>">
           <th>Current deployment</th>
           <td>
-            <%= @latest_deployment.state == 'success'?  nil : render("shared/spinner") %>
-            <span name="deployment-state"><%= @latest_deployment.state %></span>
+            <%= @deployment.state == 'success'?  nil : render("shared/spinner") %>
+            <span name="deployment-state"><%= @deployment.state %></span>
+          </td>
+          <td>
+            <code><%= @deployment.committish %></code> /
+            <%= @deployment.env.name %>
+          </td>
+          <td>
+            <%= Time.parse(@deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
           </td>
         </tr>
       </tbody>

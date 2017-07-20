@@ -13,6 +13,7 @@
       }
 
       start() {
+        this.poll(); // initial request
         this.poller = setInterval(this.poll, 3000);
       }
 
@@ -24,14 +25,14 @@
         const element = this.element;
         const appId = this.appId;
         const { state, id } = element.dataset;
-        console.log('polling', state, id)
+
         if (state === 'success') {
           return this.stop();
         }
         const req = new XMLHttpRequest();
 
-         req.onreadystatechange = () => {
-           if (req.readyState == XMLHttpRequest.DONE ) {
+        req.onreadystatechange = () => {
+          if (req.readyState == XMLHttpRequest.DONE ) {
             if (req.status == 200) {
               const deploymentStatus = req.responseText;
               if (deploymentStatus === 'success') {
@@ -43,8 +44,8 @@
             } else {
               console.log('error occurred while polling');
             }
-           }
-         };
+          }
+        };
 
         req.open("GET", `/applications/${appId}/deployments/${id}.json`, true);
         req.send();

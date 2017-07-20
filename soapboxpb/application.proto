@@ -15,6 +15,17 @@ enum ApplicationType {
     CRONJOB = 1;
 }
 
+// "infrastructure" refers to the set of resources on the hosting
+// service provider that Soapbox applications use -- for AWS: a VPC,
+// associated network resources, and a blue and green ASG and initial
+// launch config
+
+enum CreationState {
+    CREATE_INFRASTRUCTURE_WAIT = 0;
+    SUCCEEDED = 1;
+    FAILED = 2;
+}
+
 message Application {
     int32 id = 1;
     string name = 2;
@@ -27,6 +38,7 @@ message Application {
     string created_at = 9;
     string slug = 10;
     string internal_dns = 11;
+    CreationState creation_state = 12;
 }
 
 message ListApplicationResponse {

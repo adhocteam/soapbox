@@ -11,18 +11,19 @@ import (
 
 // Application represents a row from 'public.applications'.
 type Application struct {
-	ID                 int            `json:"id"`                  // id
-	Name               string         `json:"name"`                // name
-	Type               AppType        `json:"type"`                // type
-	Slug               string         `json:"slug"`                // slug
-	Description        sql.NullString `json:"description"`         // description
-	InternalDNS        sql.NullString `json:"internal_dns"`        // internal_dns
-	ExternalDNS        sql.NullString `json:"external_dns"`        // external_dns
-	GithubRepoURL      sql.NullString `json:"github_repo_url"`     // github_repo_url
-	DockerfilePath     sql.NullString `json:"dockerfile_path"`     // dockerfile_path
-	EntrypointOverride sql.NullString `json:"entrypoint_override"` // entrypoint_override
-	CreatedAt          time.Time      `json:"created_at"`          // created_at
-	UpdatedAt          time.Time      `json:"updated_at"`          // updated_at
+	ID                 int               `json:"id"`                  // id
+	Name               string            `json:"name"`                // name
+	Type               AppType           `json:"type"`                // type
+	Slug               string            `json:"slug"`                // slug
+	Description        sql.NullString    `json:"description"`         // description
+	InternalDNS        sql.NullString    `json:"internal_dns"`        // internal_dns
+	ExternalDNS        sql.NullString    `json:"external_dns"`        // external_dns
+	GithubRepoURL      sql.NullString    `json:"github_repo_url"`     // github_repo_url
+	DockerfilePath     sql.NullString    `json:"dockerfile_path"`     // dockerfile_path
+	EntrypointOverride sql.NullString    `json:"entrypoint_override"` // entrypoint_override
+	CreatedAt          time.Time         `json:"created_at"`          // created_at
+	UpdatedAt          time.Time         `json:"updated_at"`          // updated_at
+	CreationState      CreationStateType `json:"creation_state"`      // creation_state
 
 	// xo fields
 	_exists, _deleted bool
@@ -49,14 +50,14 @@ func (a *Application) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by sequence
 	const sqlstr = `INSERT INTO public.applications (` +
-		`name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at` +
+		`name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at, creation_state` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12` +
 		`) RETURNING id`
 
 	// run query
-	XOLog(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt)
-	err = db.QueryRow(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt).Scan(&a.ID)
+	XOLog(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.CreationState)
+	err = db.QueryRow(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.CreationState).Scan(&a.ID)
 	if err != nil {
 		return err
 	}
@@ -83,14 +84,14 @@ func (a *Application) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE public.applications SET (` +
-		`name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at` +
+		`name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at, creation_state` +
 		`) = ( ` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11` +
-		`) WHERE id = $12`
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12` +
+		`) WHERE id = $13`
 
 	// run query
-	XOLog(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.ID)
-	_, err = db.Exec(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.ID)
+	XOLog(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.CreationState, a.ID)
+	_, err = db.Exec(sqlstr, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.CreationState, a.ID)
 	return err
 }
 
@@ -116,18 +117,18 @@ func (a *Application) Upsert(db XODB) error {
 
 	// sql query
 	const sqlstr = `INSERT INTO public.applications (` +
-		`id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at` +
+		`id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at, creation_state` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13` +
 		`) ON CONFLICT (id) DO UPDATE SET (` +
-		`id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at` +
+		`id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at, creation_state` +
 		`) = (` +
-		`EXCLUDED.id, EXCLUDED.name, EXCLUDED.type, EXCLUDED.slug, EXCLUDED.description, EXCLUDED.internal_dns, EXCLUDED.external_dns, EXCLUDED.github_repo_url, EXCLUDED.dockerfile_path, EXCLUDED.entrypoint_override, EXCLUDED.created_at, EXCLUDED.updated_at` +
+		`EXCLUDED.id, EXCLUDED.name, EXCLUDED.type, EXCLUDED.slug, EXCLUDED.description, EXCLUDED.internal_dns, EXCLUDED.external_dns, EXCLUDED.github_repo_url, EXCLUDED.dockerfile_path, EXCLUDED.entrypoint_override, EXCLUDED.created_at, EXCLUDED.updated_at, EXCLUDED.creation_state` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, a.ID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt)
-	_, err = db.Exec(sqlstr, a.ID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt)
+	XOLog(sqlstr, a.ID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.CreationState)
+	_, err = db.Exec(sqlstr, a.ID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreatedAt, a.UpdatedAt, a.CreationState)
 	if err != nil {
 		return err
 	}
@@ -176,7 +177,7 @@ func ApplicationByID(db XODB, id int) (*Application, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at ` +
+		`id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, created_at, updated_at, creation_state ` +
 		`FROM public.applications ` +
 		`WHERE id = $1`
 
@@ -186,7 +187,7 @@ func ApplicationByID(db XODB, id int) (*Application, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.Name, &a.Type, &a.Slug, &a.Description, &a.InternalDNS, &a.ExternalDNS, &a.GithubRepoURL, &a.DockerfilePath, &a.EntrypointOverride, &a.CreatedAt, &a.UpdatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.Name, &a.Type, &a.Slug, &a.Description, &a.InternalDNS, &a.ExternalDNS, &a.GithubRepoURL, &a.DockerfilePath, &a.EntrypointOverride, &a.CreatedAt, &a.UpdatedAt, &a.CreationState)
 	if err != nil {
 		return nil, err
 	}

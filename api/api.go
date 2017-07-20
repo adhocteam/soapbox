@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -23,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"golang.org/x/net/context"
 )
@@ -65,10 +67,12 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 		dockerfilePath = "Dockerfile"
 	}
 
+	app.Slug = slugify(app.GetName())
+
 	model := &models.Application{
 		ID:                 int(app.Id),
-		Name:               app.Name,
-		Slug:               slugify(app.Name),
+		Name:               app.GetName(),
+		Slug:               app.GetSlug(),
 		Description:        newNullString(app.Description),
 		ExternalDNS:        newNullString(app.ExternalDns),
 		GithubRepoURL:      newNullString(app.GithubRepoUrl),
@@ -78,6 +82,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 		InternalDNS:        newNullString(app.InternalDns),
 		CreatedAt:          time.Now(),
 		UpdatedAt:          time.Now(),
+		CreationState:      models.CreationStateTypeCreateInfrastructureWait,
 	}
 
 	if err := model.Insert(s.db); err != nil {
@@ -86,7 +91,108 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 
 	app.Id = int32(model.ID)
 
+	// start a terraform job in the background
+	go s.createAppInfrastructure(app)
+
 	return app, nil
+}
+
+func (s *server) createAppInfrastructure(app *pb.Application) {
+	setState := func(state pb.CreationState) {
+		app.CreationState = state
+		updateSQL := "UPDATE applications SET creation_state = $1 WHERE id = $2"
+		if _, err := s.db.Exec(updateSQL, creationStateTypePbToModel(state), app.GetId()); err != nil {
+			log.Printf("updating applications table: %v", err)
+		}
+	}
+
+	do := func(f func() error) {
+		log.Printf("doing command, current state is %v", app.CreationState)
+		if app.CreationState != pb.CreationState_FAILED {
+			if err := f(); err != nil {
+				log.Printf("failed: %v", err)
+				setState(pb.CreationState_FAILED)
+			}
+		}
+	}
+
+	switch app.GetCreationState() {
+	case pb.CreationState_CREATE_INFRASTRUCTURE_WAIT:
+		// run terraform apply on VPC config TODO(paulsmith):
+		// bundle the terraform configs with the Soapbox app
+		// and make them available in a well-known location
+		var currdir string
+		do(func() error {
+			var err error
+			currdir, err = os.Getwd()
+			return err
+		})
+
+		pathToTerraformConfig := filepath.Join("ops", "terraform", "aws")
+		do(func() error {
+			return os.Chdir(filepath.Join(pathToTerraformConfig, "network"))
+		})
+
+		slug := app.GetSlug()
+		domain := fmt.Sprintf("%s.soapboxhosting.computer", slug)
+
+		do(func() error {
+			log.Printf("running terraform plan - network")
+			// TODO(paulsmith): resolve issue around VPCs per app or per env
+			cmd := exec.Command("terraform", "plan", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			log.Printf("running terraform apply - network")
+			// TODO(paulsmith): resolve issue around VPCs per app or per env
+			cmd := exec.Command("terraform", "apply", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			return os.Chdir(filepath.Join("..", "deployment", "asg"))
+		})
+
+		do(func() error {
+			return exec.Command("terraform", "get").Run()
+		})
+
+		do(func() error {
+			log.Printf("running terraform plan - deployment")
+			// TODO(paulsmith): resolve issue around VPCs per app or per env
+			cmd := exec.Command("terraform", "plan", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			log.Printf("running terraform apply - deployment")
+			// TODO(paulsmith): resolve issue around VPCs per app or per env
+			cmd := exec.Command("terraform", "apply", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			setState(pb.CreationState_SUCCEEDED)
+			log.Printf("done")
+			return nil
+		})
+	case pb.CreationState_SUCCEEDED:
+		log.Printf("creation already succeeded, doing nothing")
+	case pb.CreationState_FAILED:
+		// TODO(paulsmith): advance this to
+		// CREATE_INFRASTRUCTURE_WAIT state with some retry
+		// logic like max attempts
+		log.Printf("creation previously failed, should retry")
+	}
 }
 
 type httpHead interface {
@@ -171,6 +277,32 @@ func appTypePbToModel(at pb.ApplicationType) models.AppType {
 		return models.AppTypeCronjob
 	}
 	panic("shouldn't reach here")
+}
+
+func creationStateTypeModelToPb(cst models.CreationStateType) pb.CreationState {
+	switch cst {
+	case models.CreationStateTypeCreateInfrastructureWait:
+		return pb.CreationState_CREATE_INFRASTRUCTURE_WAIT
+	case models.CreationStateTypeSucceeded:
+		return pb.CreationState_SUCCEEDED
+	case models.CreationStateTypeFailed:
+		return pb.CreationState_FAILED
+	default:
+		panic("shouldn't get here")
+	}
+}
+
+func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
+	switch cst {
+	case pb.CreationState_CREATE_INFRASTRUCTURE_WAIT:
+		return models.CreationStateTypeCreateInfrastructureWait
+	case pb.CreationState_SUCCEEDED:
+		return models.CreationStateTypeSucceeded
+	case pb.CreationState_FAILED:
+		return models.CreationStateTypeFailed
+	default:
+		panic("shouldn't get here")
+	}
 }
 
 func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
@@ -633,9 +765,18 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	const appAmi = "ami-ef545cf9"
 	const instanceType = "t2.micro"
 	const keyName = "soapbox-app"
-	// TODO(paulsmith): get from AWS SDK
-	securityGroupIds := []*string{aws.String("sg-436f1332")}
-	const subnetId = "subnet-118c193d"
+
+	env := req.GetEnv().Slug
+
+	// ${var.application_name}: ${var.environment} application subnet security group
+	sgname := fmt.Sprintf("%s: %s application subnet security group", slug, env)
+	ec2svc := ec2.New(sess)
+	sgid, err := getSecurityGroupId(ec2svc, sgname)
+	if err != nil {
+		log.Printf("getting security group ID from name %q: %v", err)
+		setState("failed")
+		return
+	}
 
 	asSvc := autoscaling.New(sess)
 	committish := req.GetCommittish()
@@ -643,14 +784,14 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	if sha1Re.MatchString(committish) {
 		committish = committish[:8]
 	}
-	lcName := fmt.Sprintf("%s-%s-%s-%d", slug, req.GetEnv().Slug, committish, time.Now().Unix())
+	lcName := fmt.Sprintf("%s-%s-%s-%d", slug, env, committish, time.Now().Unix())
 	lcInput := &autoscaling.CreateLaunchConfigurationInput{
 		IamInstanceProfile:      aws.String(iamInstanceProfile),
 		ImageId:                 aws.String(appAmi),
 		InstanceType:            aws.String(instanceType),
 		KeyName:                 aws.String(keyName),
 		LaunchConfigurationName: aws.String(lcName),
-		SecurityGroups:          securityGroupIds,
+		SecurityGroups:          []*string{aws.String(sgid)},
 		UserData:                aws.String(base64.StdEncoding.EncodeToString(userData.Bytes())),
 	}
 	log.Printf("creating launch config")
@@ -715,9 +856,12 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	}
 	log.Printf("blue ASG instances ready")
 
-	// TODO(paulsmith): get this value dynamically from SDK or
-	// construct from well-known params
-	const targetGroupARN = "arn:aws:elasticloadbalancing:us-east-1:968246069280:targetgroup/paul-example-test/975a4c377b2fa113"
+	targetGroupARN, err := getTargetGroupARN(asSvc, greenAsgName)
+	if err != nil {
+		log.Printf("getting target group ARN from ASG name %q: %v", greenAsgName, err)
+		setState("failed")
+		return
+	}
 
 	bluetgi := &autoscaling.AttachLoadBalancerTargetGroupsInput{
 		AutoScalingGroupName: aws.String(blueAsgName),
@@ -836,4 +980,33 @@ func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
 		}
 	}
 	return count, nil
+}
+
+func getSecurityGroupId(svc *ec2.EC2, name string) (string, error) {
+	input := &ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("group-name"),
+				Values: []*string{aws.String(name)},
+			},
+		},
+	}
+	res, err := svc.DescribeSecurityGroups(input)
+	if err != nil {
+		return "", err
+	}
+	sg := res.SecurityGroups[0]
+	return *sg.GroupId, nil
+}
+
+func getTargetGroupARN(svc *autoscaling.AutoScaling, name string) (string, error) {
+	input := &autoscaling.DescribeLoadBalancerTargetGroupsInput{
+		AutoScalingGroupName: aws.String(name),
+	}
+	res, err := svc.DescribeLoadBalancerTargetGroups(input)
+	if err != nil {
+		return "", err
+	}
+	group := res.LoadBalancerTargetGroups[0]
+	return *group.LoadBalancerTargetGroupARN, nil
 }

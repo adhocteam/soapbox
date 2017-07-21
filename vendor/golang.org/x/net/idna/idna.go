@@ -68,7 +68,7 @@ func VerifyDNSLength(verify bool) Option {
 }
 
 // RemoveLeadingDots removes leading label separators. Leading runes that map to
-// dots, such as U+3002, are removed as well.
+// dots, such as U+3002 IDEOGRAPHIC FULL STOP, are removed as well.
 //
 // This is the behavior suggested by the UTS #46 and is adopted by some
 // browsers.

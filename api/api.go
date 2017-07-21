@@ -92,7 +92,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	}
 
 	if err := model.Insert(s.db); err != nil {
-		return nil, errors.Wrap(err, "Error inserting into db")
+		return nil, errors.Wrap(err, "inserting into db")
 	}
 
 	app.Id = int32(model.ID)
@@ -108,7 +108,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		app.CreationState = state
 		updateSQL := "UPDATE applications SET creation_state = $1 WHERE id = $2"
 		if _, err := s.db.Exec(updateSQL, creationStateTypePbToModel(state), app.GetId()); err != nil {
-			errors.Wrap(err, "Error updating applications table")
+			errors.Wrap(err, "updating applications table")
 		}
 	}
 
@@ -207,12 +207,12 @@ type httpHead interface {
 func canAccessURL(client httpHead, url string) error {
 	resp, err := client.Head(url)
 	if err != nil {
-		return errors.Wrapf(err, "Couldn't make HTTP HEAD request to %s", url)
+		return errors.Wrapf(err, "couldn't make HTTP HEAD request to %s", url)
 	}
 	io.Copy(ioutil.Discard, resp.Body)
 	resp.Body.Close()
 	if resp.StatusCode/100 != 2 {
-		return errors.Wrapf(err, "Non-success HTTP status response from %s: %d", url, resp.StatusCode)
+		return errors.Wrapf(err, "non-success HTTP status response from %s: %d", url, resp.StatusCode)
 	}
 	return nil
 }

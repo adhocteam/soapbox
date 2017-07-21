@@ -41,5 +41,10 @@ class ApplicationsController < ApplicationController
     req = Soapbox::ListDeploymentRequest.new(application_id: params[:id].to_i)
     res = $api_deployment_client.list_deployments(req)
     @deployment = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }.first
+
+    respond_to do |format|
+      format.html
+      format.json { render json: @app.to_json }
+    end
   end
 end

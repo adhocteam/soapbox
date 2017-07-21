@@ -17,27 +17,27 @@ variable "region" {
 }
 
 variable "availability_zones" {
-  type = "list"
+  type    = "list"
   default = ["a", "b"]
 }
 
 variable "green_asg_max" {
-  type = "string"
+  type    = "string"
   default = 6
 }
 
 variable "green_asg_min" {
-  type = "string"
+  type    = "string"
   default = 1
 }
 
 variable "green_asg_desired" {
-  type = "string"
+  type    = "string"
   default = 1
 }
 
 variable "application_acm_cert_arn" {
-  type = "string"
+  type    = "string"
   default = ""
 }
 
@@ -47,6 +47,6 @@ variable "application_port" {
 }
 
 variable "health_check_path" {
-  type = "string"
+  type    = "string"
   default = "/_health"
 }

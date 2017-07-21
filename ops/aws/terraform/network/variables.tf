@@ -11,7 +11,7 @@ variable "application_domain" {
 }
 
 variable "instance_tenancy" {
-  type = "string"
+  type    = "string"
   default = "default"
 }
 
@@ -21,7 +21,7 @@ variable "region" {
 }
 
 variable "availability_zones" {
-  type = "list"
+  type    = "list"
   default = ["a", "b"]
 }
 
@@ -37,8 +37,9 @@ variable "vpc_cidr_block" {
 
 variable "az_cidr_blocks" {
   type = "map"
+
   default = {
-    "app"  = ["10.0.0.0/20", "10.0.16.0/20"]
-    "dmz"  = ["10.0.32.0/20", "10.0.48.0/20"]
+    "app" = ["10.0.0.0/20", "10.0.16.0/20"]
+    "dmz" = ["10.0.32.0/20", "10.0.48.0/20"]
   }
 }

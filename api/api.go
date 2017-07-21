@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"golang.org/x/net/context"
 )
@@ -709,7 +710,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 
 	committish := dep.GetCommittish()
 	if sha1Re.MatchString(committish) {
-		committish = committish[:8]
+		committish = committish[:7]
 	}
 
 	var securityGroupId string
@@ -735,7 +736,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		return err
 	})
 
-	log.Printf(" blue ASG is currently: %s", blueASG.name)
+	log.Printf("blue ASG is currently: %s", blueASG.name)
 	log.Printf("green ASG is currently: %s", greenASG.name)
 
 	const nAZs = 2 // number of availability zones
@@ -754,23 +755,28 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	do(func() error { return blueASG.waitUntilInstancesReady(nAZs) })
 	log.Printf("blue ASG instances ready")
 
-	var targetGroupARN string
+	var target *targetGroup
 	do(func() error {
 		var err error
-		targetGroupARN, err = greenASG.getTargetGroupARN()
+		target, err = greenASG.getTargetGroup()
 		return err
 	})
 
 	log.Printf("attaching blue ASG to load balancer")
 	do(func() error {
-		return blueASG.attachToLBTargetGroup(targetGroupARN)
+		return blueASG.attachToLBTargetGroup(target.arn)
+	})
+
+	log.Printf("waiting for blue ASG instances to pass health checks in load balancer")
+	do(func() error {
+		return target.waitUntilInstancesReady(blueASG)
 	})
 
 	setState("rollforward")
 
 	log.Printf("detaching (stale) green ASG from load balancer")
 	do(func() error {
-		return greenASG.detachFromLBTargetGroup(targetGroupARN)
+		return greenASG.detachFromLBTargetGroup(target.arn)
 	})
 
 	log.Printf("scaling down (stale) green ASG")
@@ -798,9 +804,53 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	setState("success")
 }
 
-type autoScalingGroup struct {
-	svc  *autoscaling.AutoScaling
-	name string
+type targetGroup struct {
+	svc *elbv2.ELBV2
+	arn string
+}
+
+func (g *targetGroup) waitUntilInstancesReady(asg *autoScalingGroup) error {
+	instances, err := asg.getInstances()
+	if err != nil {
+		return fmt.Errorf("getting ASG's instances: %v", err)
+	}
+	targets := make([]*elbv2.TargetDescription, len(instances))
+	for i, inst := range instances {
+		targets[i] = &elbv2.TargetDescription{
+			Id: inst.InstanceId,
+		}
+	}
+	input := &elbv2.DescribeTargetHealthInput{
+		TargetGroupArn: aws.String(g.arn),
+		Targets:        targets,
+	}
+	deadline := time.Now().Add(5 * time.Minute)
+	for {
+		res, err := g.svc.DescribeTargetHealth(input)
+		if err != nil {
+			return fmt.Errorf("describing target group health: %v", err)
+		}
+		allHealthy := true
+		for _, health := range res.TargetHealthDescriptions {
+			// TargetHealthStateEnum:
+			// - initial
+			// - healthy
+			// - unhealthy
+			// - unused
+			// - draining
+			if *health.TargetHealth.State != "healthy" {
+				allHealthy = false
+				break
+			}
+		}
+		if allHealthy {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timeout waiting for target group instances to be healthy")
+		}
+		time.Sleep(5 * time.Second)
+	}
 }
 
 type tag struct {
@@ -817,6 +867,12 @@ func (t tag) autoscaling(name string) *autoscaling.Tag {
 		Value:             aws.String(t.value),
 		PropagateAtLaunch: aws.Bool(t.propagateAtLaunch),
 	}
+}
+
+type autoScalingGroup struct {
+	sess *session.Session
+	svc  *autoscaling.AutoScaling
+	name string
 }
 
 func (g *autoScalingGroup) updateTags(tags []tag) error {
@@ -855,16 +911,20 @@ func (g *autoScalingGroup) attachToLBTargetGroup(targetGroupARN string) error {
 	return err
 }
 
-func (g *autoScalingGroup) getTargetGroupARN() (string, error) {
+func (g *autoScalingGroup) getTargetGroup() (*targetGroup, error) {
 	input := &autoscaling.DescribeLoadBalancerTargetGroupsInput{
 		AutoScalingGroupName: aws.String(g.name),
 	}
 	res, err := g.svc.DescribeLoadBalancerTargetGroups(input)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	group := res.LoadBalancerTargetGroups[0]
-	return *group.LoadBalancerTargetGroupARN, nil
+	target := &targetGroup{
+		svc: elbv2.New(g.sess),
+		arn: *group.LoadBalancerTargetGroupARN,
+	}
+	return target, nil
 }
 
 func (g *autoScalingGroup) detachFromLBTargetGroup(targetGroupARN string) error {
@@ -887,6 +947,18 @@ func (g *autoScalingGroup) resize(min, max, desired int) error {
 	}
 	_, err := g.svc.UpdateAutoScalingGroup(input)
 	return err
+}
+
+func (g *autoScalingGroup) getInstances() ([]*autoscaling.Instance, error) {
+	input := &autoscaling.DescribeAutoScalingGroupsInput{
+		AutoScalingGroupNames: []*string{aws.String(g.name)},
+	}
+	res, err := g.svc.DescribeAutoScalingGroups(input)
+	if err != nil {
+		return nil, fmt.Errorf("describing ASG: %v", err)
+	}
+	group := res.AutoScalingGroups[0]
+	return group.Instances, nil
 }
 
 func createLaunchConfig(app *application, env *environment, committish string, securityGroupId string, t time.Time, userData string) (string, error) {
@@ -1012,11 +1084,13 @@ func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, g
 	}
 
 	blue = &autoScalingGroup{
+		sess: a.sess,
 		svc:  svc,
 		name: *blueASG.AutoScalingGroupName,
 	}
 
 	green = &autoScalingGroup{
+		sess: a.sess,
 		svc:  svc,
 		name: *greenASG.AutoScalingGroupName,
 	}
@@ -1043,8 +1117,9 @@ func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
 	return *sg.GroupId, nil
 }
 
+// wait for instances to be marked in-service in the ASG lifecycle
 func (g *autoScalingGroup) waitUntilInstancesReady(n int) error {
-	deadline := time.Now().Add(5 * 60 * time.Second) // fail after 5 minutes
+	deadline := time.Now().Add(5 * time.Minute)
 	for {
 		count, err := inService(g.svc, g.name)
 		if err != nil {

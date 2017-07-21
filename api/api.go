@@ -132,7 +132,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			return err
 		})
 
-		pathToTerraformConfig := filepath.Join("ops", "terraform", "aws")
+		pathToTerraformConfig := filepath.Join("ops", "aws", "terraform")
 		do(func() error {
 			return os.Chdir(filepath.Join(pathToTerraformConfig, "network"))
 		})

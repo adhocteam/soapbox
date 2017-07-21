@@ -374,7 +374,6 @@ func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRe
 			return nil, fmt.Errorf("unmarshalling env vars JSON: %v", err)
 		}
 		envs = append(envs, &env)
-		log.Printf("env: %+v", env)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterating over db result set: %v", err)
@@ -538,8 +537,13 @@ func (s *server) TeardownDeployment(ctx context.Context, req *pb.TeardownDeploym
 
 var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 
+const deployStateTagName = "deploystate"
+
 func (s *server) startDeployment(dep *pb.Deployment) {
 	setState := func(state string) {
+		if dep.State == "failed" {
+			return
+		}
 		dep.State = state
 		updateSQL := "UPDATE deployments SET current_state = $1 WHERE id = $2"
 		if _, err := s.db.Exec(updateSQL, state, dep.GetId()); err != nil {
@@ -566,6 +570,14 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		})
 	}
 
+	app := newAppFromProtoBuf(dep.GetApplication())
+
+	do(func() error {
+		var err error
+		app.sess, err = session.NewSession()
+		return err
+	})
+
 	// get a temp dir to work in
 	var tempdir string
 	do(func() error {
@@ -575,18 +587,15 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	})
 
 	if tempdir != "" {
-		log.Printf("temporary directory: %s", tempdir)
 		defer os.RemoveAll(tempdir)
 	}
 
 	do(func() error { return os.Chdir(tempdir) })
 
-	app := dep.GetApplication()
-
 	// clone the repo at the committish
 	const appdir = "appdir"
 	log.Printf("cloning repo")
-	doCmd("git", "clone", app.GithubRepoUrl, appdir)
+	doCmd("git", "clone", app.githubRepoUrl, appdir)
 
 	do(func() error {
 		return os.Chdir(appdir)
@@ -595,91 +604,31 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	log.Println("checking out committish")
 	doCmd("git", "checkout", dep.GetCommittish())
 
-	slug := app.Slug
-	image := fmt.Sprintf("soapbox/%s:latest", slug)
+	image := fmt.Sprintf("soapbox/%s:latest", app.slug)
 
 	// build the docker image from the repo
 	log.Printf("building docker image: %s", image)
 	doCmd("docker", "build", "-t", image, ".")
 
 	// export the docker image to a file
-	filename := fmt.Sprintf("%s.tar.gz", slug)
-	log.Printf("saving docker image %s to file: %s", image, filename)
-
-	ds := exec.Command("docker", "save", image)
-	gzip := exec.Command("gzip")
-
-	var buf bytes.Buffer
-
-	pr, pw := io.Pipe()
-	ds.Stdout = pw
-	gzip.Stdin = pr
-	ds.Stderr = &buf
-	gzip.Stderr = &buf
-
-	var f *os.File
+	log.Printf("saving docker image %s to file", image)
+	var filename string
 	do(func() error {
 		var err error
-		f, err = os.Create(filename)
+		filename, err = exportDockerImageToFile(tempdir, image)
 		return err
 	})
-	gzip.Stdout = f
-
-	do(func() error { return ds.Start() })
-
-	do(func() error { return gzip.Start() })
-
-	do(func() error {
-		var dockerSaveErr, gzipErr error
-
-		go func() {
-			dockerSaveErr = ds.Wait()
-			pw.Close()
-		}()
-
-		gzipErr = gzip.Wait()
-
-		if dockerSaveErr != nil || gzipErr != nil {
-			return fmt.Errorf("docker save / gzip pipeline: %v %v %s", dockerSaveErr, gzipErr, buf.String())
-		}
-
-		return nil
-	})
-
-	do(func() error { return f.Close() })
-
-	var sess *session.Session
-	do(func() error {
-		var err error
-		sess, err = session.NewSession()
-		return err
-	})
-
-	const soapboxImageBucket = "soapbox-app-images"
 
 	// upload docker image to S3 bucket
 	log.Println("upload docker image to S3")
-	{
-		svc := s3.New(sess)
-		var f *os.File
-		do(func() error {
-			var err error
-			f, err = os.Open(filename)
-			return err
-		})
-		objectKey := fmt.Sprintf("%s/%s.tar.gz", slug, slug)
-		input := &s3.PutObjectInput{
-			Body:   f,
-			Bucket: aws.String(soapboxImageBucket),
-			Key:    aws.String(objectKey),
-		}
-		do(func() error {
-			var err error
-			_, err = svc.PutObject(input)
-			return err
-		})
-		do(func() error { return f.Close() })
-	}
+	const soapboxImageBucket = "soapbox-app-images"
+	// TODO(paulsmith): add committish to filename (and
+	// update downstream code to match for it when
+	// fetching on app instance)
+	objectKey := fmt.Sprintf("%s/%s.tar.gz", app.slug, app.slug)
+	do(func() error {
+		return newS3Storage(app.sess).uploadFile(soapboxImageBucket, objectKey, filename)
+	})
 
 	setState("evaluate-wait")
 
@@ -746,7 +695,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 			Environment string
 			Image       string
 		}{
-			slug,
+			app.slug,
 			// TODO(paulsmith): un-hardcode
 			8080,
 			soapboxImageBucket,
@@ -756,160 +705,90 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		})
 	})
 
-	// TODO(paulsmith): get from Soapbox platform config
-	const iamInstanceProfile = "soapbox-app"
-	const appAmi = "ami-ef545cf9"
-	const instanceType = "t2.micro"
-	const keyName = "soapbox-app"
+	env := newEnvFromProtoBuf(dep.GetEnv())
 
-	env := dep.GetEnv().Slug
-
-	sgname := fmt.Sprintf("%s: %s application subnet security group", slug, env)
-	var sgid string
-	{
-		svc := ec2.New(sess)
-		do(func() error {
-			var err error
-			sgid, err = getSecurityGroupId(svc, sgname)
-			return err
-		})
-	}
-
-	svc := autoscaling.New(sess)
 	committish := dep.GetCommittish()
 	if sha1Re.MatchString(committish) {
 		committish = committish[:8]
 	}
-	lcName := fmt.Sprintf("%s-%s-%s-%d", slug, env, committish, time.Now().Unix())
-	{
-		input := &autoscaling.CreateLaunchConfigurationInput{
-			IamInstanceProfile:      aws.String(iamInstanceProfile),
-			ImageId:                 aws.String(appAmi),
-			InstanceType:            aws.String(instanceType),
-			KeyName:                 aws.String(keyName),
-			LaunchConfigurationName: aws.String(lcName),
-			SecurityGroups:          []*string{aws.String(sgid)},
-			UserData:                aws.String(base64.StdEncoding.EncodeToString(userData.Bytes())),
-		}
-		log.Printf("creating launch config")
-		do(func() error {
-			_, err := svc.CreateLaunchConfiguration(input)
-			return err
-		})
-	}
-	log.Printf("created launch config: %s", lcName)
 
-	const deployStateTagName = "deploystate"
-	// get a list of all ASGs and iterate over until find "deploystate" tag
-	var asgs *autoscaling.DescribeAutoScalingGroupsOutput
+	var securityGroupId string
 	do(func() error {
 		var err error
-		asgs, err = svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{})
+		securityGroupId, err = app.getAppSecurityGroupId(env)
 		return err
 	})
 
-	var blueAsgName, greenAsgName string
-	for _, asg := range asgs.AutoScalingGroups {
-		for _, tag := range asg.Tags {
-			if *tag.Key == deployStateTagName {
-				switch *tag.Value {
-				case "blue":
-					blueAsgName = *asg.AutoScalingGroupName
-				case "green":
-					greenAsgName = *asg.AutoScalingGroupName
-				}
-			}
-		}
-	}
-	if blueAsgName == "" || greenAsgName == "" {
-		log.Printf("couldn't find blue/green ASGs; check %s tags", deployStateTagName)
-		setState("failed")
-		return
-	}
-	log.Printf("blue ASG is currently: %s", blueAsgName)
-	log.Printf("green ASG is currently: %s", greenAsgName)
+	var launchConfig string
+	do(func() error {
+		var err error
+		launchConfig, err = createLaunchConfig(app, env, committish, securityGroupId, time.Now(), userData.String())
+		return err
+	})
+
+	log.Printf("created launch config: %s", launchConfig)
+
+	var blueASG, greenASG *autoScalingGroup
+	do(func() error {
+		var err error
+		blueASG, greenASG, err = app.blueGreenASGs(env)
+		return err
+	})
+
+	log.Printf(" blue ASG is currently: %s", blueASG.name)
+	log.Printf("green ASG is currently: %s", greenASG.name)
 
 	const nAZs = 2 // number of availability zones
 
-	blueAsgInput := &autoscaling.UpdateAutoScalingGroupInput{
-		AutoScalingGroupName:    aws.String(blueAsgName),
-		LaunchConfigurationName: aws.String(lcName),
-		DesiredCapacity:         aws.Int64(nAZs),
-		MaxSize:                 aws.Int64(nAZs),
-		MinSize:                 aws.Int64(nAZs),
-	}
-	log.Printf("updating blue ASG")
+	log.Printf("updating blue ASG with new launch config")
 	do(func() error {
-		_, err := svc.UpdateAutoScalingGroup(blueAsgInput)
-		return err
+		return blueASG.updateLaunchConfig(launchConfig, nAZs)
+	})
+
+	log.Printf("tagging blue ASG with release info")
+	do(func() error {
+		return blueASG.updateTags([]tag{{key: "release", value: committish}})
 	})
 
 	log.Printf("waiting for blue ASG instances to be ready")
-	do(func() error { return waitUntilAsgInstancesReady(svc, blueAsgName, nAZs) })
+	do(func() error { return blueASG.waitUntilInstancesReady(nAZs) })
 	log.Printf("blue ASG instances ready")
 
 	var targetGroupARN string
 	do(func() error {
 		var err error
-		targetGroupARN, err = getTargetGroupARN(svc, greenAsgName)
+		targetGroupARN, err = greenASG.getTargetGroupARN()
 		return err
 	})
 
-	{
-		input := &autoscaling.AttachLoadBalancerTargetGroupsInput{
-			AutoScalingGroupName: aws.String(blueAsgName),
-			TargetGroupARNs: []*string{
-				aws.String(targetGroupARN),
-			},
-		}
-		log.Printf("putting blue ASG into load")
-		do(func() error {
-			_, err := svc.AttachLoadBalancerTargetGroups(input)
-			return err
-		})
-	}
+	log.Printf("attaching blue ASG to load balancer")
+	do(func() error {
+		return blueASG.attachToLBTargetGroup(targetGroupARN)
+	})
 
 	setState("rollforward")
 
-	{
-		input := &autoscaling.DetachLoadBalancerTargetGroupsInput{
-			AutoScalingGroupName: aws.String(greenAsgName),
-			TargetGroupARNs: []*string{
-				aws.String(targetGroupARN),
-			},
-		}
-		log.Printf("removing stale green ASG from load")
-		do(func() error {
-			_, err := svc.DetachLoadBalancerTargetGroups(input)
-			return err
-		})
-	}
+	log.Printf("detaching (stale) green ASG from load balancer")
+	do(func() error {
+		return greenASG.detachFromLBTargetGroup(targetGroupARN)
+	})
 
-	{
-		input := &autoscaling.UpdateAutoScalingGroupInput{
-			AutoScalingGroupName: aws.String(greenAsgName),
-			DesiredCapacity:      aws.Int64(0),
-			MaxSize:              aws.Int64(0),
-			MinSize:              aws.Int64(0),
-		}
-		log.Printf("scaling down stale green ASG")
-		do(func() error {
-			_, err := svc.UpdateAutoScalingGroup(input)
-			return err
-		})
-	}
+	log.Printf("scaling down (stale) green ASG")
+	do(func() error {
+		return greenASG.resize(0, 0, 0)
+	})
 
 	// TODO(paulsmith): there is a race condition because we can't
 	// update the tags atomically, so a reader might see both
 	// groups as green, or blue, or some indeterminate combination
 	// ... risk is pretty low ATM but we should address this
 	// somehow later.
+	log.Printf("swapping blue/green pointers")
 	do(func() error {
-		return updateTag(svc, deployStateTagName, greenAsgName, "blue")
+		return greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}})
 	})
-
 	do(func() error {
-		return updateTag(svc, deployStateTagName, blueAsgName, "green")
+		return blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}})
 	})
 
 	log.Printf("done")
@@ -919,29 +798,255 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 	setState("success")
 }
 
-func updateTag(svc *autoscaling.AutoScaling, tagName string, asgName string, value string) error {
-	log.Printf("retagging %s to %s:%s", asgName, tagName, value)
-	input := &autoscaling.CreateOrUpdateTagsInput{
-		Tags: []*autoscaling.Tag{
-			{
-				Key:               aws.String(tagName),
-				ResourceId:        aws.String(asgName),
-				ResourceType:      aws.String("auto-scaling-group"),
-				Value:             aws.String(value),
-				PropagateAtLaunch: aws.Bool(false),
-			},
-		},
+type autoScalingGroup struct {
+	svc  *autoscaling.AutoScaling
+	name string
+}
+
+type tag struct {
+	key               string
+	value             string
+	propagateAtLaunch bool
+}
+
+func (t tag) autoscaling(name string) *autoscaling.Tag {
+	return &autoscaling.Tag{
+		Key:               aws.String(t.key),
+		ResourceId:        aws.String(name),
+		ResourceType:      aws.String("auto-scaling-group"),
+		Value:             aws.String(t.value),
+		PropagateAtLaunch: aws.Bool(t.propagateAtLaunch),
 	}
-	if _, err := svc.CreateOrUpdateTags(input); err != nil {
+}
+
+func (g *autoScalingGroup) updateTags(tags []tag) error {
+	input := &autoscaling.CreateOrUpdateTagsInput{
+		Tags: make([]*autoscaling.Tag, len(tags)),
+	}
+	for i, tag := range tags {
+		input.Tags[i] = tag.autoscaling(g.name)
+	}
+	if _, err := g.svc.CreateOrUpdateTags(input); err != nil {
 		return fmt.Errorf("updating ASG tags: %v", err)
 	}
 	return nil
 }
 
-func waitUntilAsgInstancesReady(svc *autoscaling.AutoScaling, name string, n int) error {
+func (g *autoScalingGroup) updateLaunchConfig(lcName string, size int) error {
+	input := &autoscaling.UpdateAutoScalingGroupInput{
+		AutoScalingGroupName:    aws.String(g.name),
+		LaunchConfigurationName: aws.String(lcName),
+		DesiredCapacity:         aws.Int64(int64(size)),
+		MaxSize:                 aws.Int64(int64(size)),
+		MinSize:                 aws.Int64(int64(size)),
+	}
+	_, err := g.svc.UpdateAutoScalingGroup(input)
+	return err
+}
+
+func (g *autoScalingGroup) attachToLBTargetGroup(targetGroupARN string) error {
+	input := &autoscaling.AttachLoadBalancerTargetGroupsInput{
+		AutoScalingGroupName: aws.String(g.name),
+		TargetGroupARNs: []*string{
+			aws.String(targetGroupARN),
+		},
+	}
+	_, err := g.svc.AttachLoadBalancerTargetGroups(input)
+	return err
+}
+
+func (g *autoScalingGroup) getTargetGroupARN() (string, error) {
+	input := &autoscaling.DescribeLoadBalancerTargetGroupsInput{
+		AutoScalingGroupName: aws.String(g.name),
+	}
+	res, err := g.svc.DescribeLoadBalancerTargetGroups(input)
+	if err != nil {
+		return "", err
+	}
+	group := res.LoadBalancerTargetGroups[0]
+	return *group.LoadBalancerTargetGroupARN, nil
+}
+
+func (g *autoScalingGroup) detachFromLBTargetGroup(targetGroupARN string) error {
+	input := &autoscaling.DetachLoadBalancerTargetGroupsInput{
+		AutoScalingGroupName: aws.String(g.name),
+		TargetGroupARNs: []*string{
+			aws.String(targetGroupARN),
+		},
+	}
+	_, err := g.svc.DetachLoadBalancerTargetGroups(input)
+	return err
+}
+
+func (g *autoScalingGroup) resize(min, max, desired int) error {
+	input := &autoscaling.UpdateAutoScalingGroupInput{
+		AutoScalingGroupName: aws.String(g.name),
+		DesiredCapacity:      aws.Int64(int64(desired)),
+		MaxSize:              aws.Int64(int64(max)),
+		MinSize:              aws.Int64(int64(min)),
+	}
+	_, err := g.svc.UpdateAutoScalingGroup(input)
+	return err
+}
+
+func createLaunchConfig(app *application, env *environment, committish string, securityGroupId string, t time.Time, userData string) (string, error) {
+	name := fmt.Sprintf("%s-%s-%s-%d", app.slug, env.slug, committish, t.Unix())
+
+	// TODO(paulsmith): get from Soapbox platform config
+	const iamInstanceProfile = "soapbox-app"
+	const appAmi = "ami-ef545cf9"
+	const instanceType = "t2.micro"
+	const keyName = "soapbox-app"
+
+	input := &autoscaling.CreateLaunchConfigurationInput{
+		IamInstanceProfile:      aws.String(iamInstanceProfile),
+		ImageId:                 aws.String(appAmi),
+		InstanceType:            aws.String(instanceType),
+		KeyName:                 aws.String(keyName),
+		LaunchConfigurationName: aws.String(name),
+		SecurityGroups:          []*string{aws.String(securityGroupId)},
+		UserData:                aws.String(base64.StdEncoding.EncodeToString([]byte(userData))),
+	}
+
+	svc := autoscaling.New(app.sess)
+	_, err := svc.CreateLaunchConfiguration(input)
+	if err != nil {
+		return "", fmt.Errorf("creating launch config: %v", err)
+	}
+
+	return name, nil
+}
+
+type s3storage struct {
+	svc *s3.S3
+}
+
+func newS3Storage(sess *session.Session) *s3storage {
+	return &s3storage{svc: s3.New(sess)}
+}
+
+func (s *s3storage) uploadFile(bucket string, key string, filename string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return fmt.Errorf("opening file %s: %v", filename, err)
+	}
+	defer f.Close()
+	input := &s3.PutObjectInput{
+		Body:   f,
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}
+	_, err = s.svc.PutObject(input)
+	return err
+}
+
+type application struct {
+	name          string
+	slug          string
+	githubRepoUrl string
+
+	sess *session.Session
+}
+
+func newAppFromProtoBuf(appPb *pb.Application) *application {
+	return &application{
+		name:          appPb.GetName(),
+		slug:          appPb.GetSlug(),
+		githubRepoUrl: appPb.GetGithubRepoUrl(),
+	}
+}
+
+type environment struct {
+	name string
+	slug string
+}
+
+func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
+	return &environment{
+		name: envPb.GetName(),
+		slug: envPb.GetSlug(),
+	}
+}
+
+func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
+	// get a list of all ASGs and iterate over until find
+	// "deploystate" tags for our app and environment
+
+	svc := autoscaling.New(a.sess)
+	asgs, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("describing ASGs: %v", err)
+	}
+
+	type mapkey struct {
+		app         string
+		env         string
+		deploystate string
+	}
+
+	groups := make(map[mapkey]*autoscaling.Group)
+
+	for _, asg := range asgs.AutoScalingGroups {
+		var key mapkey
+		for _, tag := range asg.Tags {
+			switch *tag.Key {
+			case "app":
+				key.app = *tag.Value
+			case "env":
+				key.env = *tag.Value
+			case deployStateTagName:
+				key.deploystate = *tag.Value
+			}
+		}
+		groups[key] = asg
+	}
+
+	blueASG, ok := groups[mapkey{app: a.slug, env: env.slug, deploystate: "blue"}]
+	if !ok {
+		return nil, nil, fmt.Errorf("could not find blue ASG in %s environment", env.slug)
+	}
+
+	greenASG, ok := groups[mapkey{app: a.slug, env: env.slug, deploystate: "green"}]
+	if !ok {
+		return nil, nil, fmt.Errorf("could not find green ASG in %s environment", env.slug)
+	}
+
+	blue = &autoScalingGroup{
+		svc:  svc,
+		name: *blueASG.AutoScalingGroupName,
+	}
+
+	green = &autoScalingGroup{
+		svc:  svc,
+		name: *greenASG.AutoScalingGroupName,
+	}
+
+	return blue, green, nil
+}
+
+func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
+	sgname := fmt.Sprintf("%s: %s application subnet security group", a.slug, env.slug)
+	svc := ec2.New(a.sess)
+	input := &ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("group-name"),
+				Values: []*string{aws.String(sgname)},
+			},
+		},
+	}
+	res, err := svc.DescribeSecurityGroups(input)
+	if err != nil {
+		return "", err
+	}
+	sg := res.SecurityGroups[0]
+	return *sg.GroupId, nil
+}
+
+func (g *autoScalingGroup) waitUntilInstancesReady(n int) error {
 	deadline := time.Now().Add(5 * 60 * time.Second) // fail after 5 minutes
 	for {
-		count, err := inService(svc, name)
+		count, err := inService(g.svc, g.name)
 		if err != nil {
 			return err
 		}
@@ -973,31 +1078,44 @@ func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
 	return count, nil
 }
 
-func getSecurityGroupId(svc *ec2.EC2, name string) (string, error) {
-	input := &ec2.DescribeSecurityGroupsInput{
-		Filters: []*ec2.Filter{
-			{
-				Name:   aws.String("group-name"),
-				Values: []*string{aws.String(name)},
-			},
-		},
-	}
-	res, err := svc.DescribeSecurityGroups(input)
-	if err != nil {
-		return "", err
-	}
-	sg := res.SecurityGroups[0]
-	return *sg.GroupId, nil
-}
+func exportDockerImageToFile(dir string, image string) (string, error) {
+	filename := fmt.Sprintf("docker-export-%d.tar.gz", time.Now().Unix())
+	path := filepath.Join(dir, filename)
 
-func getTargetGroupARN(svc *autoscaling.AutoScaling, name string) (string, error) {
-	input := &autoscaling.DescribeLoadBalancerTargetGroupsInput{
-		AutoScalingGroupName: aws.String(name),
-	}
-	res, err := svc.DescribeLoadBalancerTargetGroups(input)
+	ds := exec.Command("docker", "save", image)
+	gzip := exec.Command("gzip")
+
+	var buf bytes.Buffer
+
+	pr, pw := io.Pipe()
+	ds.Stdout = pw
+	gzip.Stdin = pr
+	ds.Stderr = &buf
+	gzip.Stderr = &buf
+
+	f, err := os.Create(path)
 	if err != nil {
 		return "", err
 	}
-	group := res.LoadBalancerTargetGroups[0]
-	return *group.LoadBalancerTargetGroupARN, nil
+	defer f.Close()
+
+	gzip.Stdout = f
+
+	ds.Start()
+	gzip.Start()
+
+	var dockerSaveErr, gzipErr error
+
+	go func() {
+		dockerSaveErr = ds.Wait()
+		pw.Close()
+	}()
+
+	gzipErr = gzip.Wait()
+
+	if dockerSaveErr != nil || gzipErr != nil {
+		return "", fmt.Errorf("docker save / gzip pipeline: %v %v %s", dockerSaveErr, gzipErr, buf.String())
+	}
+
+	return path, nil
 }

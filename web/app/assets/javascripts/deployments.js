@@ -5,6 +5,8 @@
     // the element passed in have two data attributes
     // data-id and data-state. Also, the element needs to have
     // a child span to display the deployment state.
+    // upon hitting the success state, this app will
+    // set the data-state attribute
     class DeploymentsApp {
       constructor(element, appId) {
         this.appId = appId;
@@ -23,6 +25,8 @@
 
       poll() {
         const element = this.element;
+        if (!element) return;
+
         const appId = this.appId;
         const { state, id } = element.dataset;
 

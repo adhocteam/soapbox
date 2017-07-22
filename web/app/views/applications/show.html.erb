@@ -15,6 +15,15 @@
     <table class="table">
       <tbody>
         <tr>
+          <th>Status</th>
+          <td colspan="3"
+            id="current-application"
+            data-id="<%= @app.id %>">
+            <%= @app.creation_state == :CREATE_INFRASTRUCTURE_WAIT ? render("shared/spinner") : nil %>
+            <span><%= @app.creation_state %></span>
+          </td>
+        </tr>
+        <tr>
           <th>GitHub repository</th>
           <td colspan="3"><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
         </tr>
@@ -52,7 +61,11 @@
 <script>
  document.addEventListener("DOMContentLoaded", () => {
    let el = document.getElementById("current-deployment");
-   const app = new DeploymentsApp(el, <%= @app.id %>);
+   let app = new DeploymentsApp(el, <%= @app.id %>);
+   app.start();
+
+   el = document.getElementById("current-application");
+   app = new ApplicationsApp(el);
    app.start();
  });
 </script>

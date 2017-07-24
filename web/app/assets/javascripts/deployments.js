@@ -26,7 +26,7 @@
         const appId = this.appId;
         const { state, id } = element.dataset;
 
-        if (state === 'success') {
+        if (['success', 'failed'].includes(state)) {
           return this.stop();
         }
         const req = new XMLHttpRequest();

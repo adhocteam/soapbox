@@ -28,7 +28,7 @@
                 <span name="deployment-state"><%= @deployment.state %></span>
               </td>
               <td>
-                <code><%= @deployment.committish %></code> /
+                <code><%= link_to @deployment.committish, "#{@app.github_repo_url}/commit/#{@deployment.committish}" %></code> /
                 <%= @deployment.env.name %>
               </td>
               <td>

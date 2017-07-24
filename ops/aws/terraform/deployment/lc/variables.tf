@@ -8,6 +8,7 @@ variable "application_name" {
 
 variable "release" {
   type = "string"
+  default = "latest"
 }
 
 variable "application_port" {

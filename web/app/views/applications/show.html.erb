@@ -24,7 +24,7 @@
             data-id="<%= @deployment.id %>">
             <th>Current deployment</th>
               <td>
-                <%= @deployment.state == 'success'?  nil : render("shared/spinner") %>
+                <%= ['success', 'failed'].include?(@deployment.state) ?  nil : render("shared/spinner") %>
                 <span name="deployment-state"><%= @deployment.state %></span>
               </td>
               <td>

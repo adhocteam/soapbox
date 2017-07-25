@@ -32,7 +32,12 @@ APP_TMP=$(mktemp -d)
 cp -R ${PWD}/../${TYPE}/ $APP_TMP/
 
 # Change to the temp dir
-cd $APP_TMP
+if [[ "$TYPE" == "deployment" ]]
+then
+  cd $APP_TMP/asg
+else
+  cd $APP_TMP
+fi
 
 # Populate backend.tfvar.sample with appropriate values
 sed -i .bak "s/#APP#/$APP/" backend.tfvars.sample

@@ -690,6 +690,7 @@ sed -i .bak \
   /etc/nginx/nginx.conf
 
 rm /etc/nginx/nginx.conf.bak
+service nginx reload
 `
 	var tmpl *template.Template
 	do(func() error {

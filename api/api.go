@@ -662,14 +662,18 @@ $DOCKER image load -i /tmp/$APP_NAME.tar.gz
 # Set up the runit dirs
 mkdir -p "/etc/sv/$APP_NAME"
 
-# TODO: Create env var dir
-mkdir -p "/etc/sv/$APP_NAME/env"
+# Logging configuration
+mkdir -p "/etc/sv/$APP_NAME/log"
+mkdir -p "/var/log/$APP_NAME"
 
-# TODO: Fetch env vars to above dir
+# Create the logging run script
+cat << EOF > /etc/sv/$APP_NAME/log/run
+#!/bin/sh
+exec svlogd -tt /var/log/$APP_NAME
+EOF
 
-# TODO: logging configuration
-#mkdir -p "/etc/sv/$APP_NAME/log"
-#mkdir -p "/var/log/$APP_NAME"
+# Mark the log/run file executable
+chmod +x /etc/sv/$APP_NAME/log/run
 
 # Create the run script for the app
 cat << EOF > /etc/sv/$APP_NAME/run

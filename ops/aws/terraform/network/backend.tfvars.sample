@@ -1,0 +1,6 @@
+bucket         = "#STATE_BUCKET#"
+key            = "#APP#/#ENV#/network.tfstate"
+region         = "#REGION#"
+dynamodb_table = "#DYNAMO_TABLE#"
+encrypt        = 1
+# TODO: kms_key_id

@@ -11,14 +11,15 @@ DOCKER=/usr/bin/docker
 APP_NAME="${application_name}"
 PORT="${application_port}"
 RELEASE_BUCKET="${release_bucket}"
+RELEASE="${release}"
 ENV="${environment}"
-IMAGE="soapbox/$APP_NAME:latest"
+IMAGE="soapbox/$APP_NAME:$RELEASE"
 
 # Retrieve the release from s3
-$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME.tar.gz /tmp/$APP_NAME.tar.gz
+$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Install the docker image
-$DOCKER image load -i /tmp/$APP_NAME.tar.gz
+$DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Set up the runit dirs
 mkdir -p "/etc/sv/$APP_NAME"
@@ -48,5 +49,10 @@ chmod +x /etc/sv/$APP_NAME/run
 # Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
 ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 
-# Restart the service
-sv restart $APP_NAME
+# Set the X-Soapbox-App-Version HTTP header
+sed -i .bak \
+  "s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\"/" \
+  /etc/nginx/nginx.conf
+
+rm /etc/nginx/nginx.conf.bak
+service nginx reload

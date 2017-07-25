@@ -605,9 +605,14 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	})
 
 	log.Println("checking out committish")
-	doCmd("git", "checkout", dep.GetCommittish())
+	committish := dep.GetCommittish()
+	doCmd("git", "checkout", committish)
+	if sha1Re.MatchString(committish) {
+		// use short committish from here on out
+		committish = committish[:7]
+	}
 
-	image := fmt.Sprintf("soapbox/%s:latest", app.slug)
+	image := fmt.Sprintf("soapbox/%s:%s", app.slug, committish)
 
 	// build the docker image from the repo
 	log.Printf("building docker image: %s", image)
@@ -625,10 +630,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	// upload docker image to S3 bucket
 	log.Println("upload docker image to S3")
 	const soapboxImageBucket = "soapbox-app-images"
-	// TODO(paulsmith): add committish to filename (and
-	// update downstream code to match for it when
-	// fetching on app instance)
-	objectKey := fmt.Sprintf("%s/%s.tar.gz", app.slug, app.slug)
+	objectKey := fmt.Sprintf("%s/%s-%s.tar.gz", app.slug, app.slug, committish)
 	do(func() error {
 		return newS3Storage(app.sess).uploadFile(soapboxImageBucket, objectKey, filename)
 	})
@@ -650,14 +652,15 @@ DOCKER=/usr/bin/docker
 APP_NAME="{{.Slug}}"
 PORT="{{.ListenPort}}"
 RELEASE_BUCKET="{{.Bucket}}"
+RELEASE="{{.Release}}" # Version string/committish
 ENV="{{.Environment}}"
 IMAGE="{{.Image}}"
 
 # Retrieve the release from s3
-$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME.tar.gz /tmp/$APP_NAME.tar.gz
+$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Install the docker image
-$DOCKER image load -i /tmp/$APP_NAME.tar.gz
+$DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Set up the runit dirs
 mkdir -p "/etc/sv/$APP_NAME"
@@ -686,6 +689,14 @@ chmod +x /etc/sv/$APP_NAME/run
 
 # Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
 ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
+
+# Set the X-Soapbox-App-Version HTTP header
+sed -i .bak \
+  "s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\"/" \
+  /etc/nginx/nginx.conf
+
+rm /etc/nginx/nginx.conf.bak
+service nginx reload
 `
 	var tmpl *template.Template
 	do(func() error {
@@ -701,6 +712,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 			Bucket      string
 			Environment string
 			Image       string
+			Release     string
 		}{
 			app.slug,
 			// TODO(paulsmith): un-hardcode
@@ -709,15 +721,11 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 			// TODO(paulsmith): unused in user-data script atm
 			"",
 			image,
+			committish,
 		})
 	})
 
 	env := newEnvFromProtoBuf(dep.GetEnv())
-
-	committish := dep.GetCommittish()
-	if sha1Re.MatchString(committish) {
-		committish = committish[:7]
-	}
 
 	var securityGroupId string
 	do(func() error {

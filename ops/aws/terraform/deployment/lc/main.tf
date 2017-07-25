@@ -42,6 +42,7 @@ data "template_file" "user_data" {
     application_name = "${var.application_name}"
     application_port = "${var.application_port}"
     environment      = "${var.environment}"
+    release          = "${var.release}"
   }
 }
 

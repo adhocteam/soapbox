@@ -345,6 +345,8 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	// Go and Rails apps
 	app.CreatedAt = model.CreatedAt.Format(timestampFormat)
 
+	app.CreationState = creationStateTypeModelToPb(model.CreationState)
+
 	return app, nil
 }
 

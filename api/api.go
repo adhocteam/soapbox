@@ -705,7 +705,7 @@ rm /etc/nginx/nginx.conf.bak
 			Bucket      string
 			Environment string
 			Image       string
-			Relase      string
+			Release     string
 		}{
 			app.slug,
 			// TODO(paulsmith): un-hardcode

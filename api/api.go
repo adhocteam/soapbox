@@ -26,6 +26,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
 
@@ -64,7 +65,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	// client configured with the token)
 	err := canAccessURL(s.httpClient, app.GetGithubRepoUrl())
 	if err != nil {
-		return nil, fmt.Errorf("couldn't connect to GitHub repo: %v", err)
+		return nil, errors.Wrap(err, "couldn't connect to Github repo")
 	}
 
 	// supply a default Dockerfile path ("Dockerfile")
@@ -92,7 +93,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	}
 
 	if err := model.Insert(s.db); err != nil {
-		return nil, fmt.Errorf("inserting into db: %v", err)
+		return nil, errors.Wrap(err, "inserting into db")
 	}
 
 	app.Id = int32(model.ID)
@@ -108,14 +109,14 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		app.CreationState = state
 		updateSQL := "UPDATE applications SET creation_state = $1 WHERE id = $2"
 		if _, err := s.db.Exec(updateSQL, creationStateTypePbToModel(state), app.GetId()); err != nil {
-			log.Printf("updating applications table: %v", err)
+			errors.Wrap(err, "updating applications table")
 		}
 	}
 
 	do := func(f func() error) {
 		if app.CreationState != pb.CreationState_FAILED {
 			if err := f(); err != nil {
-				log.Printf("failed: %v", err)
+				errors.Wrap(err, "app creation failed")
 				setState(pb.CreationState_FAILED)
 			}
 		}
@@ -207,13 +208,12 @@ type httpHead interface {
 func canAccessURL(client httpHead, url string) error {
 	resp, err := client.Head(url)
 	if err != nil {
-		// TODO(paulsmith): use github.com/pkg/errors errors.Wrap instead
-		return fmt.Errorf("couldn't make HTTP HEAD request to %s: %v", url, err)
+		return errors.Wrapf(err, "couldn't make HTTP HEAD request to %s", url)
 	}
 	io.Copy(ioutil.Discard, resp.Body)
 	resp.Body.Close()
 	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("non-success HTTP status response from %s: %d", url, resp.StatusCode)
+		return errors.Wrapf(err, "non-success HTTP status response from %s: %d", url, resp.StatusCode)
 	}
 	return nil
 }
@@ -239,7 +239,7 @@ const (
 func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApplicationResponse, error) {
 	rows, err := s.db.Query(listAppsSQL)
 	if err != nil {
-		return nil, fmt.Errorf("querying db for apps list: %v", err)
+		return nil, errors.Wrap(err, "querying db for apps list")
 	}
 
 	var apps []*pb.Application
@@ -248,13 +248,13 @@ func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApp
 		var a pb.Application
 		dest := []interface{}{&a.Id, &a.Name, &a.Description, &a.CreatedAt}
 		if err := rows.Scan(dest...); err != nil {
-			return nil, fmt.Errorf("scanning db row: %v", err)
+			return nil, errors.Wrap(err, "scanning db row")
 		}
 		apps = append(apps, &a)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterating over db rows: %v", err)
+		return nil, errors.Wrap(err, "iterating over db rows")
 	}
 
 	resp := &pb.ListApplicationResponse{
@@ -313,7 +313,7 @@ func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
 func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
 	model, err := models.ApplicationByID(s.db, int(req.Id))
 	if err != nil {
-		return nil, fmt.Errorf("getting application by ID from db: %v", err)
+		return nil, errors.Wrap(err, "getting application by ID from db")
 	}
 
 	app := &pb.Application{
@@ -356,7 +356,7 @@ func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRe
 	listSQL := "SELECT id, application_id, name, slug, vars, created_at FROM environments WHERE application_id = $1 ORDER BY id"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
 	if err != nil {
-		return nil, fmt.Errorf("querying db for environments: %v", err)
+		return nil, errors.Wrap(err, "querying db for environments")
 	}
 	var envs []*pb.Environment
 	for rows.Next() {
@@ -371,15 +371,15 @@ func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRe
 			&env.CreatedAt,
 		}
 		if err := rows.Scan(dest...); err != nil {
-			return nil, fmt.Errorf("scanning db row: %v", err)
+			return nil, errors.Wrap(err, "scanning db row")
 		}
 		if err := json.Unmarshal(vars, &env.Vars); err != nil {
-			return nil, fmt.Errorf("unmarshalling env vars JSON: %v", err)
+			return nil, errors.Wrap(err, "unmarshalling env vars JSON")
 		}
 		envs = append(envs, &env)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterating over db result set: %v", err)
+		return nil, errors.Wrap(err, "iterating over db result set")
 	}
 	res := &pb.ListEnvironmentResponse{Environments: envs}
 	return res, nil
@@ -398,10 +398,10 @@ func (s *server) GetEnvironment(ctx context.Context, req *pb.GetEnvironmentReque
 		&env.CreatedAt,
 	}
 	if err := s.db.QueryRow(getSQL, req.GetId()).Scan(dest...); err != nil {
-		return nil, fmt.Errorf("scanning db row: %v", err)
+		return nil, errors.Wrap(err, "scanning db row")
 	}
 	if err := json.Unmarshal(vars, &env.Vars); err != nil {
-		return nil, fmt.Errorf("unmarshalling env vars JSON: %v", err)
+		return nil, errors.Wrap(err, "unmarshalling env vars JSON")
 	}
 	return &env, nil
 }
@@ -412,7 +412,7 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(req.Vars); err != nil {
-		return nil, fmt.Errorf("encoding env vars as JSON: %v", err)
+		return nil, errors.Wrap(err, "encoding env vars as JSON")
 	}
 
 	args := []interface{}{
@@ -425,7 +425,7 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 	var id int
 
 	if err := s.db.QueryRow(insertSQL, args...).Scan(&id, &req.CreatedAt); err != nil {
-		return nil, fmt.Errorf("inserting in to db: %v", err)
+		return nil, errors.Wrap(err, "inserting in to db")
 	}
 
 	req.Id = int32(id)
@@ -436,7 +436,7 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 func (s *server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironmentRequest) (*pb.Empty, error) {
 	deleteSQL := "DELETE FROM environments WHERE id = $1"
 	if _, err := s.db.Exec(deleteSQL, req.GetId()); err != nil {
-		return nil, fmt.Errorf("deleting row from db: %v", err)
+		return nil, errors.Wrap(err, "deleting row from db")
 	}
 	return &pb.Empty{}, nil
 }
@@ -449,7 +449,7 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
 	if err != nil {
-		return nil, fmt.Errorf("querying db: %v", err)
+		return nil, errors.Wrap(err, "querying db")
 	}
 	var deployments []*pb.Deployment
 	for rows.Next() {
@@ -466,12 +466,12 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 			&d.Env.Name,
 		}
 		if err := rows.Scan(dest...); err != nil {
-			return nil, fmt.Errorf("scanning db row: %v", err)
+			return nil, errors.Wrap(err, "scanning db row")
 		}
 		deployments = append(deployments, &d)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iteration over result set: %v", err)
+		return nil, errors.Wrap(err, "iteration over result set")
 	}
 	res := &pb.ListDeploymentResponse{
 		Deployments: deployments,
@@ -499,20 +499,20 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 		&req.CreatedAt,
 	}
 	if err := s.db.QueryRow(query, args...).Scan(dest...); err != nil {
-		return nil, fmt.Errorf("inserting new row into db: %v", err)
+		return nil, errors.Wrap(err, "inserting new row into db")
 	}
 	env := req.GetEnv()
 	// TODO(paulsmith): hydrate fields for app and env
 	app, err := models.ApplicationByID(s.db, appId)
 	if err != nil {
-		return nil, fmt.Errorf("getting application model from db: %v", err)
+		return nil, errors.Wrap(err, "getting application model from db")
 	}
 	req.Application.Name = app.Name
 	req.Application.Description = nullString(app.Description)
 	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
 	req.Application.Slug = app.Slug
 	if err := s.db.QueryRow("SELECT slug FROM environments WHERE id = $1", env.Id).Scan(&env.Slug); err != nil {
-		return nil, fmt.Errorf("querying for env slug: %v", err)
+		return nil, errors.Wrap(err, "querying for env slug")
 	}
 	req.Env = env
 	go s.startDeployment(req)
@@ -526,7 +526,7 @@ func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentS
 	var state string
 	query := `SELECT current_state FROM deployments WHERE id = $1`
 	if err := s.db.QueryRow(query, req.GetId()).Scan(&state); err != nil {
-		return nil, fmt.Errorf("querying db for deploy state: %v", err)
+		return nil, errors.Wrap(err, "querying db for deploy state")
 	}
 	res := &pb.GetDeploymentStatusResponse{
 		State: state,
@@ -889,7 +889,7 @@ func (g *autoScalingGroup) updateTags(tags []tag) error {
 		input.Tags[i] = tag.autoscaling(g.name)
 	}
 	if _, err := g.svc.CreateOrUpdateTags(input); err != nil {
-		return fmt.Errorf("updating ASG tags: %v", err)
+		return errors.Wrap(err, "updating ASG tags: ")
 	}
 	return nil
 }
@@ -1115,6 +1115,7 @@ func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
 			},
 		},
 	}
+
 	res, err := svc.DescribeSecurityGroups(input)
 	if err != nil {
 		return "", err

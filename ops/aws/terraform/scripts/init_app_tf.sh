@@ -22,7 +22,6 @@ while getopts ":t:" opt; do
     esac
 done
 
-echo $TYPE
 if [[ "$TYPE" == "" ]]
 then
   usage;

@@ -115,7 +115,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 	do := func(f func() error) {
 		if app.CreationState != pb.CreationState_FAILED {
 			if err := f(); err != nil {
-				errors.Wrap(err, "App creation failed")
+				errors.Wrap(err, "app creation failed")
 				setState(pb.CreationState_FAILED)
 			}
 		}
@@ -827,7 +827,7 @@ func (g *autoScalingGroup) updateTags(tags []tag) error {
 		input.Tags[i] = tag.autoscaling(g.name)
 	}
 	if _, err := g.svc.CreateOrUpdateTags(input); err != nil {
-    return errors.Wrap(err, "updating ASG tags: ")
+		return errors.Wrap(err, "updating ASG tags: ")
 	}
 	return nil
 }

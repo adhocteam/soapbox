@@ -6,28 +6,10 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
 
 ### Requirements
 
- - Go 1.8 or greater - see directions below
- - Ruby 2.2 or greater - Install using [rbenv](https://github.com/rbenv/rbenv) or [rvm](https://rvm.io/rvm/install)
+ - Go 1.8 or greater - see directions [here](https://golang.org/doc/install)
+ - Ruby 2.2 or greater - see directions [here](https://www.ruby-lang.org/en/documentation/installation/)
  - PostgreSQL 9.5 or greater - [Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-16-04) | [Mac](https://solidfoundationwebdev.com/blog/posts/how-to-install-postgresql-using-brew-on-osx)
  - Terraform 0.9.11 or greater - Download and install Terraform from [here](https://www.terraform.io/downloads.html).
-
-### Installing Go
-
-###### Linux
-
-``` shell
-$ bash < <(curl -s -S -L https://raw.githubusercontent.com/moovweb/gvm/master/binscripts/gvm-installer)
-$ gvm install go1.4
-$ gvm use go1.4
-$ gvm install go1.8.3
-$ gvm use go1.8.3
-```
-
-###### Mac OS
-
-1. Download the package file (here)[https://golang.org/dl/]
-2. Open the package file and follow the prompts.
-3. Restart any terminals you have open.
 
 ### Running the server and client locally
 
@@ -39,19 +21,19 @@ $ psql -f db/schema.sql -d soapbox_dev
 
 2. **Build and install the Soapbox API server (soapboxd) and CLI client (soapboxcli):**
 ``` shell
-$ mkdir -p $GOPATH/src/github.com/adhocteam
-$ ln -s /path/to/soapbox $GOPATH/src/github.com/adhocteam/soapbox
-$ cd $GOPATH/src/github.com/adhocteam/soapbox
+$ mkdir -p $(go env GOPATH)/src/github.com/adhocteam
+$ go get github.com/adhocteam/soapbox/...
+$ cd $(go env GOPATH)/src/github.com/adhocteam/soapbox
 $ go get -u github.com/golang/dep/cmd/dep
-$ dep ensure
 $ go get -d -v ./...
 $ go install ./...
 ```
 
 3. **Run the API server:**
 ``` shell
-$ PGDATABASE=soapbox_dev PGPASSWORD=yourpgpass PGSSLMODE=disable soapboxd &
+$ PGDATABASE=soapbox_dev PGSSLMODE=disable soapboxd &
 ```
+* If your database user is password protected, you may need to pass `PGPASSWORD=yourpgpass` to the command above as well.
 
 4. **Try out the CLI client:**
 ``` shell

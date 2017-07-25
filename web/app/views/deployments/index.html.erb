@@ -32,7 +32,7 @@
       			  <%= deployment.env.name %>
       			</td>
       			<td>
-              <%= deployment.state == 'success' || index != 0 ? nil : render("shared/spinner") %>
+              <%= ['success', 'failed'].include?(deployment.state) || index != 0 ? nil : render("shared/spinner") %>
               <span name="deployment-state"><%= deployment.state %></span>
       			</td>
             <td>

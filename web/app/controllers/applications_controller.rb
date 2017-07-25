@@ -49,7 +49,7 @@ class ApplicationsController < ApplicationController
   end
 
   def destroy
-    req = Soapbox::DeleteApplication.new(id: params[:id].to_i)
+    req = Soapbox::DeleteApplicationRequest.new(id: params[:id].to_i)
     res = $api_client.delete_application(req)
   end
 end

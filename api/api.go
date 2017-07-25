@@ -364,7 +364,7 @@ func (s *server) DeleteApplication(ctx context.Context, req *pb.DeleteApplicatio
 
 		// update state on application -> 'deleting'
 		{
-			query := `UPDATE application SET state = $1 WHERE id = $2`
+			query := `UPDATE applications SET creation_state = $1 WHERE id = $2`
 			if _, err := s.db.Query(query, "deleting", id); err != nil {
 				log.Printf("setting application state in db: %v", err)
 				return
@@ -397,10 +397,10 @@ func (s *server) DeleteApplication(ctx context.Context, req *pb.DeleteApplicatio
 			}
 		}
 
-		query := `DELETE FROM applications WHERE id = $1`
-		if _, err := s.db.Exec(query, req.GetId()); err != nil {
-			log.Printf("deleting from applications table: %v", err)
-		}
+		// query := `DELETE FROM applications WHERE id = $1`
+		// if _, err := s.db.Exec(query, req.GetId()); err != nil {
+		// 	log.Printf("deleting from applications table: %v", err)
+		// }
 	}()
 	return &pb.Empty{}, nil
 }

@@ -16,10 +16,10 @@ resource "aws_dynamodb_table" "application_state_locking_table" {
   name           = "${var.application_state_locking_table}"
   read_capacity  = 5
   write_capacity = 5
-  hash_key       = "LockId"
+  hash_key       = "LockID"
 
   attribute {
-    name = "LockId"
+    name = "LockID"
     type = "S"
   }
 }

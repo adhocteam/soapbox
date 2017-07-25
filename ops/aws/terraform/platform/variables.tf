@@ -10,10 +10,10 @@ variable "application_releases_bucket" {
 
 variable "application_state_bucket" {
   type    = "string"
-  default = "soapbox-app-state"
+  default = "soapbox-app-tf-state"
 }
 
-variable "application_state_locking_table" {
+variable "application_state_table" {
   type    = "string"
   default = "soapbox-app-state-locking"
 }

@@ -106,7 +106,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 func (s *server) createAppInfrastructure(app *pb.Application) {
 	setState := func(state pb.CreationState) {
 		app.CreationState = state
-		updateSQL := "UPDATE applications SET creation_state = $1 WHERE id = $2"
+		updateSQL := "UPDATE applications SET state = $1 WHERE id = $2"
 		if _, err := s.db.Exec(updateSQL, creationStateTypePbToModel(state), app.GetId()); err != nil {
 			log.Printf("updating applications table: %v", err)
 		}
@@ -346,6 +346,63 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	app.CreatedAt = model.CreatedAt.Format(timestampFormat)
 
 	return app, nil
+}
+
+const hostingDomain = "soapboxhosting.computer"
+
+func (s *server) DeleteApplication(ctx context.Context, req *pb.DeleteApplicationRequest) (*pb.Empty, error) {
+	id := req.GetId()
+	go func() {
+		// get app details from db
+		var slug string
+		{
+			query := `SELECT slug FROM applications WHERE id = $1`
+			if err := s.db.QueryRow(query, id).Scan(&slug); err != nil {
+				log.Printf("getting app details from db: %v", err)
+			}
+		}
+
+		// update state on application -> 'deleting'
+		{
+			query := `UPDATE application SET state = $1 WHERE id = $2`
+			if _, err := s.db.Query(query, "deleting", id); err != nil {
+				log.Printf("setting application state in db: %v", err)
+				return
+			}
+		}
+
+		pathToTerraformConfig := filepath.Join("ops", "aws", "terraform")
+		// run terraform destroy on network
+		{
+			if err := os.Chdir(filepath.Join(pathToTerraformConfig, "network")); err != nil {
+				log.Printf("changing to terraform network config dir: %v", err)
+				return
+			}
+		}
+
+		domain := slug + "." + hostingDomain
+
+		run := func(cmd string, args ...string) error {
+			c := exec.Command(cmd, args...)
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			return c.Run()
+		}
+
+		{
+			log.Printf("running terraform destroy - network")
+			// TODO(paulsmith): resolve issue around VPCs per app or per env
+			if err := run("terraform", "plan", "-destroy", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false"); err != nil {
+				log.Printf("running terraform plan destroy - network: %v", err)
+			}
+		}
+
+		query := `DELETE FROM applications WHERE id = $1`
+		if _, err := s.db.Exec(query, req.GetId()); err != nil {
+			log.Printf("deleting from applications table: %v", err)
+		}
+	}()
+	return &pb.Empty{}, nil
 }
 
 const timestampFormat = "2006-01-02T15:04:05"

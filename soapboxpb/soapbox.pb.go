@@ -15,6 +15,7 @@ It has these top-level messages:
 	Application
 	ListApplicationResponse
 	GetApplicationRequest
+	DeleteApplicationRequest
 	ListDeploymentRequest
 	ListDeploymentResponse
 	GetDeploymentRequest

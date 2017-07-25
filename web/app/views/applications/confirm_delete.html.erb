@@ -1,0 +1,18 @@
+<div class="card">
+    <div class="card-header">
+	Applications
+    </div>
+    <div class="card-block">
+	<h4 class="card-title">
+	    Are you sure you want to delete <b><%= @app.name %></b>?
+	</h4>
+	<p class="card-text">
+	    <%= link_to 'Cancel', application_path(@app.id), class: 'btn btn-secondary' %>
+	</p>
+	<p class="card-text">
+	    <%= form_for :applications, url: application_path(@app.id), method: :delete do |f| %>
+		<button class="btn btn-danger">Delete</button>
+	    <% end %>
+	</p>
+    </div>
+</div>

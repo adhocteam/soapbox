@@ -4,7 +4,7 @@ require 'deployment_pb'
 class ApplicationsController < ApplicationController
   def index
     res = $api_client.list_applications(Soapbox::Empty.new)
-    if res.applications.count == 0
+    if res.applications.count.zero?
       redirect_to new_application_path
     else
       @applications = res.applications
@@ -41,5 +41,15 @@ class ApplicationsController < ApplicationController
     req = Soapbox::ListDeploymentRequest.new(application_id: params[:id].to_i)
     res = $api_deployment_client.list_deployments(req)
     @deployment = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }.first
+  end
+
+  def confirm_delete
+    req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
+    @app = $api_client.get_application(req)
+  end
+
+  def destroy
+    req = Soapbox::DeleteApplication.new(id: params[:id].to_i)
+    res = $api_client.delete_application(req)
   end
 end

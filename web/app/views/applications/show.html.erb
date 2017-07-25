@@ -1,5 +1,5 @@
 <div class="card">
-  <div class="card-header" >
+  <div class="card-header">
     Applications
   </div>
   <div class="card-block" >
@@ -44,8 +44,14 @@
       </tbody>
     </table>
     <p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
-    <%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
-    <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
+    <p class="card-text">
+	<%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
+	<%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
+    </p>
+    <p class="card-text">
+	Dangerous actions
+	<%= link_to 'Delete Application', confirm_delete_application_path(@app.id), class: "btn btn-danger" %>
+    </p>
   </div>
 </div>
 

@@ -8,6 +8,7 @@ service Applications {
     rpc ListApplications (soapbox.Empty) returns (ListApplicationResponse) {}
     rpc CreateApplication (Application) returns (Application) {}
     rpc GetApplication (GetApplicationRequest) returns (Application) {}
+    rpc DeleteApplication (DeleteApplicationRequest) returns (soapbox.Empty) {}
 }
 
 enum ApplicationType {
@@ -46,5 +47,9 @@ message ListApplicationResponse {
 }
 
 message GetApplicationRequest {
+    int32 id = 1;
+}
+
+message DeleteApplicationRequest {
     int32 id = 1;
 }

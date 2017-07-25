@@ -1,8 +1,8 @@
 all:
-	go install ./...
+	go install ./cmd/{soapboxd,soapboxcli}
 
 protobufs:
-	go generate ./...
+	go list ./... | grep -v /vendor/ | xargs go generate
 	make -C web
 
 models:

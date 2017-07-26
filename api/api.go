@@ -140,12 +140,11 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		})
 
 		slug := app.GetSlug()
-		domain := fmt.Sprintf("%s.soapboxhosting.computer", slug)
 
 		do(func() error {
 			log.Printf("running terraform plan - network")
 			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "plan", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd := exec.Command("terraform", "plan", "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -154,7 +153,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		do(func() error {
 			log.Printf("running terraform apply - network")
 			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "apply", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test")
+			cmd := exec.Command("terraform", "apply", "-var", "application_name="+slug, "-var", "environment=test")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -171,7 +170,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		do(func() error {
 			log.Printf("running terraform plan - deployment")
 			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "plan", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd := exec.Command("terraform", "plan", "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -180,7 +179,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		do(func() error {
 			log.Printf("running terraform apply - deployment")
 			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "apply", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test")
+			cmd := exec.Command("terraform", "apply", "-var", "application_name="+slug, "-var", "environment=test")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()

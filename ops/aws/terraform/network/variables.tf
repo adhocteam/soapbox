@@ -6,10 +6,6 @@ variable "application_name" {
   type = "string"
 }
 
-variable "application_domain" {
-  type = "string"
-}
-
 variable "instance_tenancy" {
   type    = "string"
   default = "default"
@@ -42,4 +38,9 @@ variable "az_cidr_blocks" {
     "app" = ["10.0.0.0/20", "10.0.16.0/20"]
     "dmz" = ["10.0.32.0/20", "10.0.48.0/20"]
   }
+}
+
+variable "platform_domain" {
+  type    = "string"
+  default = "soapbox.hosting"
 }

@@ -672,7 +672,7 @@ mkdir -p "/etc/sv/$APP_NAME"
 mkdir -p "/etc/sv/$APP_NAME/env"
 
 # Place env vars in /etc/sv/$APP_NAME/env
-{{-range .Variables}}
+{{- range .Variables}}
 cat << EOF > /etc/sv/$APP_NAME/env/{{.Name}}
 {{.Value}}
 EOF
@@ -772,14 +772,36 @@ service nginx reload
 
 	const nAZs = 2 // number of availability zones
 
+	log.Printf("ensuring blue ASG has no instances")
+	do(func() error {
+		return blueASG.ensureEmpty()
+	})
+
 	log.Printf("updating blue ASG with new launch config")
 	do(func() error {
-		return blueASG.updateLaunchConfig(launchConfig, nAZs)
+		return blueASG.updateLaunchConfig(launchConfig)
 	})
+
+	defer func() {
+		log.Printf("cleaning up: terminating instances in blue ASG")
+		blueASG, err := app.getASGByColor(env, "blue")
+		if err != nil {
+			log.Printf("getting blue ASG: %v", err)
+		}
+		if err := blueASG.ensureEmpty(); err != nil {
+			log.Printf("ensuring blue ASG is empty: %v", err)
+		}
+		log.Printf("cleaning up: blue ASG empty")
+	}()
 
 	log.Printf("tagging blue ASG with release info")
 	do(func() error {
 		return blueASG.updateTags([]tag{{key: "release", value: committish}})
+	})
+
+	log.Printf("starting up blue ASG instances")
+	do(func() error {
+		return blueASG.resize(nAZs, nAZs*2, nAZs)
 	})
 
 	log.Printf("waiting for blue ASG instances to be ready")
@@ -808,11 +830,6 @@ service nginx reload
 	log.Printf("detaching (stale) green ASG from load balancer")
 	do(func() error {
 		return greenASG.detachFromLBTargetGroup(target.arn)
-	})
-
-	log.Printf("scaling down (stale) green ASG")
-	do(func() error {
-		return greenASG.resize(0, 0, 0)
 	})
 
 	// TODO(paulsmith): there is a race condition because we can't
@@ -919,13 +936,10 @@ func (g *autoScalingGroup) updateTags(tags []tag) error {
 	return nil
 }
 
-func (g *autoScalingGroup) updateLaunchConfig(lcName string, size int) error {
+func (g *autoScalingGroup) updateLaunchConfig(lcName string) error {
 	input := &autoscaling.UpdateAutoScalingGroupInput{
 		AutoScalingGroupName:    aws.String(g.name),
 		LaunchConfigurationName: aws.String(lcName),
-		DesiredCapacity:         aws.Int64(int64(size)),
-		MaxSize:                 aws.Int64(int64(size)),
-		MinSize:                 aws.Int64(int64(size)),
 	}
 	_, err := g.svc.UpdateAutoScalingGroup(input)
 	return err
@@ -967,6 +981,23 @@ func (g *autoScalingGroup) detachFromLBTargetGroup(targetGroupARN string) error 
 	}
 	_, err := g.svc.DetachLoadBalancerTargetGroups(input)
 	return err
+}
+
+func (g *autoScalingGroup) ensureEmpty() error {
+	insts, err := g.getInstances()
+	if err != nil {
+		return errors.Wrap(err, "getting instances")
+	}
+	if len(insts) == 0 {
+		return nil
+	}
+	if err := g.resize(0, 0, 0); err != nil {
+		return errors.Wrap(err, "resizing group to 0")
+	}
+	if err := g.waitUntilGroupEmpty(); err != nil {
+		return errors.Wrap(err, "waiting until group empty")
+	}
+	return nil
 }
 
 func (g *autoScalingGroup) resize(min, max, desired int) error {
@@ -1073,59 +1104,62 @@ func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
 	}
 }
 
-func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
+func (a *application) getASGByColor(env *environment, color string) (*autoScalingGroup, error) {
 	// get a list of all ASGs and iterate over until find
 	// "deploystate" tags for our app and environment
 
 	svc := autoscaling.New(a.sess)
 	asgs, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{})
 	if err != nil {
-		return nil, nil, fmt.Errorf("describing ASGs: %v", err)
+		return nil, errors.Wrap(err, "describing ASGs")
 	}
 
-	type mapkey struct {
-		app         string
-		env         string
-		deploystate string
-	}
-
-	groups := make(map[mapkey]*autoscaling.Group)
+	var group *autoscaling.Group
 
 	for _, asg := range asgs.AutoScalingGroups {
-		var key mapkey
+		found := make(map[string]bool)
 		for _, tag := range asg.Tags {
 			switch *tag.Key {
 			case "app":
-				key.app = *tag.Value
+				if *tag.Value == a.slug {
+					found["app"] = true
+				}
 			case "env":
-				key.env = *tag.Value
+				if *tag.Value == env.slug {
+					found["env"] = true
+				}
 			case deployStateTagName:
-				key.deploystate = *tag.Value
+				if *tag.Value == color {
+					found["deploystate"] = true
+				}
 			}
 		}
-		groups[key] = asg
+		if found["app"] && found["env"] && found["deploystate"] {
+			group = asg
+			break
+		}
 	}
 
-	blueASG, ok := groups[mapkey{app: a.slug, env: env.slug, deploystate: "blue"}]
-	if !ok {
-		return nil, nil, fmt.Errorf("could not find blue ASG in %s environment", env.slug)
+	if group == nil {
+		return nil, errors.Wrapf(err, "could not find %s ASG in %s environment", color, env.slug)
 	}
 
-	greenASG, ok := groups[mapkey{app: a.slug, env: env.slug, deploystate: "green"}]
-	if !ok {
-		return nil, nil, fmt.Errorf("could not find green ASG in %s environment", env.slug)
-	}
-
-	blue = &autoScalingGroup{
+	return &autoScalingGroup{
 		sess: a.sess,
 		svc:  svc,
-		name: *blueASG.AutoScalingGroupName,
+		name: *group.AutoScalingGroupName,
+	}, nil
+}
+
+func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
+	blue, err = a.getASGByColor(env, "blue")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting blue ASG")
 	}
 
-	green = &autoScalingGroup{
-		sess: a.sess,
-		svc:  svc,
-		name: *greenASG.AutoScalingGroupName,
+	green, err = a.getASGByColor(env, "green")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting green ASG")
 	}
 
 	return blue, green, nil
@@ -1170,6 +1204,10 @@ func (g *autoScalingGroup) waitUntilInstancesReady(n int) error {
 }
 
 func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
+	return lifecycleState("InService", svc, name)
+}
+
+func lifecycleState(state string, svc *autoscaling.AutoScaling, name string) (int, error) {
 	out, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: []*string{aws.String(name)},
 	})
@@ -1180,11 +1218,28 @@ func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
 	count := 0
 	group := out.AutoScalingGroups[0]
 	for _, inst := range group.Instances {
-		if *inst.LifecycleState == "InService" {
+		if *inst.LifecycleState == state {
 			count++
 		}
 	}
 	return count, nil
+}
+
+func (g *autoScalingGroup) waitUntilGroupEmpty() error {
+	deadline := time.Now().Add(5 * time.Minute)
+	for {
+		instances, err := g.getInstances()
+		if err != nil {
+			return errors.Wrap(err, "getting group's instances")
+		}
+		if len(instances) == 0 {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timeout waiting for ASG to be empty)")
+		}
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func exportDockerImageToFile(dir string, image string) (string, error) {

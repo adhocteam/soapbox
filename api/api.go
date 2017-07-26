@@ -669,6 +669,14 @@ $DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Set up the runit dirs
 mkdir -p "/etc/sv/$APP_NAME"
+mkdir -p "/etc/sv/$APP_NAME/env"
+
+# Place env vars in /etc/sv/$APP_NAME/env
+{{-range .Variables}}
+cat << EOF > /etc/sv/$APP_NAME/env/{{.Name}}
+{{.Value}}
+EOF
+{{end}}
 
 # Logging configuration
 mkdir -p "/etc/sv/$APP_NAME/log"
@@ -686,9 +694,9 @@ chmod +x /etc/sv/$APP_NAME/log/run
 # Create the run script for the app
 cat << EOF > /etc/sv/$APP_NAME/run
 #!/bin/bash
-exec 2>&1 $DOCKER run \
+exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
 {{range .Variables -}}
-	-env {{.Name}}="{{.Value}}" \
+	--env {{.Name}} \
 {{end -}}
 --rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
 EOF

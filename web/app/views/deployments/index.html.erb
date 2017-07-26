@@ -28,11 +28,11 @@
             data-id="<%= deployment.id %>">
             <td><%= deployment.id %></td>
       			<td>
-      			  <code><%= deployment.committish %></code> /
+      			  <code><%= link_to deployment.committish, "#{@app.github_repo_url}/commit/#{deployment.committish}" %></code> /
       			  <%= deployment.env.name %>
       			</td>
       			<td>
-              <%= deployment.state == 'success' || index != 0 ? nil : render("shared/spinner") %>
+              <%= ['success', 'failed'].include?(deployment.state) || index != 0 ? nil : render("shared/spinner") %>
               <span name="deployment-state"><%= deployment.state %></span>
       			</td>
             <td>

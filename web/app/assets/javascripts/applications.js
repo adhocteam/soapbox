@@ -1,15 +1,9 @@
 (function(window) {
     "use strict";
 
-    // this component requires that
-    // the element passed in have two data attributes
-    // data-id and data-state. Also, the element needs to have
-    // a child span to display the deployment state.
-    // upon hitting the success state, this app will
-    // set the data-state attribute
-    class DeploymentsApp {
-      constructor(element, appId) {
-        this.appId = appId;
+    // TODO: DRY up code with shared polling component
+    class ApplicationsApp {
+      constructor(element) {
         this.element = element;
         this.poll = this.poll.bind(this);
       }
@@ -25,12 +19,9 @@
 
       poll() {
         const element = this.element;
-        if (!element) return;
-
-        const appId = this.appId;
         const { state, id } = element.dataset;
 
-        if (['success', 'failed'].includes(state)) {
+        if (state !== 'CREATE_INFRASTRUCTURE_WAIT') {
           return this.stop();
         }
         const req = new XMLHttpRequest();
@@ -43,18 +34,19 @@
                 element.classList.add('latest');
                 element.classList.remove('active');
               }
-              element.dataset.state = req.responseText;
-              element.getElementsByTagName("span")[0].innerHTML = req.responseText;
+              const currentState = JSON.parse(req.responseText).creationState
+              element.dataset.state = currentState;
+              element.getElementsByTagName("span")[0].innerHTML = currentState;
             } else {
               console.log('error occurred while polling');
             }
           }
         };
 
-        req.open("GET", `/applications/${appId}/deployments/${id}.json`, true);
+        req.open("GET", `/applications/${id}.json`, true);
         req.send();
       }
     }
 
-  window.DeploymentsApp = DeploymentsApp;
+  window.ApplicationsApp = ApplicationsApp;
 })(window);

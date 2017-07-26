@@ -134,7 +134,7 @@ resource "aws_alb" "application_alb" {
 }
 
 # Lookup of Route53 platform hosted zone
-data "aws_route53_one" "platform_zone" {
+data "aws_route53_zone" "platform_zone" {
   name = "${var.platform_domain}."
 }
 

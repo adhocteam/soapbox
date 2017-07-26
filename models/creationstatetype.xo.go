@@ -20,6 +20,9 @@ const (
 
 	// CreationStateTypeFailed is the 'FAILED' CreationStateType.
 	CreationStateTypeFailed = CreationStateType(3)
+
+	// CreationStateTypeDeleteWait is the 'DELETE_WAIT' CreationStateType.
+	CreationStateTypeDeleteWait = CreationStateType(4)
 )
 
 // String returns the string value of the CreationStateType.
@@ -35,6 +38,9 @@ func (cst CreationStateType) String() string {
 
 	case CreationStateTypeFailed:
 		enumVal = "FAILED"
+
+	case CreationStateTypeDeleteWait:
+		enumVal = "DELETE_WAIT"
 	}
 
 	return enumVal
@@ -56,6 +62,9 @@ func (cst *CreationStateType) UnmarshalText(text []byte) error {
 
 	case "FAILED":
 		*cst = CreationStateTypeFailed
+
+	case "DELETE_WAIT":
+		*cst = CreationStateTypeDeleteWait
 
 	default:
 		return errors.New("invalid CreationStateType")

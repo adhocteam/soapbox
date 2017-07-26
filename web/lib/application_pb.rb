@@ -36,6 +36,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     value :CREATE_INFRASTRUCTURE_WAIT, 0
     value :SUCCEEDED, 1
     value :FAILED, 2
+    value :DELETE_WAIT, 3
   end
 end
 

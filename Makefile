@@ -7,6 +7,7 @@ protobufs:
 
 models:
 	PGSSLMODE=disable xo pgsql://localhost/soapbox_dev -o models
+	-rm models/environment.xo.go
 
 .PHONY: models
 

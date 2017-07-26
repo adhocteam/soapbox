@@ -2,7 +2,8 @@ create type app_type as enum ('server', 'cronjob');
 create type creation_state_type as enum (
        'CREATE_INFRASTRUCTURE_WAIT',
        'SUCCEEDED',
-       'FAILED');
+       'FAILED',
+       'DELETE_WAIT');
 
 create table applications (
        -- TODO(paulsmith): use app generated ID

@@ -25,6 +25,7 @@ enum CreationState {
     CREATE_INFRASTRUCTURE_WAIT = 0;
     SUCCEEDED = 1;
     FAILED = 2;
+    DELETE_WAIT = 3;
 }
 
 message Application {

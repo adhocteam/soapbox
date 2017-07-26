@@ -292,6 +292,8 @@ func creationStateTypeModelToPb(cst models.CreationStateType) pb.CreationState {
 		return pb.CreationState_SUCCEEDED
 	case models.CreationStateTypeFailed:
 		return pb.CreationState_FAILED
+	case models.CreationStateTypeDeleteWait:
+		return pb.CreationState_DELETE_WAIT
 	default:
 		panic("shouldn't get here")
 	}
@@ -305,6 +307,8 @@ func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
 		return models.CreationStateTypeSucceeded
 	case pb.CreationState_FAILED:
 		return models.CreationStateTypeFailed
+	case pb.CreationState_DELETE_WAIT:
+		return models.CreationStateTypeDeleteWait
 	default:
 		panic("shouldn't get here")
 	}
@@ -357,29 +361,33 @@ func (s *server) DeleteApplication(ctx context.Context, req *pb.DeleteApplicatio
 	go func() {
 		// get app details from db
 		var slug string
-		{
-			query := `SELECT slug FROM applications WHERE id = $1`
-			if err := s.db.QueryRow(query, id).Scan(&slug); err != nil {
-				log.Printf("getting app details from db: %v", err)
-			}
+		query := `SELECT slug FROM applications WHERE id = $1`
+		if err := s.db.QueryRow(query, id).Scan(&slug); err != nil {
+			log.Printf("getting app details from db: %v", err)
 		}
 
 		// update state on application -> 'deleting'
-		{
-			query := `UPDATE applications SET creation_state = $1 WHERE id = $2`
-			if _, err := s.db.Query(query, "deleting", id); err != nil {
-				log.Printf("setting application state in db: %v", err)
-				return
-			}
+		query = `UPDATE applications SET creation_state = $1 WHERE id = $2`
+		if _, err := s.db.Query(query, "DELETE_WAIT", id); err != nil {
+			log.Printf("setting application state in db: %v", err)
+			return
 		}
+
+		wd, err := os.Getwd()
+		if err != nil {
+			log.Printf("getting root working dir: %v", err)
+		}
+		defer func() {
+			if err := os.Chdir(wd); err != nil {
+				log.Printf("changing back to root working dir: %v", err)
+			}
+		}()
 
 		pathToTerraformConfig := filepath.Join("ops", "aws", "terraform")
 		// run terraform destroy on network
-		{
-			if err := os.Chdir(filepath.Join(pathToTerraformConfig, "network")); err != nil {
-				log.Printf("changing to terraform network config dir: %v", err)
-				return
-			}
+		if err := os.Chdir(filepath.Join(pathToTerraformConfig, "network")); err != nil {
+			log.Printf("changing to terraform network config dir: %v", err)
+			return
 		}
 
 		domain := slug + "." + hostingDomain
@@ -391,12 +399,16 @@ func (s *server) DeleteApplication(ctx context.Context, req *pb.DeleteApplicatio
 			return c.Run()
 		}
 
-		{
-			log.Printf("running terraform destroy - network")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			if err := run("terraform", "plan", "-destroy", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false"); err != nil {
-				log.Printf("running terraform plan destroy - network: %v", err)
-			}
+		// TODO(paulsmith): resolve issue around VPCs per app or per env
+		log.Printf("running terraform destroy - deployment")
+		args := []string{
+			"plan", "-destroy",
+			"-var", "application_domain=" + domain,
+			"-var", "application_name=" + slug,
+			"-var", "environment=test", // TODO(paulsmith): FIXME
+		}
+		if err := run("terraform", args...); err != nil {
+			log.Printf("running terraform plan destroy - network: %v", err)
 		}
 
 		// query := `DELETE FROM applications WHERE id = $1`

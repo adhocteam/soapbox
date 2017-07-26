@@ -501,7 +501,6 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	if err := s.db.QueryRow(query, args...).Scan(dest...); err != nil {
 		return nil, errors.Wrap(err, "inserting new row into db")
 	}
-	env := req.GetEnv()
 	// TODO(paulsmith): hydrate fields for app and env
 	app, err := models.ApplicationByID(s.db, appId)
 	if err != nil {
@@ -511,10 +510,14 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	req.Application.Description = nullString(app.Description)
 	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
 	req.Application.Slug = app.Slug
-	if err := s.db.QueryRow("SELECT slug FROM environments WHERE id = $1", env.Id).Scan(&env.Slug); err != nil {
-		return nil, errors.Wrap(err, "querying for env slug")
+
+	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
+	env, err := s.GetEnvironment(ctx, &envReq)
+	if err != nil {
+		return nil, fmt.Errorf("getting environment: %v", err)
 	}
 	req.Env = env
+
 	go s.startDeployment(req)
 	res := &pb.StartDeploymentResponse{
 		Id: req.GetId(),
@@ -637,6 +640,8 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	setState("evaluate-wait")
 
+	env := newEnvFromProtoBuf(dep.GetEnv())
+
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
 	userDataTmpl := `#!/bin/bash
@@ -664,6 +669,14 @@ $DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Set up the runit dirs
 mkdir -p "/etc/sv/$APP_NAME"
+mkdir -p "/etc/sv/$APP_NAME/env"
+
+# Place env vars in /etc/sv/$APP_NAME/env
+{{-range .Variables}}
+cat << EOF > /etc/sv/$APP_NAME/env/{{.Name}}
+{{.Value}}
+EOF
+{{end}}
 
 # Logging configuration
 mkdir -p "/etc/sv/$APP_NAME/log"
@@ -681,7 +694,11 @@ chmod +x /etc/sv/$APP_NAME/log/run
 # Create the run script for the app
 cat << EOF > /etc/sv/$APP_NAME/run
 #!/bin/bash
-exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run --rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
+exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
+{{range .Variables -}}
+	--env {{.Name}} \
+{{end -}}
+--rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
 EOF
 
 # Mark the run file executable
@@ -713,6 +730,7 @@ service nginx reload
 			Environment string
 			Image       string
 			Release     string
+			Variables   []*pb.EnvironmentVariable
 		}{
 			app.slug,
 			// TODO(paulsmith): un-hardcode
@@ -722,10 +740,9 @@ service nginx reload
 			"",
 			image,
 			committish,
+			env.vars,
 		})
 	})
-
-	env := newEnvFromProtoBuf(dep.GetEnv())
 
 	var securityGroupId string
 	do(func() error {
@@ -1045,12 +1062,14 @@ func newAppFromProtoBuf(appPb *pb.Application) *application {
 type environment struct {
 	name string
 	slug string
+	vars []*pb.EnvironmentVariable
 }
 
 func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
 	return &environment{
 		name: envPb.GetName(),
 		slug: envPb.GetSlug(),
+		vars: envPb.GetVars(),
 	}
 }
 

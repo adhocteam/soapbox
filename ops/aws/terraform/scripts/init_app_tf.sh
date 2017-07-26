@@ -4,7 +4,7 @@ set -e
 
 APP="${APP_NAME-soapbox-app-name}"
 ENV="${ENV-test}"
-STATE_BUCKET="${S3_BUCKET-soapbox-app-state}"
+STATE_BUCKET="${S3_BUCKET-soapbox-app-tf-state}"
 REGION="${REGION-us-east-1}"
 DYNAMO_TABLE="${DYNAMO_TABLE-soapbox-app-state-locking}"
 PWD=$(pwd)

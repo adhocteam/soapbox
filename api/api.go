@@ -310,6 +310,40 @@ func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
 	}
 }
 
+func deploymentStateTypeModelToPb(cst models.DeploymentStateType) pb.DeploymentState {
+	switch cst {
+	case models.DeploymentStateTypeDeploymentRolloutWait:
+		return pb.DeploymentState_DEPLOYMENT_ROLLOUT_WAIT
+	case models.DeploymentStateTypeDeploymentEvaluateWait:
+		return pb.DeploymentState_DEPLOYMENT_EVALUATE_WAIT
+	case models.DeploymentStateTypeDeploymentRollForward:
+		return pb.DeploymentState_DEPLOYMENT_ROLL_FORWARD
+	case models.DeploymentStateTypeDeploymentSucceeded:
+		return pb.DeploymentState_DEPLOYMENT_SUCCEEDED
+	case models.DeploymentStateTypeDeploymentFailed:
+		return pb.DeploymentState_DEPLOYMENT_FAILED
+	default:
+		panic("shouldn't get here")
+	}
+}
+
+func deploymentStateTypePbToModel(cst pb.DeploymentState) models.DeploymentStateType {
+	switch cst {
+	case pb.DeploymentState_DEPLOYMENT_ROLLOUT_WAIT:
+		return models.DeploymentStateTypeDeploymentRolloutWait
+	case pb.DeploymentState_DEPLOYMENT_EVALUATE_WAIT:
+		return models.DeploymentStateTypeDeploymentEvaluateWait
+	case pb.DeploymentState_DEPLOYMENT_ROLL_FORWARD:
+		return models.DeploymentStateTypeDeploymentRollForward
+	case pb.DeploymentState_DEPLOYMENT_SUCCEEDED:
+		return models.DeploymentStateTypeDeploymentSucceeded
+	case pb.DeploymentState_DEPLOYMENT_FAILED:
+		return models.DeploymentStateTypeDeploymentFailed
+	default:
+		panic("shouldn't get here")
+	}
+}
+
 func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
 	model, err := models.ApplicationByID(s.db, int(req.Id))
 	if err != nil {
@@ -461,7 +495,7 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 			&d.Application.Id,
 			&d.Env.Id,
 			&d.Committish,
-			&d.State,
+			deploymentStateTypeModelToPb(&d.State),
 			&d.CreatedAt,
 			&d.Env.Name,
 		}
@@ -485,14 +519,14 @@ func (s *server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest
 }
 
 func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
-	req.State = "rollout-wait"
+	req.State = pb.DeploymentState_DEPLOYMENT_ROLLOUT_WAIT
 	query := `INSERT INTO deployments (application_id, environment_id, committish, current_state) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
 	appId := int(req.GetApplication().GetId())
 	args := []interface{}{
 		appId,
 		req.GetEnv().GetId(),
 		req.GetCommittish(),
-		req.GetState(),
+		creationStateTypeModelToPb(req.GetState()),
 	}
 	dest := []interface{}{
 		&req.Id,
@@ -529,7 +563,7 @@ func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentS
 		return nil, errors.Wrap(err, "querying db for deploy state")
 	}
 	res := &pb.GetDeploymentStatusResponse{
-		State: state,
+		State: creationStateTypeModelToPb(state),
 	}
 	return res, nil
 }
@@ -543,22 +577,22 @@ var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 const deployStateTagName = "deploystate"
 
 func (s *server) startDeployment(dep *pb.Deployment) {
-	setState := func(state string) {
-		if dep.State == "failed" {
+	setState := func(state pb.DeploymentState) {
+		if dep.State == pb.DeploymentState_DEPLOYMENT_FAILED {
 			return
 		}
 		dep.State = state
 		updateSQL := "UPDATE deployments SET current_state = $1 WHERE id = $2"
-		if _, err := s.db.Exec(updateSQL, state, dep.GetId()); err != nil {
+		if _, err := s.db.Exec(updateSQL, deploymentStateTypePbToModel(state), dep.GetId()); err != nil {
 			log.Printf("updating deployments table: %v", err)
 		}
 	}
 
 	do := func(f func() error) {
-		if dep.State != "failed" {
+		if dep.State != pb.DeploymentState_DEPLOYMENT_FAILED {
 			if err := f(); err != nil {
 				log.Printf("error: %v", err)
-				setState("failed")
+				setState(pb.DeploymentState_DEPLOYMENT_FAILED)
 			}
 		}
 	}
@@ -633,7 +667,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		return newS3Storage(app.sess).uploadFile(soapboxImageBucket, objectKey, filename)
 	})
 
-	setState("evaluate-wait")
+	setState(pb.DeploymentState_DEPLOYMENT_EVALUATE_WAIT)
 
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
@@ -778,7 +812,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		return target.waitUntilInstancesReady(blueASG)
 	})
 
-	setState("rollforward")
+	setState(pb.DeploymentState_DEPLOYMENT_ROLL_FORWARD)
 
 	log.Printf("detaching (stale) green ASG from load balancer")
 	do(func() error {
@@ -807,7 +841,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 
 	// TODO(paulsmith): health check
 
-	setState("success")
+	setState(pb.DeploymentState_DEPLOYMENT_SUCCEEDED)
 }
 
 type targetGroup struct {

@@ -14,6 +14,14 @@ service Deployments {
     rpc TeardownDeployment (TeardownDeploymentRequest) returns (soapbox.Empty) {}
 }
 
+enum DeploymentState {
+    DEPLOYMENT_ROLLOUT_WAIT = 0;
+    DEPLOYMENT_EVALUATE_WAIT = 1;
+    DEPLOYMENT_ROLL_FORWARD = 2;
+    DEPLOYMENT_SUCCEEDED = 3;
+    DEPLOYMENT_FAILED = 4;
+}
+
 message ListDeploymentRequest {
     int32 application_id = 1;
 }
@@ -31,7 +39,7 @@ message Deployment {
     soapbox.Application application = 2;
     soapbox.Environment env = 3;
     string committish = 4;
-    string state = 5;
+    DeploymentState state = 5;
     string created_at = 6;
 }
 

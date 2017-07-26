@@ -11,12 +11,12 @@ import (
 
 // Deployment represents a row from 'public.deployments'.
 type Deployment struct {
-	ID            int           `json:"id"`             // id
-	ApplicationID sql.NullInt64 `json:"application_id"` // application_id
-	EnvironmentID sql.NullInt64 `json:"environment_id"` // environment_id
-	Committish    string        `json:"committish"`     // committish
-	CurrentState  string        `json:"current_state"`  // current_state
-	CreatedAt     time.Time     `json:"created_at"`     // created_at
+	ID            int                 `json:"id"`             // id
+	ApplicationID sql.NullInt64       `json:"application_id"` // application_id
+	EnvironmentID sql.NullInt64       `json:"environment_id"` // environment_id
+	Committish    string              `json:"committish"`     // committish
+	CurrentState  DeploymentStateType `json:"current_state"`  // current_state
+	CreatedAt     time.Time           `json:"created_at"`     // created_at
 
 	// xo fields
 	_exists, _deleted bool
@@ -167,6 +167,13 @@ func (d *Deployment) Delete(db XODB) error {
 // Generated from foreign key 'deployments_application_id_fkey'.
 func (d *Deployment) Application(db XODB) (*Application, error) {
 	return ApplicationByID(db, int(d.ApplicationID.Int64))
+}
+
+// Environment returns the Environment associated with the Deployment's EnvironmentID (environment_id).
+//
+// Generated from foreign key 'deployments_environment_id_fkey'.
+func (d *Deployment) Environment(db XODB) (*Environment, error) {
+	return EnvironmentByID(db, int(d.EnvironmentID.Int64))
 }
 
 // DeploymentByID retrieves a row from 'public.deployments' as a Deployment.

@@ -21,7 +21,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :application, :message, 2, "soapbox.Application"
     optional :env, :message, 3, "soapbox.Environment"
     optional :committish, :string, 4
-    optional :state, :string, 5
+    optional :state, :enum, 5, "soapbox.DeploymentState"
     optional :created_at, :string, 6
   end
   add_message "soapbox.StartDeploymentResponse" do
@@ -36,6 +36,13 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.TeardownDeploymentRequest" do
     optional :id, :int32, 1
   end
+  add_enum "soapbox.DeploymentState" do
+    value :DEPLOYMENT_ROLLOUT_WAIT, 0
+    value :DEPLOYMENT_EVALUATE_WAIT, 1
+    value :DEPLOYMENT_ROLL_FORWARD, 2
+    value :DEPLOYMENT_SUCCEEDED, 3
+    value :DEPLOYMENT_FAILED, 4
+  end
 end
 
 module Soapbox
@@ -47,4 +54,5 @@ module Soapbox
   GetDeploymentStatusRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentStatusRequest").msgclass
   GetDeploymentStatusResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentStatusResponse").msgclass
   TeardownDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.TeardownDeploymentRequest").msgclass
+  DeploymentState = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.DeploymentState").enummodule
 end

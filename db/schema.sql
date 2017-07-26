@@ -3,6 +3,12 @@ create type creation_state_type as enum (
        'CREATE_INFRASTRUCTURE_WAIT',
        'SUCCEEDED',
        'FAILED');
+create type deployment_state_type as enum (
+       'DEPLOYMENT_ROLLOUT_WAIT',
+       'DEPLOYMENT_EVALUATE_WAIT',
+       'DEPLOYMENT_ROLL_FORWARD',
+       'DEPLOYMENT_SUCCEEDED',
+       'DEPLOYMENT_FAILED');
 
 create table applications (
        -- TODO(paulsmith): use app generated ID
@@ -38,6 +44,6 @@ create table deployments (
        environment_id integer references environments on delete cascade,
        committish text not null,
        -- TODO(paulsmith): enum? some type safety on valid values of 'current_state'?
-       current_state text not null default '',
+       current_state deployment_state_type not null default 'DEPLOYMENT_ROLLOUT_WAIT',
        created_at timestamp with time zone not null default now()
 );

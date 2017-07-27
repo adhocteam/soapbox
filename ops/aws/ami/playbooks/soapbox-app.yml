@@ -32,11 +32,16 @@
         append: yes
         groups: docker
 
-    - name: install nginx config
+    - name: install nginx configs
       copy:
-        src: files/nginx.conf
-        dest: /etc/nginx/nginx.conf
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
         mode: "0644"
+      with_items:
+        - src: files/app.conf
+          dest: /etc/nginx/app.conf
+        - src: files/init.conf
+          dest: /etc/nginx/nginx.conf
 
     - name: restart nginx
       service:

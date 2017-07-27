@@ -479,13 +479,38 @@ func (s *server) CopyEnvironment(context.Context, *pb.CopyEnvironmentRequest) (*
 	return nil, nil
 }
 
+type deploymentState struct {
+	*pb.DeploymentState
+}
+
+func (c deploymentState) Scan(src interface{}) error {
+	switch val := src.(type) {
+	case []byte:
+		return c.UnmarshalText(val)
+	default:
+		return fmt.Errorf("invalid DeploymentStateType: %#v", src)
+	}
+}
+
+func (c deploymentState) UnmarshalText(b []byte) error {
+	if state, exists := pb.DeploymentState_value[string(b)]; exists {
+		*c.DeploymentState = pb.DeploymentState(state)
+	} else if !exists {
+		return fmt.Errorf("unknown value for deployment state: %v", string(b))
+	}
+
+	return nil
+}
+
 func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
 	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
 	if err != nil {
-		return nil, errors.Wrap(err, "querying db")
+		return nil, errors.Wrap(err, "querying db in ListDeployments")
 	}
 	var deployments []*pb.Deployment
+
+	defer rows.Close()
 	for rows.Next() {
 		var d pb.Deployment
 		d.Application = &pb.Application{}
@@ -495,7 +520,7 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 			&d.Application.Id,
 			&d.Env.Id,
 			&d.Committish,
-			deploymentStateTypeModelToPb(&d.State),
+			deploymentState{&d.State},
 			&d.CreatedAt,
 			&d.Env.Name,
 		}
@@ -526,7 +551,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 		appId,
 		req.GetEnv().GetId(),
 		req.GetCommittish(),
-		creationStateTypeModelToPb(req.GetState()),
+		pb.DeploymentStateToString(req.GetState()),
 	}
 	dest := []interface{}{
 		&req.Id,
@@ -563,7 +588,7 @@ func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentS
 		return nil, errors.Wrap(err, "querying db for deploy state")
 	}
 	res := &pb.GetDeploymentStatusResponse{
-		State: creationStateTypeModelToPb(state),
+		State: state,
 	}
 	return res, nil
 }
@@ -583,7 +608,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		}
 		dep.State = state
 		updateSQL := "UPDATE deployments SET current_state = $1 WHERE id = $2"
-		if _, err := s.db.Exec(updateSQL, deploymentStateTypePbToModel(state), dep.GetId()); err != nil {
+		if _, err := s.db.Exec(updateSQL, pb.DeploymentStateToString(state), dep.GetId()); err != nil {
 			log.Printf("updating deployments table: %v", err)
 		}
 	}

@@ -35,7 +35,7 @@
 	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:type) %>">
 		<%= f.label :type, class: "col-form-label" %>
 		<%= f.select :type, {}, {}, {class: "form-control"} do %>
-		    <%= options_for_select([['Server', 'server'], ['Cron job', 'cronjob']], @form.type) %>
+		    <%= options_for_select([['Server', 'server'], ['Cron job', 'cronjob']], selected: @form.type, disabled: 'cronjob') %>
 		<% end %>
 		<% @form.errors.full_messages_for(:type).each do |msg| %>
 		    <div class="form-control-feedback"><%= msg %></div>

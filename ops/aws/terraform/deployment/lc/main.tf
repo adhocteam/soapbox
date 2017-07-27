@@ -34,18 +34,6 @@ data "aws_security_group" "application_app_sg" {
   name   = "${var.application_name}: ${var.environment} application subnet security group"
 }
 
-data "template_file" "user_data" {
-  template = "${file("${path.module}/user_data.tmpl")}"
-
-  vars = {
-    release_bucket   = "${var.release_bucket}"
-    application_name = "${var.application_name}"
-    application_port = "${var.application_port}"
-    environment      = "${var.environment}"
-    release          = "${var.release}"
-  }
-}
-
 resource "aws_launch_configuration" "launch_config" {
   name                        = "${var.application_name}-${var.environment}-${var.release}"
   instance_type               = "${var.instance_type}"
@@ -53,7 +41,6 @@ resource "aws_launch_configuration" "launch_config" {
   security_groups             = ["${data.aws_security_group.application_app_sg.id}"]
   associate_public_ip_address = false
   ebs_optimized               = false
-  user_data                   = "${data.template_file.user_data.rendered}"
   key_name                    = "${var.key_name}"
   iam_instance_profile        = "${var.instance_profile}"
 

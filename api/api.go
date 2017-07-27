@@ -150,6 +150,10 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			return nil
 		})
 
+		if networkDir != "" {
+			defer os.RemoveAll(networkDir)
+		}
+
 		do(func() error {
 			log.Printf("running terraform plan - network")
 			cmd := exec.Command("terraform", "plan",
@@ -188,6 +192,10 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			deploymentDir = strings.TrimSpace(buf.String())
 			return nil
 		})
+
+		if deploymentDir != "" {
+			defer os.RemoveAll(deploymentDir)
+		}
 
 		do(func() error {
 			cmd := exec.Command("terraform", "get")

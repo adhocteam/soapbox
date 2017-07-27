@@ -138,6 +138,7 @@ resource "aws_autoscaling_group" "asg_blue" {
     {
       key                 = "deploystate"
       value               = "blue"
+      propagate_at_launch = false
     }
   ]
 
@@ -193,6 +194,7 @@ resource "aws_autoscaling_group" "asg_green" {
     {
       key                 = "deploystate"
       value               = "green"
+      propagate_at_launch = false
     }
   ]
 

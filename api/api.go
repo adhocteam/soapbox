@@ -208,7 +208,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			cmd := exec.Command("terraform", "plan",
 				"-var", "application_name="+slug,
 				"-var", "environment=test") // TODO(paulsmith): FIXME
-			cmd.Dir = deploymentDir
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -219,7 +219,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			cmd := exec.Command("terraform", "apply",
 				"-var", "application_name="+slug,
 				"-var", "environment=test") // TODO(paulsmith): FIXME
-			cmd.Dir = deploymentDir
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()

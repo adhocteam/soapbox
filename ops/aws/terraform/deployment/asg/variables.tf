@@ -48,5 +48,5 @@ variable "application_port" {
 
 variable "health_check_path" {
   type    = "string"
-  default = "/_health"
+  default = "/_healthcheck"
 }

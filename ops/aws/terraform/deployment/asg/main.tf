@@ -48,6 +48,7 @@ resource "aws_alb_target_group" "application_target_group" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = "${data.aws_vpc.application_vpc.id}"
+  deregistration_delay = 60
 
   health_check {
     interval            = 60

@@ -1030,7 +1030,7 @@ func createLaunchConfig(app *application, env *environment, committish string, s
 
 	// TODO(paulsmith): get from Soapbox platform config
 	const iamInstanceProfile = "soapbox-app"
-	const appAmi = "ami-ef545cf9"
+	const appAmi = "ami-ceefb0b5"
 	const instanceType = "t2.micro"
 	const keyName = "soapbox-app"
 

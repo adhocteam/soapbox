@@ -310,40 +310,6 @@ func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
 	}
 }
 
-func deploymentStateTypeModelToPb(cst models.DeploymentStateType) pb.DeploymentState {
-	switch cst {
-	case models.DeploymentStateTypeDeploymentRolloutWait:
-		return pb.DeploymentState_DEPLOYMENT_ROLLOUT_WAIT
-	case models.DeploymentStateTypeDeploymentEvaluateWait:
-		return pb.DeploymentState_DEPLOYMENT_EVALUATE_WAIT
-	case models.DeploymentStateTypeDeploymentRollForward:
-		return pb.DeploymentState_DEPLOYMENT_ROLL_FORWARD
-	case models.DeploymentStateTypeDeploymentSucceeded:
-		return pb.DeploymentState_DEPLOYMENT_SUCCEEDED
-	case models.DeploymentStateTypeDeploymentFailed:
-		return pb.DeploymentState_DEPLOYMENT_FAILED
-	default:
-		panic("shouldn't get here")
-	}
-}
-
-func deploymentStateTypePbToModel(cst pb.DeploymentState) models.DeploymentStateType {
-	switch cst {
-	case pb.DeploymentState_DEPLOYMENT_ROLLOUT_WAIT:
-		return models.DeploymentStateTypeDeploymentRolloutWait
-	case pb.DeploymentState_DEPLOYMENT_EVALUATE_WAIT:
-		return models.DeploymentStateTypeDeploymentEvaluateWait
-	case pb.DeploymentState_DEPLOYMENT_ROLL_FORWARD:
-		return models.DeploymentStateTypeDeploymentRollForward
-	case pb.DeploymentState_DEPLOYMENT_SUCCEEDED:
-		return models.DeploymentStateTypeDeploymentSucceeded
-	case pb.DeploymentState_DEPLOYMENT_FAILED:
-		return models.DeploymentStateTypeDeploymentFailed
-	default:
-		panic("shouldn't get here")
-	}
-}
-
 func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
 	model, err := models.ApplicationByID(s.db, int(req.Id))
 	if err != nil {

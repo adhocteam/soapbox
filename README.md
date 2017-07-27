@@ -6,10 +6,10 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
 
 ### Requirements
 
- - Go 1.8 or greater
- - Ruby 2.2 or greater
- - PostgreSQL 9.5 or greater
- - Terraform 0.9.11 or greater
+ - Go 1.8 or greater - see directions [here](https://golang.org/doc/install)
+ - Ruby 2.2 or greater - see directions [here](https://www.ruby-lang.org/en/documentation/installation/)
+ - PostgreSQL 9.5 or greater - [Ubuntu](https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-ubuntu-16-04) | [Mac](https://solidfoundationwebdev.com/blog/posts/how-to-install-postgresql-using-brew-on-osx)
+ - Terraform 0.9.11 or greater - Download and install Terraform from [here](https://www.terraform.io/downloads.html).
 
 ### Running the server and client locally
 
@@ -21,32 +21,33 @@ $ psql -f db/schema.sql -d soapbox_dev
 
 2. **Build and install the Soapbox API server (soapboxd) and CLI client (soapboxcli):**
 ``` shell
+$ mkdir -p $(go env GOPATH)/src/github.com/adhocteam
+$ go get github.com/adhocteam/soapbox/...
+$ cd $(go env GOPATH)/src/github.com/adhocteam/soapbox
+$ go get -u github.com/golang/dep/cmd/dep
 $ go get -d -v ./...
 $ go install ./...
 ```
 
-3. **Install Terraform**
-
-Download and install Terraform from [here](https://www.terraform.io/downloads.html).
-
-4. **Run the API server:**
+3. **Run the API server:**
 ``` shell
 $ PGDATABASE=soapbox_dev PGSSLMODE=disable soapboxd &
 ```
+* If your database user is password protected, you may need to pass `PGPASSWORD=yourpgpass` to the command above as well.
 
-5. **Try out the CLI client:**
+4. **Try out the CLI client:**
 ``` shell
 $ soapboxcli list-applications
 ```
 
-6. **Install the web client:**
+5. **Install the web client:**
 ``` shell
 $ cd web
 $ gem install bundler
 $ bundle install
 ```
 
-7. **Run the web client and try it out:**
+6. **Run the web client and try it out:**
 ``` shell
 $ bin/rails server &
 $ open http://localhost:3000/

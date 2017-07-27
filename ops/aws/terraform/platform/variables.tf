@@ -17,3 +17,8 @@ variable "application_state_table" {
   type    = "string"
   default = "soapbox-app-state-locking"
 }
+
+variable "platform_domain" {
+  type    = "string"
+  default = "soapbox.hosting"
+}

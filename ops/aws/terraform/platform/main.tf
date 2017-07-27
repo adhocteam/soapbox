@@ -22,4 +22,12 @@ resource "aws_dynamodb_table" "application_state_table" {
     name = "LockID"
     type = "S"
   }
+
+resource "aws_route53_zone" "platform_zone" {
+  name    = "${var.platform_domain}."
+  comment = "Soapbox platform hosted zone: ${var.platform_domain}"
+
+  tags {
+    Name = "Soapbox platform hosted zone: ${var.platform_domain}"
+  }
 }

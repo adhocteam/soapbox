@@ -7,7 +7,6 @@
 ```
 $ cd ops/terraform/aws/network
 $ terraform plan \
-  -var 'application_domain=no-name-application.com' \
   -var 'application_name=no-name-application' \
   -var 'environment=test'
 ```
@@ -61,3 +60,11 @@ Default: `{"app" = ["10.0.0.0/20", "10.0.16.0/20"], "dmz"  = ["10.0.32.0/20", "1
 The breakdown of address spaces for each of the zones specified for `availability_zones`.
 
 Using the default values of `region=us-east-1`, `availability_zones = ["a", "b"]` and `app = ["10.0.0.0/20", "10.0.16.0/20"]`, this means that the app subnet in availability zone "us-east-1a" would have allocation "10.0.0.0/20".
+
+### platform_domain
+
+Default: `soapbox.hosting`
+
+The domain name/hosted zone for the deployment of Soapbox the platform. Soapbox applications will have DNS records created where the `application_name` and `environment` comprise the subdomain. The value used here must match the value for the `platform_domain` variable in `platform/variables.tf`.
+
+To illustrate, where `application_name=example-web-app` and `environment=test`: `example-web-app.test.soapbox.hosting`

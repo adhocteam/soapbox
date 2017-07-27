@@ -706,6 +706,9 @@ chmod +x /etc/sv/$APP_NAME/run
 # Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
 ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 
+# Switch to /etc/nginx/app.conf
+mv /etc/nginx/app.conf /etc/nginx/nginx.conf
+
 # Set the X-Soapbox-App-Version HTTP header
 sed -i .bak \
   "s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\"/" \

@@ -911,7 +911,7 @@ func (g *targetGroup) waitUntilInstancesReady(asg *autoScalingGroup) error {
 		TargetGroupArn: aws.String(g.arn),
 		Targets:        targets,
 	}
-	deadline := time.Now().Add(5 * time.Minute)
+	deadline := time.Now().Add(10 * time.Minute)
 	for {
 		res, err := g.svc.DescribeTargetHealth(input)
 		if err != nil {
@@ -1226,7 +1226,7 @@ func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
 
 // wait for instances to be marked in-service in the ASG lifecycle
 func (g *autoScalingGroup) waitUntilInstancesReady(n int) error {
-	deadline := time.Now().Add(5 * time.Minute)
+	deadline := time.Now().Add(10 * time.Minute)
 	for {
 		count, err := inService(g.svc, g.name)
 		if err != nil {
@@ -1265,7 +1265,7 @@ func lifecycleState(state string, svc *autoscaling.AutoScaling, name string) (in
 }
 
 func (g *autoScalingGroup) waitUntilGroupEmpty() error {
-	deadline := time.Now().Add(5 * time.Minute)
+	deadline := time.Now().Add(10 * time.Minute)
 	for {
 		instances, err := g.getInstances()
 		if err != nil {

@@ -116,7 +116,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 	do := func(f func() error) {
 		if app.CreationState != pb.CreationState_FAILED {
 			if err := f(); err != nil {
-				errors.Wrap(err, "app creation failed")
+				log.Printf("app creation failed: %v", err)
 				setState(pb.CreationState_FAILED)
 			}
 		}
@@ -127,24 +127,35 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		// run terraform apply on VPC config TODO(paulsmith):
 		// bundle the terraform configs with the Soapbox app
 		// and make them available in a well-known location
-		var currdir string
-		do(func() error {
-			var err error
-			currdir, err = os.Getwd()
-			return err
-		})
-
-		pathToTerraformConfig := filepath.Join("ops", "aws", "terraform")
-		do(func() error {
-			return os.Chdir(filepath.Join(pathToTerraformConfig, "network"))
-		})
+		terraformPath := filepath.Join("ops", "aws", "terraform")
+		scriptsPath := filepath.Join(terraformPath, "scripts")
 
 		slug := app.GetSlug()
+		var networkDir, deploymentDir string
+
+		do(func() error {
+			log.Printf("generating terraform configuration - network")
+			cmd := exec.Command("./init_app_tf.sh",
+				"-a", slug,
+				"-e", "test", // TODO(paulsmith): FIXME
+				"-t", "network")
+			cmd.Dir = scriptsPath
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running init_app_tf.sh for network")
+			}
+			networkDir = strings.TrimSpace(buf.String())
+			return nil
+		})
 
 		do(func() error {
 			log.Printf("running terraform plan - network")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "plan", "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd := exec.Command("terraform", "plan",
+				"-var", "application_name="+slug,
+				"-var", "environment=test") // TODO(paulsmith): FIXME
+			cmd.Dir = networkDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -152,25 +163,44 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 
 		do(func() error {
 			log.Printf("running terraform apply - network")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "apply", "-var", "application_name="+slug, "-var", "environment=test")
+			cmd := exec.Command("terraform", "apply",
+				"-var", "application_name="+slug,
+				"-var", "environment=test") // TODO(paulsmith): FIXME
+			cmd.Dir = networkDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
 		})
 
 		do(func() error {
-			return os.Chdir(filepath.Join("..", "deployment", "asg"))
+			log.Printf("generating terraform configuration - deployment")
+			cmd := exec.Command("./init_app_tf.sh",
+				"-a", slug,
+				"-e", "test", // TODO(paulsmith): FIXME
+				"-t", "deployment")
+			cmd.Dir = scriptsPath
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running init_app_tf.sh for deployment")
+			}
+			deploymentDir = strings.TrimSpace(buf.String())
+			return nil
 		})
 
 		do(func() error {
-			return exec.Command("terraform", "get").Run()
+			cmd := exec.Command("terraform", "get")
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
+			return cmd.Run()
 		})
 
 		do(func() error {
 			log.Printf("running terraform plan - deployment")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "plan", "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd := exec.Command("terraform", "plan",
+				"-var", "application_name="+slug,
+				"-var", "environment=test") // TODO(paulsmith): FIXME
+			cmd.Dir = deploymentDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -178,8 +208,10 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 
 		do(func() error {
 			log.Printf("running terraform apply - deployment")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "apply", "-var", "application_name="+slug, "-var", "environment=test")
+			cmd := exec.Command("terraform", "apply",
+				"-var", "application_name="+slug,
+				"-var", "environment=test") // TODO(paulsmith): FIXME
+			cmd.Dir = deploymentDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()

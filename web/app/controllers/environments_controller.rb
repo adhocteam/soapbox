@@ -4,7 +4,6 @@ class EnvironmentsController < ApplicationController
   before_action :set_application, only: [:index, :create, :new, :show, :copy]
 
   def index
-    @environments = $environments
     req = Soapbox::ListEnvironmentRequest.new(application_id: params[:application_id].to_i)
     res = $api_environment_client.list_environments(req)
     if res.environments.count == 0

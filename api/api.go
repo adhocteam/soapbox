@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/adhocteam/soapbox/models"
+	"github.com/adhocteam/soapbox/soapbox"
 	pb "github.com/adhocteam/soapbox/soapboxpb"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -33,17 +34,19 @@ import (
 type server struct {
 	db         *sql.DB
 	httpClient *http.Client
+	config     *soapbox.Config
 }
 
 type state string
 
-func NewServer(db *sql.DB, httpClient *http.Client) *server {
+func NewServer(db *sql.DB, httpClient *http.Client, config *soapbox.Config) *server {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 	return &server{
 		db:         db,
 		httpClient: httpClient,
+		config:     config,
 	}
 }
 
@@ -516,6 +519,23 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "iteration over result set")
 	}
+
+	// environments
+	envReq := &pb.ListEnvironmentRequest{
+		ApplicationId: req.GetApplicationId(),
+	}
+	envRes, err := s.ListEnvironments(ctx, envReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting environments")
+	}
+	byId := make(map[int32]*pb.Environment)
+	for _, env := range envRes.Environments {
+		byId[env.GetId()] = env
+	}
+	for _, d := range deployments {
+		d.Env = byId[d.GetEnv().GetId()]
+	}
+
 	res := &pb.ListDeploymentResponse{
 		Deployments: deployments,
 	}
@@ -807,7 +827,7 @@ service nginx reload
 	var launchConfig string
 	do(func() error {
 		var err error
-		launchConfig, err = createLaunchConfig(app, env, committish, securityGroupId, time.Now(), userData.String())
+		launchConfig, err = createLaunchConfig(s.config, app, env, committish, securityGroupId, time.Now(), userData.String())
 		return err
 	})
 
@@ -1076,20 +1096,14 @@ func (g *autoScalingGroup) getInstances() ([]*autoscaling.Instance, error) {
 	return group.Instances, nil
 }
 
-func createLaunchConfig(app *application, env *environment, committish string, securityGroupId string, t time.Time, userData string) (string, error) {
+func createLaunchConfig(config *soapbox.Config, app *application, env *environment, committish string, securityGroupId string, t time.Time, userData string) (string, error) {
 	name := fmt.Sprintf("%s-%s-%s-%d", app.slug, env.slug, committish, t.Unix())
 
-	// TODO(paulsmith): get from Soapbox platform config
-	const iamInstanceProfile = "soapbox-app"
-	const appAmi = "ami-ceefb0b5"
-	const instanceType = "t2.micro"
-	const keyName = "soapbox-app"
-
 	input := &autoscaling.CreateLaunchConfigurationInput{
-		IamInstanceProfile:      aws.String(iamInstanceProfile),
-		ImageId:                 aws.String(appAmi),
-		InstanceType:            aws.String(instanceType),
-		KeyName:                 aws.String(keyName),
+		IamInstanceProfile:      aws.String(config.IamProfile),
+		ImageId:                 aws.String(config.AmiId),
+		InstanceType:            aws.String(config.InstanceType),
+		KeyName:                 aws.String(config.KeyName),
 		LaunchConfigurationName: aws.String(name),
 		SecurityGroups:          []*string{aws.String(securityGroupId)},
 		UserData:                aws.String(base64.StdEncoding.EncodeToString([]byte(userData))),

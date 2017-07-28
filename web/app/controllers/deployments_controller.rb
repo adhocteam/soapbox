@@ -11,6 +11,13 @@ class DeploymentsController < ApplicationController
       redirect_to new_application_deployment_path
     else
       @deployments = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }
+      @active_by_env = {}
+      @deployments.each do |d|
+        env = d.env.slug
+        if d.state == 'success' && !@active_by_env.key?(env)
+          @active_by_env[env] = d
+        end
+      end
     end
   end
 

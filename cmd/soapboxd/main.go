@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"strconv"
 
 	"github.com/adhocteam/soapbox/api"
+	"github.com/adhocteam/soapbox/soapbox"
 	pb "github.com/adhocteam/soapbox/soapboxpb"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
@@ -35,7 +37,11 @@ func main() {
 	}
 
 	server := grpc.NewServer()
-	apiServer := api.NewServer(db, nil)
+	config := getConfig()
+	if config.AmiId == "" {
+		log.Fatal("SOAPBOX_AMI_ID must be set")
+	}
+	apiServer := api.NewServer(db, nil, config)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
 	pb.RegisterDeploymentsServer(server, apiServer)
@@ -48,4 +54,30 @@ func checkJobDependencies() error {
 		return fmt.Errorf("terraform not found: %v", err)
 	}
 	return nil
+}
+
+func getConfig() *soapbox.Config {
+	c := &soapbox.Config{
+		AmiId:        "", // must be set in the environment
+		Domain:       "soapbox.hosting",
+		IamProfile:   "soapbox-app",
+		InstanceType: "t2.micro",
+		KeyName:      "soapbox-app",
+	}
+	if val := os.Getenv("SOAPBOX_AMI_ID"); val != "" {
+		c.AmiId = val
+	}
+	if val := os.Getenv("SOAPBOX_DOMAIN"); val != "" {
+		c.Domain = val
+	}
+	if val := os.Getenv("SOAPBOX_IAM_PROFILE"); val != "" {
+		c.IamProfile = val
+	}
+	if val := os.Getenv("SOAPBOX_INSTANCE_TYPE"); val != "" {
+		c.InstanceType = val
+	}
+	if val := os.Getenv("SOAPBOX_KEY_NAME"); val != "" {
+		c.KeyName = val
+	}
+	return c
 }

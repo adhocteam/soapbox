@@ -609,11 +609,11 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		}
 	}
 
-	doCmd := func(cmd string, args ...string) {
+	doCmd := func(cmd *exec.Cmd) {
 		do(func() error {
-			out, err := exec.Command(cmd, args...).CombinedOutput()
+			out, err := cmd.CombinedOutput()
 			if err != nil {
-				log.Printf("command %s %s:\n%s", cmd, args, out)
+				log.Printf("command %s %v:\n%s", cmd.Path, cmd.Args, out)
 			}
 			return err
 		})
@@ -639,20 +639,19 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		defer os.RemoveAll(tempdir)
 	}
 
-	do(func() error { return os.Chdir(tempdir) })
-
 	// clone the repo at the committish
 	const appdir = "appdir"
+	cmd := exec.Command("git", "clone", app.githubRepoUrl, appdir)
+	cmd.Dir = tempdir
 	log.Printf("cloning repo")
-	doCmd("git", "clone", app.githubRepoUrl, appdir)
+	doCmd(cmd)
 
-	do(func() error {
-		return os.Chdir(appdir)
-	})
-
-	log.Println("checking out committish")
 	committish := dep.GetCommittish()
-	doCmd("git", "checkout", committish)
+	cmd = exec.Command("git", "checkout", committish)
+	cmd.Dir = filepath.Join(tempdir, appdir)
+	log.Println("checking out committish")
+	doCmd(cmd)
+
 	if sha1Re.MatchString(committish) {
 		// use short committish from here on out
 		committish = committish[:7]
@@ -661,8 +660,10 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	image := fmt.Sprintf("soapbox/%s:%s", app.slug, committish)
 
 	// build the docker image from the repo
+	cmd = exec.Command("docker", "build", "-t", image, ".")
+	cmd.Dir = filepath.Join(tempdir, appdir)
 	log.Printf("building docker image: %s", image)
-	doCmd("docker", "build", "-t", image, ".")
+	doCmd(cmd)
 
 	// export the docker image to a file
 	log.Printf("saving docker image %s to file", image)
@@ -899,7 +900,7 @@ service nginx reload
 
 	log.Printf("done")
 
-	// TODO(paulsmith): health check
+	// TODO(paulsmith): health check?
 
 	setState("success")
 }

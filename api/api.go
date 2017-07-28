@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 	"time"
@@ -1099,9 +1100,14 @@ func (g *autoScalingGroup) getInstances() ([]*autoscaling.Instance, error) {
 func createLaunchConfig(config *soapbox.Config, app *application, env *environment, committish string, securityGroupId string, t time.Time, userData string) (string, error) {
 	name := fmt.Sprintf("%s-%s-%s-%d", app.slug, env.slug, committish, t.Unix())
 
+	amiId, err := app.getRecentAmiId(config.AmiName)
+	if err != nil {
+		return "", fmt.Errorf("determining ami id: %v", err)
+	}
+
 	input := &autoscaling.CreateLaunchConfigurationInput{
 		IamInstanceProfile:      aws.String(config.IamProfile),
-		ImageId:                 aws.String(config.AmiId),
+		ImageId:                 aws.String(amiId),
 		InstanceType:            aws.String(config.InstanceType),
 		KeyName:                 aws.String(config.KeyName),
 		LaunchConfigurationName: aws.String(name),
@@ -1110,7 +1116,7 @@ func createLaunchConfig(config *soapbox.Config, app *application, env *environme
 	}
 
 	svc := autoscaling.New(app.sess)
-	_, err := svc.CreateLaunchConfiguration(input)
+	_, err = svc.CreateLaunchConfiguration(input)
 	if err != nil {
 		return "", fmt.Errorf("creating launch config: %v", err)
 	}
@@ -1250,6 +1256,45 @@ func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
 	}
 	sg := res.SecurityGroups[0]
 	return *sg.GroupId, nil
+}
+
+func (a *application) getRecentAmiId(amiNameGlob string) (string, error) {
+	svc := ec2.New(a.sess)
+	filters := []*ec2.Filter{
+		&ec2.Filter{
+			Name:   aws.String("virtualization-type"),
+			Values: []*string{aws.String("hvm")},
+		},
+		&ec2.Filter{
+			Name:   aws.String("name"),
+			Values: []*string{aws.String(amiNameGlob)},
+		},
+	}
+	descImagesInput := ec2.DescribeImagesInput{
+		Filters: filters,
+		Owners:  []*string{aws.String("self")},
+	}
+	amiRes, err := svc.DescribeImages(&descImagesInput)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("describing AMIs: %s", err))
+		return "", err
+	}
+	sort.Sort(AmiByCreationDate(amiRes.Images))
+	return *amiRes.Images[0].ImageId, nil
+}
+
+type AmiByCreationDate []*ec2.Image
+
+func (a AmiByCreationDate) Len() int {
+	return len(a)
+}
+
+func (a AmiByCreationDate) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a AmiByCreationDate) Less(i, j int) bool {
+	return *a[i].CreationDate > *a[j].CreationDate
 }
 
 // wait for instances to be marked in-service in the ASG lifecycle

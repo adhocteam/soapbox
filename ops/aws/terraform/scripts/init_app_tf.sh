@@ -73,7 +73,7 @@ mv backend.tfvars.sample backend.tfvars
 exec 1>&2
 
 # Get any required terraform modules
-terraform get
+terraform get -no-color
 
 # Initialize the backend
-terraform init -backend-config=backend.tfvars
+terraform init -backend-config=backend.tfvars -no-color

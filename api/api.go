@@ -158,7 +158,8 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			log.Printf("running terraform plan - network")
 			cmd := exec.Command("terraform", "plan",
 				"-var", "application_name="+slug,
-				"-var", "environment=test") // TODO(paulsmith): FIXME
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
 			cmd.Dir = networkDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -169,7 +170,8 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			log.Printf("running terraform apply - network")
 			cmd := exec.Command("terraform", "apply",
 				"-var", "application_name="+slug,
-				"-var", "environment=test") // TODO(paulsmith): FIXME
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
 			cmd.Dir = networkDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -207,7 +209,8 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			log.Printf("running terraform plan - deployment")
 			cmd := exec.Command("terraform", "plan",
 				"-var", "application_name="+slug,
-				"-var", "environment=test") // TODO(paulsmith): FIXME
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
 			cmd.Dir = filepath.Join(deploymentDir, "asg")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -218,7 +221,8 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			log.Printf("running terraform apply - deployment")
 			cmd := exec.Command("terraform", "apply",
 				"-var", "application_name="+slug,
-				"-var", "environment=test") // TODO(paulsmith): FIXME
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
 			cmd.Dir = filepath.Join(deploymentDir, "asg")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr

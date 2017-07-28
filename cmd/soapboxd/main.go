@@ -9,11 +9,13 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"time"
 
 	"github.com/adhocteam/soapbox/api"
 	"github.com/adhocteam/soapbox/soapbox"
 	pb "github.com/adhocteam/soapbox/soapboxpb"
 	_ "github.com/lib/pq"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
@@ -36,7 +38,7 @@ func main() {
 		log.Fatalf("couldn't listen on port %d: %v", *port, err)
 	}
 
-	server := grpc.NewServer()
+	server := grpc.NewServer(serverInterceptor())
 	config := getConfig()
 	if config.AmiId == "" {
 		log.Fatal("SOAPBOX_AMI_ID must be set")
@@ -80,4 +82,20 @@ func getConfig() *soapbox.Config {
 		c.KeyName = val
 	}
 	return c
+}
+
+func serverInterceptor() grpc.ServerOption {
+	return grpc.UnaryInterceptor(grpc.UnaryServerInterceptor(timingInterceptor))
+}
+
+func timingInterceptor(
+	ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (interface{}, error) {
+	t0 := time.Now()
+	resp, err := handler(ctx, req)
+	log.Printf("method=%s duration=%s error=%v", info.FullMethod, time.Since(t0), err)
+	return resp, err
 }

@@ -116,7 +116,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 	do := func(f func() error) {
 		if app.CreationState != pb.CreationState_FAILED {
 			if err := f(); err != nil {
-				errors.Wrap(err, "app creation failed")
+				log.Printf("app creation failed: %v", err)
 				setState(pb.CreationState_FAILED)
 			}
 		}
@@ -127,25 +127,40 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		// run terraform apply on VPC config TODO(paulsmith):
 		// bundle the terraform configs with the Soapbox app
 		// and make them available in a well-known location
-		var currdir string
-		do(func() error {
-			var err error
-			currdir, err = os.Getwd()
-			return err
-		})
-
-		pathToTerraformConfig := filepath.Join("ops", "aws", "terraform")
-		do(func() error {
-			return os.Chdir(filepath.Join(pathToTerraformConfig, "network"))
-		})
+		terraformPath := filepath.Join("ops", "aws", "terraform")
+		scriptsPath := filepath.Join(terraformPath, "scripts")
 
 		slug := app.GetSlug()
-		domain := fmt.Sprintf("%s.soapboxhosting.computer", slug)
+		var networkDir, deploymentDir string
+
+		do(func() error {
+			log.Printf("generating terraform configuration - network")
+			cmd := exec.Command("./init_app_tf.sh",
+				"-a", slug,
+				"-e", "test", // TODO(paulsmith): FIXME
+				"-t", "network")
+			cmd.Dir = scriptsPath
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running init_app_tf.sh for network")
+			}
+			networkDir = strings.TrimSpace(buf.String())
+			return nil
+		})
+
+		if networkDir != "" {
+			defer os.RemoveAll(networkDir)
+		}
 
 		do(func() error {
 			log.Printf("running terraform plan - network")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "plan", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd := exec.Command("terraform", "plan",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = networkDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -153,25 +168,50 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 
 		do(func() error {
 			log.Printf("running terraform apply - network")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "apply", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test")
+			cmd := exec.Command("terraform", "apply",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = networkDir
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
 		})
 
 		do(func() error {
-			return os.Chdir(filepath.Join("..", "deployment", "asg"))
+			log.Printf("generating terraform configuration - deployment")
+			cmd := exec.Command("./init_app_tf.sh",
+				"-a", slug,
+				"-e", "test", // TODO(paulsmith): FIXME
+				"-t", "deployment")
+			cmd.Dir = scriptsPath
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running init_app_tf.sh for deployment")
+			}
+			deploymentDir = strings.TrimSpace(buf.String())
+			return nil
 		})
 
+		if deploymentDir != "" {
+			defer os.RemoveAll(deploymentDir)
+		}
+
 		do(func() error {
-			return exec.Command("terraform", "get").Run()
+			cmd := exec.Command("terraform", "get")
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
+			return cmd.Run()
 		})
 
 		do(func() error {
 			log.Printf("running terraform plan - deployment")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "plan", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test", "-out=/dev/null", "-state=/dev/null", "-lock=false")
+			cmd := exec.Command("terraform", "plan",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -179,8 +219,11 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 
 		do(func() error {
 			log.Printf("running terraform apply - deployment")
-			// TODO(paulsmith): resolve issue around VPCs per app or per env
-			cmd := exec.Command("terraform", "apply", "-var", "application_domain="+domain, "-var", "application_name="+slug, "-var", "environment=test")
+			cmd := exec.Command("terraform", "apply",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
@@ -570,7 +613,6 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	if err := s.db.QueryRow(query, args...).Scan(dest...); err != nil {
 		return nil, errors.Wrap(err, "inserting new row into db")
 	}
-	env := req.GetEnv()
 	// TODO(paulsmith): hydrate fields for app and env
 	app, err := models.ApplicationByID(s.db, appId)
 	if err != nil {
@@ -580,10 +622,14 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	req.Application.Description = nullString(app.Description)
 	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
 	req.Application.Slug = app.Slug
-	if err := s.db.QueryRow("SELECT slug FROM environments WHERE id = $1", env.Id).Scan(&env.Slug); err != nil {
-		return nil, errors.Wrap(err, "querying for env slug")
+
+	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
+	env, err := s.GetEnvironment(ctx, &envReq)
+	if err != nil {
+		return nil, fmt.Errorf("getting environment: %v", err)
 	}
 	req.Env = env
+
 	go s.startDeployment(req)
 	res := &pb.StartDeploymentResponse{
 		Id: req.GetId(),
@@ -632,11 +678,11 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		}
 	}
 
-	doCmd := func(cmd string, args ...string) {
+	doCmd := func(cmd *exec.Cmd) {
 		do(func() error {
-			out, err := exec.Command(cmd, args...).CombinedOutput()
+			out, err := cmd.CombinedOutput()
 			if err != nil {
-				log.Printf("command %s %s:\n%s", cmd, args, out)
+				log.Printf("command %s %v:\n%s", cmd.Path, cmd.Args, out)
 			}
 			return err
 		})
@@ -662,25 +708,31 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		defer os.RemoveAll(tempdir)
 	}
 
-	do(func() error { return os.Chdir(tempdir) })
-
 	// clone the repo at the committish
 	const appdir = "appdir"
+	cmd := exec.Command("git", "clone", app.githubRepoUrl, appdir)
+	cmd.Dir = tempdir
 	log.Printf("cloning repo")
-	doCmd("git", "clone", app.githubRepoUrl, appdir)
+	doCmd(cmd)
 
-	do(func() error {
-		return os.Chdir(appdir)
-	})
-
+	committish := dep.GetCommittish()
+	cmd = exec.Command("git", "checkout", committish)
+	cmd.Dir = filepath.Join(tempdir, appdir)
 	log.Println("checking out committish")
-	doCmd("git", "checkout", dep.GetCommittish())
+	doCmd(cmd)
 
-	image := fmt.Sprintf("soapbox/%s:latest", app.slug)
+	if sha1Re.MatchString(committish) {
+		// use short committish from here on out
+		committish = committish[:7]
+	}
+
+	image := fmt.Sprintf("soapbox/%s:%s", app.slug, committish)
 
 	// build the docker image from the repo
+	cmd = exec.Command("docker", "build", "-t", image, ".")
+	cmd.Dir = filepath.Join(tempdir, appdir)
 	log.Printf("building docker image: %s", image)
-	doCmd("docker", "build", "-t", image, ".")
+	doCmd(cmd)
 
 	// export the docker image to a file
 	log.Printf("saving docker image %s to file", image)
@@ -694,15 +746,14 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	// upload docker image to S3 bucket
 	log.Println("upload docker image to S3")
 	const soapboxImageBucket = "soapbox-app-images"
-	// TODO(paulsmith): add committish to filename (and
-	// update downstream code to match for it when
-	// fetching on app instance)
-	objectKey := fmt.Sprintf("%s/%s.tar.gz", app.slug, app.slug)
+	objectKey := fmt.Sprintf("%s/%s-%s.tar.gz", app.slug, app.slug, committish)
 	do(func() error {
 		return newS3Storage(app.sess).uploadFile(soapboxImageBucket, objectKey, filename)
 	})
 
 	setState("evaluate-wait")
+
+	env := newEnvFromProtoBuf(dep.GetEnv())
 
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
@@ -719,17 +770,26 @@ DOCKER=/usr/bin/docker
 APP_NAME="{{.Slug}}"
 PORT="{{.ListenPort}}"
 RELEASE_BUCKET="{{.Bucket}}"
+RELEASE="{{.Release}}" # Version string/committish
 ENV="{{.Environment}}"
 IMAGE="{{.Image}}"
 
 # Retrieve the release from s3
-$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME.tar.gz /tmp/$APP_NAME.tar.gz
+$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Install the docker image
-$DOCKER image load -i /tmp/$APP_NAME.tar.gz
+$DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
 
 # Set up the runit dirs
 mkdir -p "/etc/sv/$APP_NAME"
+mkdir -p "/etc/sv/$APP_NAME/env"
+
+# Place env vars in /etc/sv/$APP_NAME/env
+{{- range .Variables}}
+cat << EOF > /etc/sv/$APP_NAME/env/{{.Name}}
+{{.Value}}
+EOF
+{{end}}
 
 # Logging configuration
 mkdir -p "/etc/sv/$APP_NAME/log"
@@ -747,7 +807,11 @@ chmod +x /etc/sv/$APP_NAME/log/run
 # Create the run script for the app
 cat << EOF > /etc/sv/$APP_NAME/run
 #!/bin/bash
-exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run --rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
+exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
+{{range .Variables -}}
+	--env {{.Name}} \
+{{end -}}
+--rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
 EOF
 
 # Mark the run file executable
@@ -755,6 +819,23 @@ chmod +x /etc/sv/$APP_NAME/run
 
 # Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
 ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
+
+# Switch to /etc/nginx/app.conf
+mv /etc/nginx/app.conf /etc/nginx/nginx.conf
+
+# nginx is now proxying to the app itself
+service nginx reload
+
+# Set the X-Soapbox-App-Version HTTP header
+sed -i.bak \
+  "s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\"/" \
+  /etc/nginx/nginx.conf
+
+# Safely remove backup
+rm -f /etc/nginx/nginx.conf.bak
+
+# Pick up changes to response header
+service nginx reload
 `
 	var tmpl *template.Template
 	do(func() error {
@@ -770,6 +851,8 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 			Bucket      string
 			Environment string
 			Image       string
+			Release     string
+			Variables   []*pb.EnvironmentVariable
 		}{
 			app.slug,
 			// TODO(paulsmith): un-hardcode
@@ -778,15 +861,10 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 			// TODO(paulsmith): unused in user-data script atm
 			"",
 			image,
+			committish,
+			env.vars,
 		})
 	})
-
-	env := newEnvFromProtoBuf(dep.GetEnv())
-
-	committish := dep.GetCommittish()
-	if sha1Re.MatchString(committish) {
-		committish = committish[:7]
-	}
 
 	var securityGroupId string
 	do(func() error {
@@ -816,14 +894,36 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 
 	const nAZs = 2 // number of availability zones
 
+	log.Printf("ensuring blue ASG has no instances")
+	do(func() error {
+		return blueASG.ensureEmpty()
+	})
+
 	log.Printf("updating blue ASG with new launch config")
 	do(func() error {
-		return blueASG.updateLaunchConfig(launchConfig, nAZs)
+		return blueASG.updateLaunchConfig(launchConfig)
 	})
+
+	defer func() {
+		log.Printf("cleaning up: terminating instances in blue ASG")
+		blueASG, err := app.getASGByColor(env, "blue")
+		if err != nil {
+			log.Printf("getting blue ASG: %v", err)
+		}
+		if err := blueASG.ensureEmpty(); err != nil {
+			log.Printf("ensuring blue ASG is empty: %v", err)
+		}
+		log.Printf("cleaning up: blue ASG empty")
+	}()
 
 	log.Printf("tagging blue ASG with release info")
 	do(func() error {
 		return blueASG.updateTags([]tag{{key: "release", value: committish}})
+	})
+
+	log.Printf("starting up blue ASG instances")
+	do(func() error {
+		return blueASG.resize(nAZs, nAZs*2, nAZs)
 	})
 
 	log.Printf("waiting for blue ASG instances to be ready")
@@ -854,11 +954,6 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 		return greenASG.detachFromLBTargetGroup(target.arn)
 	})
 
-	log.Printf("scaling down (stale) green ASG")
-	do(func() error {
-		return greenASG.resize(0, 0, 0)
-	})
-
 	// TODO(paulsmith): there is a race condition because we can't
 	// update the tags atomically, so a reader might see both
 	// groups as green, or blue, or some indeterminate combination
@@ -874,7 +969,7 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 
 	log.Printf("done")
 
-	// TODO(paulsmith): health check
+	// TODO(paulsmith): health check?
 
 	setState("success")
 }
@@ -899,7 +994,7 @@ func (g *targetGroup) waitUntilInstancesReady(asg *autoScalingGroup) error {
 		TargetGroupArn: aws.String(g.arn),
 		Targets:        targets,
 	}
-	deadline := time.Now().Add(5 * time.Minute)
+	deadline := time.Now().Add(10 * time.Minute)
 	for {
 		res, err := g.svc.DescribeTargetHealth(input)
 		if err != nil {
@@ -963,13 +1058,10 @@ func (g *autoScalingGroup) updateTags(tags []tag) error {
 	return nil
 }
 
-func (g *autoScalingGroup) updateLaunchConfig(lcName string, size int) error {
+func (g *autoScalingGroup) updateLaunchConfig(lcName string) error {
 	input := &autoscaling.UpdateAutoScalingGroupInput{
 		AutoScalingGroupName:    aws.String(g.name),
 		LaunchConfigurationName: aws.String(lcName),
-		DesiredCapacity:         aws.Int64(int64(size)),
-		MaxSize:                 aws.Int64(int64(size)),
-		MinSize:                 aws.Int64(int64(size)),
 	}
 	_, err := g.svc.UpdateAutoScalingGroup(input)
 	return err
@@ -1013,6 +1105,23 @@ func (g *autoScalingGroup) detachFromLBTargetGroup(targetGroupARN string) error 
 	return err
 }
 
+func (g *autoScalingGroup) ensureEmpty() error {
+	insts, err := g.getInstances()
+	if err != nil {
+		return errors.Wrap(err, "getting instances")
+	}
+	if len(insts) == 0 {
+		return nil
+	}
+	if err := g.resize(0, 0, 0); err != nil {
+		return errors.Wrap(err, "resizing group to 0")
+	}
+	if err := g.waitUntilGroupEmpty(); err != nil {
+		return errors.Wrap(err, "waiting until group empty")
+	}
+	return nil
+}
+
 func (g *autoScalingGroup) resize(min, max, desired int) error {
 	input := &autoscaling.UpdateAutoScalingGroupInput{
 		AutoScalingGroupName: aws.String(g.name),
@@ -1041,7 +1150,7 @@ func createLaunchConfig(app *application, env *environment, committish string, s
 
 	// TODO(paulsmith): get from Soapbox platform config
 	const iamInstanceProfile = "soapbox-app"
-	const appAmi = "ami-ef545cf9"
+	const appAmi = "ami-ceefb0b5"
 	const instanceType = "t2.micro"
 	const keyName = "soapbox-app"
 
@@ -1106,68 +1215,73 @@ func newAppFromProtoBuf(appPb *pb.Application) *application {
 type environment struct {
 	name string
 	slug string
+	vars []*pb.EnvironmentVariable
 }
 
 func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
 	return &environment{
 		name: envPb.GetName(),
 		slug: envPb.GetSlug(),
+		vars: envPb.GetVars(),
 	}
 }
 
-func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
+func (a *application) getASGByColor(env *environment, color string) (*autoScalingGroup, error) {
 	// get a list of all ASGs and iterate over until find
 	// "deploystate" tags for our app and environment
 
 	svc := autoscaling.New(a.sess)
 	asgs, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{})
 	if err != nil {
-		return nil, nil, fmt.Errorf("describing ASGs: %v", err)
+		return nil, errors.Wrap(err, "describing ASGs")
 	}
 
-	type mapkey struct {
-		app         string
-		env         string
-		deploystate string
-	}
-
-	groups := make(map[mapkey]*autoscaling.Group)
+	var group *autoscaling.Group
 
 	for _, asg := range asgs.AutoScalingGroups {
-		var key mapkey
+		found := make(map[string]bool)
 		for _, tag := range asg.Tags {
 			switch *tag.Key {
 			case "app":
-				key.app = *tag.Value
+				if *tag.Value == a.slug {
+					found["app"] = true
+				}
 			case "env":
-				key.env = *tag.Value
+				if *tag.Value == env.slug {
+					found["env"] = true
+				}
 			case deployStateTagName:
-				key.deploystate = *tag.Value
+				if *tag.Value == color {
+					found["deploystate"] = true
+				}
 			}
 		}
-		groups[key] = asg
+		if found["app"] && found["env"] && found["deploystate"] {
+			group = asg
+			break
+		}
 	}
 
-	blueASG, ok := groups[mapkey{app: a.slug, env: env.slug, deploystate: "blue"}]
-	if !ok {
-		return nil, nil, fmt.Errorf("could not find blue ASG in %s environment", env.slug)
+	if group == nil {
+		return nil, errors.Wrapf(err, "could not find %s ASG in %s environment", color, env.slug)
 	}
 
-	greenASG, ok := groups[mapkey{app: a.slug, env: env.slug, deploystate: "green"}]
-	if !ok {
-		return nil, nil, fmt.Errorf("could not find green ASG in %s environment", env.slug)
-	}
-
-	blue = &autoScalingGroup{
+	return &autoScalingGroup{
 		sess: a.sess,
 		svc:  svc,
-		name: *blueASG.AutoScalingGroupName,
+		name: *group.AutoScalingGroupName,
+	}, nil
+}
+
+func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
+	blue, err = a.getASGByColor(env, "blue")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting blue ASG")
 	}
 
-	green = &autoScalingGroup{
-		sess: a.sess,
-		svc:  svc,
-		name: *greenASG.AutoScalingGroupName,
+	green, err = a.getASGByColor(env, "green")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting green ASG")
 	}
 
 	return blue, green, nil
@@ -1195,7 +1309,7 @@ func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
 
 // wait for instances to be marked in-service in the ASG lifecycle
 func (g *autoScalingGroup) waitUntilInstancesReady(n int) error {
-	deadline := time.Now().Add(5 * time.Minute)
+	deadline := time.Now().Add(10 * time.Minute)
 	for {
 		count, err := inService(g.svc, g.name)
 		if err != nil {
@@ -1212,6 +1326,10 @@ func (g *autoScalingGroup) waitUntilInstancesReady(n int) error {
 }
 
 func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
+	return lifecycleState("InService", svc, name)
+}
+
+func lifecycleState(state string, svc *autoscaling.AutoScaling, name string) (int, error) {
 	out, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
 		AutoScalingGroupNames: []*string{aws.String(name)},
 	})
@@ -1222,11 +1340,28 @@ func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
 	count := 0
 	group := out.AutoScalingGroups[0]
 	for _, inst := range group.Instances {
-		if *inst.LifecycleState == "InService" {
+		if *inst.LifecycleState == state {
 			count++
 		}
 	}
 	return count, nil
+}
+
+func (g *autoScalingGroup) waitUntilGroupEmpty() error {
+	deadline := time.Now().Add(10 * time.Minute)
+	for {
+		instances, err := g.getInstances()
+		if err != nil {
+			return errors.Wrap(err, "getting group's instances")
+		}
+		if len(instances) == 0 {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timeout waiting for ASG to be empty)")
+		}
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func exportDockerImageToFile(dir string, image string) (string, error) {

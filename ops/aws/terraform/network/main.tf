@@ -133,17 +133,19 @@ resource "aws_alb" "application_alb" {
   }
 }
 
-# Route53 zone
-resource "aws_route53_zone" "application_zone" {
-  name    = "${var.application_domain}."
-  comment = "${var.application_name}: ${var.environment} domain"
-  vpc_id  = "${aws_vpc.application_vpc.id}"
+# Lookup of Route53 platform hosted zone
+data "aws_route53_zone" "platform_zone" {
+  name = "${var.platform_domain}."
+}
 
-  tags {
-    Name = "${var.application_name}: ${var.environment} hosted zone"
-    env  = "${var.environment}"
-    app  = "${var.application_name}"
-  }
+# Route53 record for <app-name>.<env>.soapbox.hosting
+resource "aws_route53_record" "application_subdomain" {
+  zone_id = "${data.aws_route53_zone.platform_zone.zone_id}"
+  name    = "${var.application_name}.${var.environment}"
+  type    = "CNAME"
+  ttl     = "300"
+
+  records = ["${aws_alb.application_alb.dns_name}"]
 }
 
 # IGW

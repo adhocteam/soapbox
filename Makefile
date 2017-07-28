@@ -1,8 +1,10 @@
+SOAPBOX_PKGS := $(shell go list ./... | grep -v /vendor/)
+
 all:
-	go install ./cmd/{soapboxd,soapboxcli}
+	go install $(SOAPBOX_PKGS)
 
 protobufs:
-	go list ./... | grep -v /vendor/ | xargs go generate
+	go generate $(SOAPBOX_PKGS)
 	make -C web
 
 models:

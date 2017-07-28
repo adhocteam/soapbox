@@ -40,9 +40,6 @@ func main() {
 
 	server := grpc.NewServer(serverInterceptor())
 	config := getConfig()
-	if config.AmiId == "" {
-		log.Fatal("SOAPBOX_AMI_ID must be set")
-	}
 	apiServer := api.NewServer(db, nil, config)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
@@ -60,14 +57,14 @@ func checkJobDependencies() error {
 
 func getConfig() *soapbox.Config {
 	c := &soapbox.Config{
-		AmiId:        "", // must be set in the environment
+		AmiName:      "soapbox-aws-linux-ami-*",
 		Domain:       "soapbox.hosting",
 		IamProfile:   "soapbox-app",
 		InstanceType: "t2.micro",
 		KeyName:      "soapbox-app",
 	}
-	if val := os.Getenv("SOAPBOX_AMI_ID"); val != "" {
-		c.AmiId = val
+	if val := os.Getenv("SOAPBOX_AMI_NAME"); val != "" {
+		c.AmiName = val
 	}
 	if val := os.Getenv("SOAPBOX_DOMAIN"); val != "" {
 		c.Domain = val

@@ -1,7 +1,7 @@
 package soapbox
 
 type Config struct {
-	AmiId        string
+	AmiName      string
 	Domain       string
 	IamProfile   string // IAM instance profile
 	KeyName      string

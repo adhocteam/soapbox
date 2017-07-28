@@ -753,12 +753,18 @@ ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
 # Switch to /etc/nginx/app.conf
 mv /etc/nginx/app.conf /etc/nginx/nginx.conf
 
+# nginx is now proxying to the app itself
+service nginx reload
+
 # Set the X-Soapbox-App-Version HTTP header
-sed -i .bak \
+sed -i.bak \
   "s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\"/" \
   /etc/nginx/nginx.conf
 
-rm /etc/nginx/nginx.conf.bak
+# Safely remove backup
+rm -f /etc/nginx/nginx.conf.bak
+
+# Pick up changes to response header
 service nginx reload
 `
 	var tmpl *template.Template

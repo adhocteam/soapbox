@@ -30,6 +30,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type server struct {
@@ -1394,4 +1395,81 @@ func exportDockerImageToFile(dir string, image string) (string, error) {
 	}
 
 	return path, nil
+}
+
+// Users
+func (s *server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*pb.User, error) {
+	password := []byte(user.Password)
+
+  // Hashing the password with the default cost of 10
+  hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+  if err != nil {
+    panic(err)
+  }
+
+	model := &models.User{
+		ID:                 int(user.Id),
+		Name:               user.GetName(),
+		Email:              user.GetEmail(),
+		EncryptedPassword:  string(hashedPassword),
+	}
+
+	if err := model.Insert(s.db); err != nil {
+		return nil, errors.Wrap(err, "inserting into db")
+	}
+
+	user.Id = int32(model.ID)
+
+	new_user := &pb.User{
+		Id:   int32(model.ID),
+		Name: model.Name,
+		Email: model.Email,
+		EncryptedPassword: model.EncryptedPassword,
+	}
+
+	return new_user, nil
+}
+
+func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
+	model, err := models.UserByEmail(s.db, req.Email)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting user by email from db")
+	}
+
+	user := &pb.User{
+		Id:   int32(model.ID),
+		Name: model.Name,
+		Email: model.Email,
+		EncryptedPassword: model.EncryptedPassword,
+		GithubOauthAccessToken: model.GithubOauthAccessToken,
+	}
+
+	return user, nil
+}
+
+func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.User, error) {
+	user_req := &pb.GetUserRequest{Email: req.Email}
+	user, err := s.GetUser(ctx, user_req)
+	err = bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password))
+
+	if err != nil {
+		return nil, errors.Wrap(err, "incorrect password")
+	}
+
+	return user, nil
+}
+
+func (s *server) AssignGithubOmniauthTokenToUser(ctx context.Context, user *pb.User) (*pb.User, error) {
+	model, err := models.UserByEmail(s.db, user.Email)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting user by email from db")
+	}
+
+	model.GithubOauthAccessToken = user.GithubOauthAccessToken
+
+	if err := model.Update(s.db); err != nil {
+		return nil, errors.Wrap(err, "updating in db")
+	}
+
+	return user, nil
 }

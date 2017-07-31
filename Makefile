@@ -3,12 +3,13 @@ SOAPBOX_PKGS := $(shell go list ./... | grep -v /vendor/)
 all:
 	go install $(SOAPBOX_PKGS)
 
+# Be sure to add any new .proto files to soapboxpb.go to generate .pb.go files
 protobufs:
 	go generate $(SOAPBOX_PKGS)
 	make -C web
 
 models:
-	PGSSLMODE=disable xo pgsql://localhost/soapbox_dev -o models
+	PGSSLMODE=disable xo pgsql://localhost/soapbox_dev -o models --template-path models/templates/
 
 .PHONY: models
 

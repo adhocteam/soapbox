@@ -8,17 +8,24 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/adhocteam/soapbox/buildinfo"
 	pb "github.com/adhocteam/soapbox/proto"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"google.golang.org/grpc"
 )
+
+var dryRun bool
 
 func main() {
 	serverAddr := flag.String("server", "127.0.0.1:9090", "host:port of server")
 	printVersion := flag.Bool("V", false, "print version and exit")
 
+	flag.BoolVar(&dryRun, "dry-run", false, "do not perform any changes")
 	flag.Parse()
 
 	if *printVersion {
@@ -57,6 +64,8 @@ func main() {
 			log.Fatalf("getting version: %v", err)
 		}
 		return
+	case "cleanup":
+		cmd = deployCleanup
 	default:
 		log.Fatalf("unknown command %q", flag.Arg(0))
 	}
@@ -147,5 +156,62 @@ func getVersion(ctx context.Context, client pb.VersionClient, args []string) err
 	fmt.Printf("    version: %s\n", resp.Version)
 	fmt.Printf(" git commit: %s\n", resp.GitCommit)
 	fmt.Printf(" build time: %s\n", resp.BuildTime)
+	return nil
+}
+
+func deployCleanup(ctx context.Context, client pb.ApplicationsClient, args []string) error {
+	args = args[1:]
+	if len(args) < 1 {
+		return fmt.Errorf("1 argument is required: application name")
+	}
+
+	appName := args[0]
+
+	sess, _ := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{Region: aws.String("us-east-1")},
+	})
+	svc := autoscaling.New(sess)
+
+	descAsgInput := autoscaling.DescribeAutoScalingGroupsInput{}
+	asgRes, err := svc.DescribeAutoScalingGroups(&descAsgInput)
+	if err != nil {
+		return fmt.Errorf("describing autoscaling groups: %s", err)
+	}
+
+	var inUseLcs map[string]bool
+	inUseLcs = make(map[string]bool)
+	for _, asg := range asgRes.AutoScalingGroups {
+		inUseLcs[*asg.LaunchConfigurationName] = true
+	}
+
+	descLcInput := autoscaling.DescribeLaunchConfigurationsInput{}
+	lcRes, err := svc.DescribeLaunchConfigurations(&descLcInput)
+	if err != nil {
+		return fmt.Errorf("describing autoscaling groups: %s", err)
+	}
+
+	var unusedLcs []string
+	for _, lc := range lcRes.LaunchConfigurations {
+		if !inUseLcs[*lc.LaunchConfigurationName] {
+			unusedLcs = append(unusedLcs, *lc.LaunchConfigurationName)
+		}
+	}
+
+	for _, lc := range unusedLcs {
+		if strings.HasPrefix(lc, appName) {
+			if !dryRun {
+				fmt.Println("deleting:", lc)
+				delLcInput := autoscaling.DeleteLaunchConfigurationInput{
+					LaunchConfigurationName: aws.String(lc),
+				}
+				_, err := svc.DeleteLaunchConfiguration(&delLcInput)
+				if err != nil {
+					return fmt.Errorf("deleting launch config: %s", err)
+				}
+			} else {
+				fmt.Println("would delete:", lc)
+			}
+		}
+	}
 	return nil
 }

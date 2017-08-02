@@ -18,7 +18,8 @@
           <th>Status</th>
           <td colspan="3"
             id="current-application"
-            data-id="<%= @app.id %>">
+            data-id="<%= @app.id %>"
+            data-state="<%= @app.creation_state %>">
             <%= @app.creation_state == :CREATE_INFRASTRUCTURE_WAIT ? render("shared/spinner") : nil %>
             <span><%= @app.creation_state %></span>
           </td>

@@ -44,7 +44,7 @@ class ApplicationsController < ApplicationController
 
     respond_to do |format|
       format.html
-      format.json { render json: @app.to_json }
+      format.json { render json: @app.as_json }
     end
   end
 end

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/adhocteam/soapbox"
-	"github.com/adhocteam/soapbox/api"
+	"github.com/adhocteam/soapbox/soapboxd"
 	pb "github.com/adhocteam/soapbox/soapboxpb"
 	"github.com/adhocteam/soapbox/version"
 	_ "github.com/lib/pq"
@@ -49,7 +49,7 @@ func main() {
 
 	server := grpc.NewServer(serverInterceptor())
 	config := getConfig()
-	apiServer := api.NewServer(db, nil, config)
+	apiServer := soapboxd.NewServer(db, nil, config)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
 	pb.RegisterDeploymentsServer(server, apiServer)

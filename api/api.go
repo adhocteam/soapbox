@@ -29,8 +29,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
-	"golang.org/x/net/context"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/net/context"
 )
 
 type server struct {
@@ -1401,17 +1401,17 @@ func exportDockerImageToFile(dir string, image string) (string, error) {
 func (s *server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*pb.User, error) {
 	password := []byte(user.Password)
 
-  // Hashing the password with the default cost of 10
-  hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
-  if err != nil {
-    panic(err)
-  }
+	// Hashing the password with the default cost of 10
+	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
 
 	model := &models.User{
-		ID:                 int(user.Id),
-		Name:               user.GetName(),
-		Email:              user.GetEmail(),
-		EncryptedPassword:  string(hashedPassword),
+		ID:                int(user.Id),
+		Name:              user.GetName(),
+		Email:             user.GetEmail(),
+		EncryptedPassword: string(hashedPassword),
 	}
 
 	if err := model.Insert(s.db); err != nil {
@@ -1420,14 +1420,14 @@ func (s *server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*p
 
 	user.Id = int32(model.ID)
 
-	new_user := &pb.User{
-		Id:   int32(model.ID),
-		Name: model.Name,
-		Email: model.Email,
+	newUser := &pb.User{
+		Id:                int32(model.ID),
+		Name:              model.Name,
+		Email:             model.Email,
 		EncryptedPassword: model.EncryptedPassword,
 	}
 
-	return new_user, nil
+	return newUser, nil
 }
 
 func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
@@ -1437,10 +1437,10 @@ func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User,
 	}
 
 	user := &pb.User{
-		Id:   int32(model.ID),
-		Name: model.Name,
-		Email: model.Email,
-		EncryptedPassword: model.EncryptedPassword,
+		Id:                     int32(model.ID),
+		Name:                   model.Name,
+		Email:                  model.Email,
+		EncryptedPassword:      model.EncryptedPassword,
 		GithubOauthAccessToken: model.GithubOauthAccessToken,
 	}
 

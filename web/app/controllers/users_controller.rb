@@ -13,7 +13,7 @@ class UsersController < ApplicationController
       req = Soapbox::CreateUserRequest.new(name: @form.name, email: @form.email, password: @form.password)
       @user = $api_user_client.create_user(req)
       session[:current_user_email] = @user.email
-      redirect_to user_path(@user)
+      redirect_to profile_user_path(@user)
     else
       render :new
     end
@@ -30,7 +30,7 @@ class UsersController < ApplicationController
       begin
         @user = $api_user_client.login_user(req)
         session[:current_user_email] = @user.email
-        redirect_to user_path(@user)
+        redirect_to profile_user_path(@user)
       rescue GRPC::Unknown
         @form.errors.add(:password, :invalid)
         render :login
@@ -45,7 +45,7 @@ class UsersController < ApplicationController
     @user.github_oauth_access_token = auth['credentials']['token']
     @user = $api_user_client.assign_github_omniauth_token_to_user(@user)
     refresh_user
-    redirect_to user_path(@user)
+    redirect_to profile_user_path(@user)
   end
 
   private

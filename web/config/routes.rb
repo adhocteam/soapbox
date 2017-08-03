@@ -8,7 +8,8 @@ Rails.application.routes.draw do
     resources :deployments
   end
 
-  resource :user, only: %i[new create show] do
+  resource :user, only: %i[new create] do
+    get :profile, on: :member, action: :show
     get :login
     post :login, to: 'users#attempt_login'
   end

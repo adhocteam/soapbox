@@ -24,7 +24,7 @@ type ListDeploymentRequest struct {
 func (m *ListDeploymentRequest) Reset()                    { *m = ListDeploymentRequest{} }
 func (m *ListDeploymentRequest) String() string            { return proto1.CompactTextString(m) }
 func (*ListDeploymentRequest) ProtoMessage()               {}
-func (*ListDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*ListDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *ListDeploymentRequest) GetApplicationId() int32 {
 	if m != nil {
@@ -40,7 +40,7 @@ type ListDeploymentResponse struct {
 func (m *ListDeploymentResponse) Reset()                    { *m = ListDeploymentResponse{} }
 func (m *ListDeploymentResponse) String() string            { return proto1.CompactTextString(m) }
 func (*ListDeploymentResponse) ProtoMessage()               {}
-func (*ListDeploymentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (*ListDeploymentResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 func (m *ListDeploymentResponse) GetDeployments() []*Deployment {
 	if m != nil {
@@ -56,7 +56,7 @@ type GetDeploymentRequest struct {
 func (m *GetDeploymentRequest) Reset()                    { *m = GetDeploymentRequest{} }
 func (m *GetDeploymentRequest) String() string            { return proto1.CompactTextString(m) }
 func (*GetDeploymentRequest) ProtoMessage()               {}
-func (*GetDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (*GetDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 func (m *GetDeploymentRequest) GetId() int32 {
 	if m != nil {
@@ -77,7 +77,7 @@ type Deployment struct {
 func (m *Deployment) Reset()                    { *m = Deployment{} }
 func (m *Deployment) String() string            { return proto1.CompactTextString(m) }
 func (*Deployment) ProtoMessage()               {}
-func (*Deployment) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (*Deployment) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
 func (m *Deployment) GetId() int32 {
 	if m != nil {
@@ -128,7 +128,7 @@ type StartDeploymentResponse struct {
 func (m *StartDeploymentResponse) Reset()                    { *m = StartDeploymentResponse{} }
 func (m *StartDeploymentResponse) String() string            { return proto1.CompactTextString(m) }
 func (*StartDeploymentResponse) ProtoMessage()               {}
-func (*StartDeploymentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (*StartDeploymentResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
 
 func (m *StartDeploymentResponse) GetId() int32 {
 	if m != nil {
@@ -144,7 +144,7 @@ type GetDeploymentStatusRequest struct {
 func (m *GetDeploymentStatusRequest) Reset()                    { *m = GetDeploymentStatusRequest{} }
 func (m *GetDeploymentStatusRequest) String() string            { return proto1.CompactTextString(m) }
 func (*GetDeploymentStatusRequest) ProtoMessage()               {}
-func (*GetDeploymentStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
+func (*GetDeploymentStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
 func (m *GetDeploymentStatusRequest) GetId() int32 {
 	if m != nil {
@@ -160,7 +160,7 @@ type GetDeploymentStatusResponse struct {
 func (m *GetDeploymentStatusResponse) Reset()                    { *m = GetDeploymentStatusResponse{} }
 func (m *GetDeploymentStatusResponse) String() string            { return proto1.CompactTextString(m) }
 func (*GetDeploymentStatusResponse) ProtoMessage()               {}
-func (*GetDeploymentStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
+func (*GetDeploymentStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
 
 func (m *GetDeploymentStatusResponse) GetState() string {
 	if m != nil {
@@ -176,7 +176,7 @@ type TeardownDeploymentRequest struct {
 func (m *TeardownDeploymentRequest) Reset()                    { *m = TeardownDeploymentRequest{} }
 func (m *TeardownDeploymentRequest) String() string            { return proto1.CompactTextString(m) }
 func (*TeardownDeploymentRequest) ProtoMessage()               {}
-func (*TeardownDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
+func (*TeardownDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
 
 func (m *TeardownDeploymentRequest) GetId() int32 {
 	if m != nil {
@@ -400,9 +400,9 @@ var _Deployments_serviceDesc = grpc.ServiceDesc{
 	Metadata: "deployment.proto",
 }
 
-func init() { proto1.RegisterFile("deployment.proto", fileDescriptor2) }
+func init() { proto1.RegisterFile("deployment.proto", fileDescriptor1) }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor1 = []byte{
 	// 433 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x53, 0xd1, 0x6e, 0xd3, 0x30,
 	0x14, 0x6d, 0x5a, 0xba, 0x69, 0x37, 0x6a, 0x07, 0x77, 0x05, 0x82, 0xd1, 0x46, 0x64, 0x60, 0x0a,

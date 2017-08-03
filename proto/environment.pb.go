@@ -24,7 +24,7 @@ type ListEnvironmentRequest struct {
 func (m *ListEnvironmentRequest) Reset()                    { *m = ListEnvironmentRequest{} }
 func (m *ListEnvironmentRequest) String() string            { return proto1.CompactTextString(m) }
 func (*ListEnvironmentRequest) ProtoMessage()               {}
-func (*ListEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*ListEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *ListEnvironmentRequest) GetApplicationId() int32 {
 	if m != nil {
@@ -40,7 +40,7 @@ type ListEnvironmentResponse struct {
 func (m *ListEnvironmentResponse) Reset()                    { *m = ListEnvironmentResponse{} }
 func (m *ListEnvironmentResponse) String() string            { return proto1.CompactTextString(m) }
 func (*ListEnvironmentResponse) ProtoMessage()               {}
-func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *ListEnvironmentResponse) GetEnvironments() []*Environment {
 	if m != nil {
@@ -56,7 +56,7 @@ type GetEnvironmentRequest struct {
 func (m *GetEnvironmentRequest) Reset()                    { *m = GetEnvironmentRequest{} }
 func (m *GetEnvironmentRequest) String() string            { return proto1.CompactTextString(m) }
 func (*GetEnvironmentRequest) ProtoMessage()               {}
-func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *GetEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -77,7 +77,7 @@ type Environment struct {
 func (m *Environment) Reset()                    { *m = Environment{} }
 func (m *Environment) String() string            { return proto1.CompactTextString(m) }
 func (*Environment) ProtoMessage()               {}
-func (*Environment) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
+func (*Environment) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 func (m *Environment) GetId() int32 {
 	if m != nil {
@@ -129,7 +129,7 @@ type EnvironmentVariable struct {
 func (m *EnvironmentVariable) Reset()                    { *m = EnvironmentVariable{} }
 func (m *EnvironmentVariable) String() string            { return proto1.CompactTextString(m) }
 func (*EnvironmentVariable) ProtoMessage()               {}
-func (*EnvironmentVariable) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+func (*EnvironmentVariable) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func (m *EnvironmentVariable) GetName() string {
 	if m != nil {
@@ -152,7 +152,7 @@ type DestroyEnvironmentRequest struct {
 func (m *DestroyEnvironmentRequest) Reset()                    { *m = DestroyEnvironmentRequest{} }
 func (m *DestroyEnvironmentRequest) String() string            { return proto1.CompactTextString(m) }
 func (*DestroyEnvironmentRequest) ProtoMessage()               {}
-func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
+func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
 
 func (m *DestroyEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -168,7 +168,7 @@ type CopyEnvironmentRequest struct {
 func (m *CopyEnvironmentRequest) Reset()                    { *m = CopyEnvironmentRequest{} }
 func (m *CopyEnvironmentRequest) String() string            { return proto1.CompactTextString(m) }
 func (*CopyEnvironmentRequest) ProtoMessage()               {}
-func (*CopyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{6} }
+func (*CopyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
 
 func (m *CopyEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -391,9 +391,9 @@ var _Environments_serviceDesc = grpc.ServiceDesc{
 	Metadata: "environment.proto",
 }
 
-func init() { proto1.RegisterFile("environment.proto", fileDescriptor3) }
+func init() { proto1.RegisterFile("environment.proto", fileDescriptor2) }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor2 = []byte{
 	// 394 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x5d, 0x6b, 0xe2, 0x40,
 	0x14, 0x35, 0x6a, 0x14, 0xaf, 0x9a, 0x5d, 0x67, 0x5d, 0x37, 0x1b, 0xf6, 0x23, 0x0c, 0x2c, 0x1b,

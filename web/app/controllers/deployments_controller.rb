@@ -11,11 +11,24 @@ class DeploymentsController < ApplicationController
       redirect_to new_application_deployment_path
     else
       @deployments = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }
+      @active_by_env = {}
+      @deployments.each do |d|
+        env = d.env.slug
+        if d.state == 'success' && !@active_by_env.key?(env)
+          @active_by_env[env] = d
+        end
+      end
     end
   end
 
   def new
-    @form = CreateDeploymentForm.new
+    req = Soapbox::ListEnvironmentRequest.new(application_id: params[:application_id].to_i)
+    res = $api_environment_client.list_environments(req)
+    if res.environments.count == 0
+      redirect_to new_application_environment_path
+    else
+      @form = CreateDeploymentForm.new
+    end
   end
 
   def create

@@ -2,3 +2,5 @@
 *.tfstate.*
 *.tfvars
 .terraform/
+.go-pkgset
+.go-version

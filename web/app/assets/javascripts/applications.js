@@ -34,7 +34,7 @@
                 element.classList.add('latest');
                 element.classList.remove('active');
               }
-              const currentState = JSON.parse(req.responseText).creationState
+              const currentState = JSON.parse(req.responseText).creation_state
               element.dataset.state = currentState;
               element.getElementsByTagName("span")[0].innerHTML = currentState;
             } else {

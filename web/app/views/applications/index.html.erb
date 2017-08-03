@@ -4,24 +4,17 @@
 	<div class="text-right mb-3">
 	    <%= link_to '+ New Application', new_application_path, class: "btn btn-primary" %>
 	</div>
-	<table class="table table-striped">
-	    <thead>
-		<tr>
-		    <th>Name</th>
-		    <th></th>
-		</tr>
-	    </thead>
-	    <tbody>
-		<% @applications.each do |app| %>
-		    <tr scope="row">
-			<td>
-			    <%= link_to app.name, application_path(app.id) %>
-			</td>
-			<td>
-			</td>
-		    </tr>
-		<% end %>
-	    </tbody>
-	</table>
+	<ul class="applications-list list-unstyled">
+	    <% @applications.each do |app| %>
+	        <li>
+	            <h3>
+	                <%= link_to app.name, application_path(app.id) %>
+	            </h3>
+	            <div class="">
+	                <small>Last deployed on July 28, 2017</small>
+	            </div>
+	        </li>
+	    <% end %>
+	</ul>
     </div>
 </div>

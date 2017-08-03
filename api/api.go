@@ -19,9 +19,10 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/adhocteam/soapbox"
 	"github.com/adhocteam/soapbox/models"
-	"github.com/adhocteam/soapbox/soapbox"
 	pb "github.com/adhocteam/soapbox/soapboxpb"
+	"github.com/adhocteam/soapbox/version"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
@@ -603,6 +604,14 @@ func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentS
 
 func (s *server) TeardownDeployment(ctx context.Context, req *pb.TeardownDeploymentRequest) (*pb.Empty, error) {
 	return nil, nil
+}
+
+func (s *server) GetVersion(ctx context.Context, req *pb.Empty) (*pb.GetVersionResponse, error) {
+	return &pb.GetVersionResponse{
+		Version:   version.Version,
+		GitCommit: version.GitCommit,
+		BuildTime: version.BuildTime,
+	}, nil
 }
 
 var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)

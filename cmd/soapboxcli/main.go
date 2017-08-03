@@ -10,14 +10,23 @@ import (
 	"strconv"
 
 	pb "github.com/adhocteam/soapbox/soapboxpb"
+	"github.com/adhocteam/soapbox/version"
 
 	"google.golang.org/grpc"
 )
 
 func main() {
 	serverAddr := flag.String("server", "127.0.0.1:9090", "host:port of server")
+	printVersion := flag.Bool("V", false, "print version and exit")
 
 	flag.Parse()
+
+	if *printVersion {
+		fmt.Printf("        version: %s\n", version.Version)
+		fmt.Printf("     git commit: %s\n", version.GitCommit)
+		fmt.Printf("     build time: %s\n", version.BuildTime)
+		return
+	}
 
 	if flag.NArg() < 1 {
 		usage()
@@ -43,6 +52,11 @@ func main() {
 		cmd = listApplications
 	case "get-application":
 		cmd = getApplication
+	case "get-version":
+		if err := getVersion(ctx, pb.NewVersionClient(conn), nil); err != nil {
+			log.Fatalf("getting version: %v", err)
+		}
+		return
 	default:
 		log.Fatalf("unknown command %q", flag.Arg(0))
 	}
@@ -120,5 +134,18 @@ func getApplication(ctx context.Context, client pb.ApplicationsClient, args []st
 	fmt.Printf("Dockerfile path:     %s\n", app.DockerfilePath)
 	fmt.Printf("entrypoint override: %s\n", app.EntrypointOverride)
 	fmt.Printf("description:\n%s\n", app.Description)
+	return nil
+}
+
+func getVersion(ctx context.Context, client pb.VersionClient, args []string) error {
+	resp, err := client.GetVersion(ctx, &pb.Empty{})
+	if err != nil {
+		return fmt.Errorf("getting version: %v", err)
+	}
+	fmt.Println("soapboxd")
+	fmt.Println("--------")
+	fmt.Printf("    version: %s\n", resp.Version)
+	fmt.Printf(" git commit: %s\n", resp.GitCommit)
+	fmt.Printf(" build time: %s\n", resp.BuildTime)
 	return nil
 }

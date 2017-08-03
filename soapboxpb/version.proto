@@ -1,0 +1,15 @@
+syntax = "proto3";
+package soapbox;
+option go_package = "soapboxpb";
+
+import "soapbox.proto";
+
+service Version {
+    rpc GetVersion (soapbox.Empty) returns (GetVersionResponse) {}
+}
+
+message GetVersionResponse {
+    string version = 1;
+    string git_commit = 2;
+    string build_time = 3;
+}

@@ -11,9 +11,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/adhocteam/soapbox"
 	"github.com/adhocteam/soapbox/api"
-	"github.com/adhocteam/soapbox/soapbox"
 	pb "github.com/adhocteam/soapbox/soapboxpb"
+	"github.com/adhocteam/soapbox/version"
 	_ "github.com/lib/pq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -21,8 +22,16 @@ import (
 
 func main() {
 	port := flag.Int("port", 9090, "port to listen on")
+	printVersion := flag.Bool("V", false, "print version and exit")
 
 	flag.Parse()
+
+	if *printVersion {
+		fmt.Printf("        version: %s\n", version.Version)
+		fmt.Printf("     git commit: %s\n", version.GitCommit)
+		fmt.Printf("     build time: %s\n", version.BuildTime)
+		return
+	}
 
 	if err := checkJobDependencies(); err != nil {
 		log.Fatalf("checking for dependencies: %v", err)
@@ -44,6 +53,7 @@ func main() {
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
 	pb.RegisterDeploymentsServer(server, apiServer)
+	pb.RegisterVersionServer(server, apiServer)
 	log.Printf("soapboxd listening on 0.0.0.0:%d", *port)
 	log.Fatal(server.Serve(ln))
 }

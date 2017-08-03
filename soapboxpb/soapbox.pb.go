@@ -9,6 +9,7 @@ It is generated from these files:
 	application.proto
 	deployment.proto
 	environment.proto
+	version.proto
 
 It has these top-level messages:
 	Empty
@@ -30,6 +31,7 @@ It has these top-level messages:
 	EnvironmentVariable
 	DestroyEnvironmentRequest
 	CopyEnvironmentRequest
+	GetVersionResponse
 */
 package soapboxpb
 

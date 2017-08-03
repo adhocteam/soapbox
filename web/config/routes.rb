@@ -8,5 +8,7 @@ Rails.application.routes.draw do
     resources :deployments
   end
 
+  get '/about', to: 'about#index'
+
   root 'dashboard#index'
 end

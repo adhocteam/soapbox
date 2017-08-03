@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/adhocteam/soapbox"
+	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/adhocteam/soapbox/soapboxd"
-	pb "github.com/adhocteam/soapbox/soapboxpb"
 	"github.com/adhocteam/soapbox/version"
 	_ "github.com/lib/pq"
 	"golang.org/x/net/context"

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	pb "github.com/adhocteam/soapbox/soapboxpb"
+	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/adhocteam/soapbox/version"
 
 	"google.golang.org/grpc"

@@ -1,6 +1,6 @@
 syntax = "proto3";
 package soapbox;
-option go_package = "soapboxpb";
+option go_package = "proto";
 
 import "soapbox.proto";
 

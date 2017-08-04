@@ -3,8 +3,10 @@ package soapboxd
 import (
 	"bytes"
 	"encoding/json"
+	"time"
 
 	pb "github.com/adhocteam/soapbox/proto"
+	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 
 	"golang.org/x/net/context"
@@ -18,7 +20,10 @@ func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRe
 	}
 	var envs []*pb.Environment
 	for rows.Next() {
-		var env pb.Environment
+		env := &pb.Environment{
+			CreatedAt: new(gpb.Timestamp),
+		}
+		var createdAt time.Time
 		var vars []byte
 		dest := []interface{}{
 			&env.Id,
@@ -26,15 +31,16 @@ func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRe
 			&env.Name,
 			&env.Slug,
 			&vars,
-			&env.CreatedAt,
+			&createdAt,
 		}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, errors.Wrap(err, "scanning db row")
 		}
+		setPbTimestamp(env.CreatedAt, createdAt)
 		if err := json.Unmarshal(vars, &env.Vars); err != nil {
 			return nil, errors.Wrap(err, "unmarshalling env vars JSON")
 		}
-		envs = append(envs, &env)
+		envs = append(envs, env)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "iterating over db result set")

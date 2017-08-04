@@ -24,6 +24,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/s3"
+	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
@@ -36,22 +37,26 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 	}
 	var deployments []*pb.Deployment
 	for rows.Next() {
-		var d pb.Deployment
-		d.Application = &pb.Application{}
-		d.Env = &pb.Environment{}
+		d := &pb.Deployment{
+			Application: &pb.Application{},
+			Env:         &pb.Environment{},
+			CreatedAt:   new(gpb.Timestamp),
+		}
+		var createdAt time.Time
 		dest := []interface{}{
 			&d.Id,
 			&d.Application.Id,
 			&d.Env.Id,
 			&d.Committish,
 			&d.State,
-			&d.CreatedAt,
+			&createdAt,
 			&d.Env.Name,
 		}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, errors.Wrap(err, "scanning db row")
 		}
-		deployments = append(deployments, &d)
+		setPbTimestamp(d.CreatedAt, createdAt)
+		deployments = append(deployments, d)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "iteration over result set")

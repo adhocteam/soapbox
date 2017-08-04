@@ -4,6 +4,7 @@
 require 'google/protobuf'
 
 require 'soapbox_pb'
+require 'google/protobuf/timestamp_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.ListEnvironmentRequest" do
     optional :application_id, :int32, 1
@@ -20,7 +21,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :name, :string, 3
     optional :slug, :string, 4
     repeated :vars, :message, 5, "soapbox.EnvironmentVariable"
-    optional :created_at, :string, 6
+    optional :created_at, :message, 6, "google.protobuf.Timestamp"
   end
   add_message "soapbox.EnvironmentVariable" do
     optional :name, :string, 1

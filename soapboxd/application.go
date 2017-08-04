@@ -14,6 +14,7 @@ import (
 
 	"github.com/adhocteam/soapbox/models"
 	pb "github.com/adhocteam/soapbox/proto"
+	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
@@ -59,7 +60,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	app.Id = int32(model.ID)
 
 	// start a terraform job in the background
-	go s.createAppInfrastructure(app)
+	//	go s.createAppInfrastructure(app)
 
 	return app, nil
 }
@@ -231,12 +232,16 @@ func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApp
 	var apps []*pb.Application
 
 	for rows.Next() {
-		var a pb.Application
-		dest := []interface{}{&a.Id, &a.Name, &a.Description, &a.CreatedAt}
+		app := &pb.Application{
+			CreatedAt: new(gpb.Timestamp),
+		}
+		var createdAt time.Time
+		dest := []interface{}{&app.Id, &app.Name, &app.Description, &createdAt}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, errors.Wrap(err, "scanning db row")
 		}
-		apps = append(apps, &a)
+		setPbTimestamp(app.CreatedAt, createdAt)
+		apps = append(apps, app)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -295,8 +300,6 @@ func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
 	}
 }
 
-const timestampFormat = "2006-01-02T15:04:05"
-
 func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
 	model, err := models.ApplicationByID(s.db, int(req.Id))
 	if err != nil {
@@ -304,10 +307,11 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	}
 
 	app := &pb.Application{
-		Id:   int32(model.ID),
-		Name: model.Name,
-		Slug: model.Slug,
-		Type: appTypeModelToPb(model.Type),
+		Id:        int32(model.ID),
+		Name:      model.Name,
+		Slug:      model.Slug,
+		Type:      appTypeModelToPb(model.Type),
+		CreatedAt: new(gpb.Timestamp),
 	}
 
 	if model.Description.Valid {
@@ -328,11 +332,14 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	if model.EntrypointOverride.Valid {
 		app.EntrypointOverride = model.EntrypointOverride.String
 	}
-	// TODO(paulsmith): have a global timestamp format across the
-	// Go and Rails apps
-	app.CreatedAt = model.CreatedAt.Format(timestampFormat)
+
+	setPbTimestamp(app.CreatedAt, model.CreatedAt)
 
 	app.CreationState = creationStateTypeModelToPb(model.CreationState)
 
 	return app, nil
+}
+
+func setPbTimestamp(ts *gpb.Timestamp, t time.Time) {
+	ts.Seconds = t.Unix()
 }

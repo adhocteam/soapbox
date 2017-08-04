@@ -5,6 +5,7 @@ option go_package = "proto";
 import "soapbox.proto";
 import "application.proto";
 import "environment.proto";
+import "google/protobuf/timestamp.proto";
 
 service Deployments {
     rpc ListDeployments (ListDeploymentRequest) returns (ListDeploymentResponse) {}
@@ -32,7 +33,7 @@ message Deployment {
     soapbox.Environment env = 3;
     string committish = 4;
     string state = 5;
-    string created_at = 6;
+    google.protobuf.Timestamp created_at = 6;
 }
 
 message StartDeploymentResponse {

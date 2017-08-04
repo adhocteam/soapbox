@@ -10,12 +10,8 @@ LDFLAGS += -X "github.com/adhocteam/soapbox/version.BuildTime=$(shell date)"
 all:
 	go install -ldflags '$(LDFLAGS)' $(SOAPBOX_PKGS)
 
-PROTOBUFDIR = soapboxpb
-PROTOBUFS = $(wildcard $(PROTOBUFDIR)/*.proto)
-GOCODEPBDIR = proto
-
 protobufs:
-	protoc -I$(PROTOBUFDIR) --go_out=plugins=grpc:$(GOCODEPBDIR) $(PROTOBUFS)
+	make -C soapboxpb
 	make -C web
 
 models:

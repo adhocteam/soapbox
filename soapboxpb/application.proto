@@ -3,6 +3,7 @@ package soapbox;
 option go_package = "proto";
 
 import "soapbox.proto";
+import "google/protobuf/timestamp.proto";
 
 service Applications {
     rpc ListApplications (soapbox.Empty) returns (ListApplicationResponse) {}
@@ -35,7 +36,7 @@ message Application {
     string dockerfile_path = 6;
     string entrypoint_override = 7;
     ApplicationType type = 8;
-    string created_at = 9;
+    google.protobuf.Timestamp created_at = 9;
     string slug = 10;
     string internal_dns = 11;
     CreationState creation_state = 12;

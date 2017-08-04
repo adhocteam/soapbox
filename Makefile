@@ -12,12 +12,13 @@ LDFLAGS += -X "github.com/adhocteam/soapbox/buildinfo.BuildTime=$(shell date)"
 all:
 	go install -ldflags '$(LDFLAGS)' $(SOAPBOX_PKGS)
 
+# Be sure to add any new .proto files to soapboxpb.go to generate .pb.go files
 protobufs:
 	make -C soapboxpb
 	make -C web
 
 models:
-	PGSSLMODE=disable xo pgsql://localhost/soapbox_dev -o models
+	PGSSLMODE=disable xo pgsql://localhost/soapbox_dev -o models --template-path models/templates/
 
 .PHONY: models
 

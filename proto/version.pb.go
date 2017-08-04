@@ -26,7 +26,7 @@ type GetVersionResponse struct {
 func (m *GetVersionResponse) Reset()                    { *m = GetVersionResponse{} }
 func (m *GetVersionResponse) String() string            { return proto1.CompactTextString(m) }
 func (*GetVersionResponse) ProtoMessage()               {}
-func (*GetVersionResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*GetVersionResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 func (m *GetVersionResponse) GetVersion() string {
 	if m != nil {
@@ -125,9 +125,9 @@ var _Version_serviceDesc = grpc.ServiceDesc{
 	Metadata: "version.proto",
 }
 
-func init() { proto1.RegisterFile("version.proto", fileDescriptor4) }
+func init() { proto1.RegisterFile("version.proto", fileDescriptor5) }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor5 = []byte{
 	// 174 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0x4b, 0x2d, 0x2a,
 	0xce, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2f, 0xce, 0x4f, 0x2c, 0x48,

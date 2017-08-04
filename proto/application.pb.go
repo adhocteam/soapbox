@@ -9,6 +9,7 @@ It is generated from these files:
 	deployment.proto
 	environment.proto
 	soapbox.proto
+	user.proto
 	version.proto
 
 It has these top-level messages:
@@ -31,6 +32,11 @@ It has these top-level messages:
 	DestroyEnvironmentRequest
 	CopyEnvironmentRequest
 	Empty
+	User
+	CreateUserRequest
+	GetUserRequest
+	LoginUserRequest
+	LoginUserResponse
 	GetVersionResponse
 */
 package proto

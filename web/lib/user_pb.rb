@@ -3,6 +3,7 @@
 
 require 'google/protobuf'
 
+require 'google/protobuf/timestamp_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.User" do
     optional :id, :int32, 1
@@ -10,7 +11,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :email, :string, 3
     optional :encrypted_password, :string, 4
     optional :github_oauth_access_token, :string, 5
-    optional :created_at, :string, 6
+    optional :created_at, :message, 6, "google.protobuf.Timestamp"
   end
   add_message "soapbox.CreateUserRequest" do
     optional :id, :int32, 1
@@ -25,6 +26,10 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :email, :string, 1
     optional :password, :string, 2
   end
+  add_message "soapbox.LoginUserResponse" do
+    optional :error, :string, 1
+    optional :user, :message, 2, "soapbox.User"
+  end
 end
 
 module Soapbox
@@ -32,4 +37,5 @@ module Soapbox
   CreateUserRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreateUserRequest").msgclass
   GetUserRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetUserRequest").msgclass
   LoginUserRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.LoginUserRequest").msgclass
+  LoginUserResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.LoginUserResponse").msgclass
 end

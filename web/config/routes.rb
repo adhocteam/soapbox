@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   end
 
   get '/auth/:provider/callback', to: 'users#omniauth'
+  get '/about', to: 'about#index'
 
   root 'dashboard#index'
 end

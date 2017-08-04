@@ -18,7 +18,7 @@
 				<span class="environment"><%= deployment.env.name %></span>
 			    </h6>
 			    <p class="card-text text-muted">
-      				Deployed at: <%= Time.parse(deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
+      				Deployed at: <%= Time.at(deployment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %>
 			    </p>
 			    <p class="card-text link-to-app">
 				<a href="http://<%= @app.slug %>.<%= deployment.env.slug %>.soapbox.hosting" target="_blank" class="btn btn-success">Open app</a>
@@ -61,7 +61,7 @@
 			    <span name="deployment-state"><%= deployment.state %></span>
       			</td>
 			<td>
-      			    <%= Time.parse(deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
+      			    <%= Time.at(deployment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %>
       			</td>
     		    </tr>
     		<% end %>

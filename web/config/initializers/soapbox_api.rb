@@ -10,3 +10,4 @@ $api_client = Soapbox::Applications::Stub.new(api_server, :this_channel_is_insec
 $api_environment_client = Soapbox::Environments::Stub.new(api_server, :this_channel_is_insecure)
 $api_deployment_client = Soapbox::Deployments::Stub.new(api_server, :this_channel_is_insecure)
 $api_user_client = Soapbox::Users::Stub.new(api_server, :this_channel_is_insecure)
+$api_version_client = Soapbox::Version::Stub.new(api_server, :this_channel_is_insecure)

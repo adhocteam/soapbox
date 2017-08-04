@@ -16,7 +16,7 @@ module Soapbox
 
       rpc :CreateUser, CreateUserRequest, User
       rpc :GetUser, GetUserRequest, User
-      rpc :LoginUser, LoginUserRequest, User
+      rpc :LoginUser, LoginUserRequest, LoginUserResponse
       rpc :AssignGithubOmniauthTokenToUser, User, User
     end
 

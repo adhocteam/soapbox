@@ -10,7 +10,7 @@ class DeploymentsController < ApplicationController
     if res.deployments.count == 0
       redirect_to new_application_deployment_path
     else
-      @deployments = res.deployments.sort_by { |d| -Time.parse(d.created_at).to_i }
+      @deployments = res.deployments.sort_by { |d| -d.created_at.seconds }
       @active_by_env = {}
       @deployments.each do |d|
         env = d.env.slug

@@ -1,8 +1,9 @@
 syntax = "proto3";
 package soapbox;
-option go_package = "soapboxpb";
+option go_package = "proto";
 
 import "soapbox.proto";
+import "google/protobuf/timestamp.proto";
 
 service Environments {
     rpc ListEnvironments (ListEnvironmentRequest) returns (ListEnvironmentResponse) {}
@@ -30,7 +31,7 @@ message Environment {
     string name = 3;
     string slug = 4;
     repeated EnvironmentVariable vars = 5;
-    string created_at = 6;
+    google.protobuf.Timestamp created_at = 6;
 }
 
 message EnvironmentVariable {

@@ -1,4 +1,4 @@
-package api
+package soapboxd
 
 import "testing"
 

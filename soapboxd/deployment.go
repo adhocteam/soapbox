@@ -1,497 +1,33 @@
-package api
+package soapboxd
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strings"
-	"text/template"
 	"time"
 
+	"github.com/adhocteam/soapbox"
 	"github.com/adhocteam/soapbox/models"
-	"github.com/adhocteam/soapbox/soapbox"
-	pb "github.com/adhocteam/soapbox/soapboxpb"
+	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/aws/aws-sdk-go/service/s3"
+	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
-	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 )
-
-type server struct {
-	db         *sql.DB
-	httpClient *http.Client
-	config     *soapbox.Config
-}
-
-type state string
-
-func NewServer(db *sql.DB, httpClient *http.Client, config *soapbox.Config) *server {
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-	return &server{
-		db:         db,
-		httpClient: httpClient,
-		config:     config,
-	}
-}
-
-func newNullString(s string) sql.NullString {
-	return sql.NullString{String: s, Valid: true}
-}
-
-func nullString(ns sql.NullString) string {
-	if ns.Valid {
-		return ns.String
-	}
-	return ""
-}
-
-func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*pb.Application, error) {
-	// verify access to the GitHub repo (if private, then need
-	// OAuth2 token: this is not the responsibility of this
-	// module, the caller should supply this server with an HTTP
-	// client configured with the token)
-	err := canAccessURL(s.httpClient, app.GetGithubRepoUrl())
-	if err != nil {
-		return nil, errors.Wrap(err, "couldn't connect to Github repo")
-	}
-
-	// supply a default Dockerfile path ("Dockerfile")
-	dockerfilePath := app.GetDockerfilePath()
-	if dockerfilePath == "" {
-		dockerfilePath = "Dockerfile"
-	}
-
-	app.Slug = slugify(app.GetName())
-
-	model := &models.Application{
-		ID:                 int(app.Id),
-		Name:               app.GetName(),
-		Slug:               app.GetSlug(),
-		Description:        newNullString(app.Description),
-		ExternalDNS:        newNullString(app.ExternalDns),
-		GithubRepoURL:      newNullString(app.GithubRepoUrl),
-		DockerfilePath:     newNullString(app.DockerfilePath),
-		EntrypointOverride: newNullString(app.EntrypointOverride),
-		Type:               appTypePbToModel(app.Type),
-		InternalDNS:        newNullString(app.InternalDns),
-		CreatedAt:          time.Now(),
-		UpdatedAt:          time.Now(),
-		CreationState:      models.CreationStateTypeCreateInfrastructureWait,
-	}
-
-	if err := model.Insert(s.db); err != nil {
-		return nil, errors.Wrap(err, "inserting into db")
-	}
-
-	app.Id = int32(model.ID)
-
-	// start a terraform job in the background
-	go s.createAppInfrastructure(app)
-
-	return app, nil
-}
-
-func (s *server) createAppInfrastructure(app *pb.Application) {
-	setState := func(state pb.CreationState) {
-		app.CreationState = state
-		updateSQL := "UPDATE applications SET creation_state = $1 WHERE id = $2"
-		if _, err := s.db.Exec(updateSQL, creationStateTypePbToModel(state), app.GetId()); err != nil {
-			errors.Wrap(err, "updating applications table")
-		}
-	}
-
-	do := func(f func() error) {
-		if app.CreationState != pb.CreationState_FAILED {
-			if err := f(); err != nil {
-				log.Printf("app creation failed: %v", err)
-				setState(pb.CreationState_FAILED)
-			}
-		}
-	}
-
-	switch app.GetCreationState() {
-	case pb.CreationState_CREATE_INFRASTRUCTURE_WAIT:
-		// run terraform apply on VPC config TODO(paulsmith):
-		// bundle the terraform configs with the Soapbox app
-		// and make them available in a well-known location
-		terraformPath := filepath.Join("ops", "aws", "terraform")
-		scriptsPath := filepath.Join(terraformPath, "scripts")
-
-		slug := app.GetSlug()
-		var networkDir, deploymentDir string
-
-		do(func() error {
-			log.Printf("generating terraform configuration - network")
-			cmd := exec.Command("./init_app_tf.sh",
-				"-a", slug,
-				"-e", "test", // TODO(paulsmith): FIXME
-				"-t", "network")
-			cmd.Dir = scriptsPath
-			var buf bytes.Buffer
-			cmd.Stdout = &buf
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				return errors.Wrap(err, "running init_app_tf.sh for network")
-			}
-			networkDir = strings.TrimSpace(buf.String())
-			return nil
-		})
-
-		if networkDir != "" {
-			defer os.RemoveAll(networkDir)
-		}
-
-		do(func() error {
-			log.Printf("running terraform plan - network")
-			cmd := exec.Command("terraform", "plan",
-				"-var", "application_name="+slug,
-				"-var", "environment=test", // TODO(paulsmith): FIXME
-				"-no-color")
-			cmd.Dir = networkDir
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd.Run()
-		})
-
-		do(func() error {
-			log.Printf("running terraform apply - network")
-			cmd := exec.Command("terraform", "apply",
-				"-var", "application_name="+slug,
-				"-var", "environment=test", // TODO(paulsmith): FIXME
-				"-no-color")
-			cmd.Dir = networkDir
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd.Run()
-		})
-
-		do(func() error {
-			log.Printf("generating terraform configuration - deployment")
-			cmd := exec.Command("./init_app_tf.sh",
-				"-a", slug,
-				"-e", "test", // TODO(paulsmith): FIXME
-				"-t", "deployment")
-			cmd.Dir = scriptsPath
-			var buf bytes.Buffer
-			cmd.Stdout = &buf
-			cmd.Stderr = os.Stderr
-			if err := cmd.Run(); err != nil {
-				return errors.Wrap(err, "running init_app_tf.sh for deployment")
-			}
-			deploymentDir = strings.TrimSpace(buf.String())
-			return nil
-		})
-
-		if deploymentDir != "" {
-			defer os.RemoveAll(deploymentDir)
-		}
-
-		do(func() error {
-			cmd := exec.Command("terraform", "get")
-			cmd.Dir = filepath.Join(deploymentDir, "asg")
-			return cmd.Run()
-		})
-
-		do(func() error {
-			log.Printf("running terraform plan - deployment")
-			cmd := exec.Command("terraform", "plan",
-				"-var", "application_name="+slug,
-				"-var", "environment=test", // TODO(paulsmith): FIXME
-				"-no-color")
-			cmd.Dir = filepath.Join(deploymentDir, "asg")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd.Run()
-		})
-
-		do(func() error {
-			log.Printf("running terraform apply - deployment")
-			cmd := exec.Command("terraform", "apply",
-				"-var", "application_name="+slug,
-				"-var", "environment=test", // TODO(paulsmith): FIXME
-				"-no-color")
-			cmd.Dir = filepath.Join(deploymentDir, "asg")
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-			return cmd.Run()
-		})
-
-		do(func() error {
-			setState(pb.CreationState_SUCCEEDED)
-			log.Printf("done")
-			return nil
-		})
-	case pb.CreationState_SUCCEEDED:
-		log.Printf("creation already succeeded, doing nothing")
-	case pb.CreationState_FAILED:
-		// TODO(paulsmith): advance this to
-		// CREATE_INFRASTRUCTURE_WAIT state with some retry
-		// logic like max attempts
-		log.Printf("creation previously failed, should retry")
-	}
-}
-
-type httpHead interface {
-	Head(url string) (*http.Response, error)
-}
-
-func canAccessURL(client httpHead, url string) error {
-	resp, err := client.Head(url)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't make HTTP HEAD request to %s", url)
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-	resp.Body.Close()
-	if resp.StatusCode/100 != 2 {
-		return errors.Wrapf(err, "non-success HTTP status response from %s: %d", url, resp.StatusCode)
-	}
-	return nil
-}
-
-var (
-	slugSpaceRe      = regexp.MustCompile(`\s+`)
-	slugNotAllowedRe = regexp.MustCompile(`[^a-z0-9-]`)
-	slugRepeatDashRe = regexp.MustCompile(`-{2,}`)
-)
-
-func slugify(s string) string {
-	s = strings.TrimSpace(strings.ToLower(s))
-	s = slugSpaceRe.ReplaceAllString(s, "-")
-	s = slugNotAllowedRe.ReplaceAllString(s, "")
-	s = slugRepeatDashRe.ReplaceAllString(s, "-")
-	return s
-}
-
-const (
-	listAppsSQL = `SELECT id, name, description, created_at FROM applications ORDER BY created_at ASC`
-)
-
-func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApplicationResponse, error) {
-	rows, err := s.db.Query(listAppsSQL)
-	if err != nil {
-		return nil, errors.Wrap(err, "querying db for apps list")
-	}
-
-	var apps []*pb.Application
-
-	for rows.Next() {
-		var a pb.Application
-		dest := []interface{}{&a.Id, &a.Name, &a.Description, &a.CreatedAt}
-		if err := rows.Scan(dest...); err != nil {
-			return nil, errors.Wrap(err, "scanning db row")
-		}
-		apps = append(apps, &a)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "iterating over db rows")
-	}
-
-	resp := &pb.ListApplicationResponse{
-		Applications: apps,
-	}
-
-	return resp, nil
-}
-
-func appTypeModelToPb(at models.AppType) pb.ApplicationType {
-	switch at {
-	case models.AppTypeServer:
-		return pb.ApplicationType_SERVER
-	case models.AppTypeCronjob:
-		return pb.ApplicationType_CRONJOB
-	}
-	panic("shouldn't reach here")
-}
-
-func appTypePbToModel(at pb.ApplicationType) models.AppType {
-	switch at {
-	case pb.ApplicationType_SERVER:
-		return models.AppTypeServer
-	case pb.ApplicationType_CRONJOB:
-		return models.AppTypeCronjob
-	}
-	panic("shouldn't reach here")
-}
-
-func creationStateTypeModelToPb(cst models.CreationStateType) pb.CreationState {
-	switch cst {
-	case models.CreationStateTypeCreateInfrastructureWait:
-		return pb.CreationState_CREATE_INFRASTRUCTURE_WAIT
-	case models.CreationStateTypeSucceeded:
-		return pb.CreationState_SUCCEEDED
-	case models.CreationStateTypeFailed:
-		return pb.CreationState_FAILED
-	default:
-		panic("shouldn't get here")
-	}
-}
-
-func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
-	switch cst {
-	case pb.CreationState_CREATE_INFRASTRUCTURE_WAIT:
-		return models.CreationStateTypeCreateInfrastructureWait
-	case pb.CreationState_SUCCEEDED:
-		return models.CreationStateTypeSucceeded
-	case pb.CreationState_FAILED:
-		return models.CreationStateTypeFailed
-	default:
-		panic("shouldn't get here")
-	}
-}
-
-func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
-	model, err := models.ApplicationByID(s.db, int(req.Id))
-	if err != nil {
-		return nil, errors.Wrap(err, "getting application by ID from db")
-	}
-
-	app := &pb.Application{
-		Id:   int32(model.ID),
-		Name: model.Name,
-		Slug: model.Slug,
-		Type: appTypeModelToPb(model.Type),
-	}
-
-	if model.Description.Valid {
-		app.Description = model.Description.String
-	}
-	if model.InternalDNS.Valid {
-		app.InternalDns = model.InternalDNS.String
-	}
-	if model.ExternalDNS.Valid {
-		app.ExternalDns = model.ExternalDNS.String
-	}
-	if model.GithubRepoURL.Valid {
-		app.GithubRepoUrl = model.GithubRepoURL.String
-	}
-	if model.DockerfilePath.Valid {
-		app.DockerfilePath = model.DockerfilePath.String
-	}
-	if model.EntrypointOverride.Valid {
-		app.EntrypointOverride = model.EntrypointOverride.String
-	}
-	// TODO(paulsmith): have a global timestamp format across the
-	// Go and Rails apps
-	app.CreatedAt = model.CreatedAt.Format(timestampFormat)
-
-	app.CreationState = creationStateTypeModelToPb(model.CreationState)
-
-	return app, nil
-}
-
-const timestampFormat = "2006-01-02T15:04:05"
-
-func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRequest) (*pb.ListEnvironmentResponse, error) {
-	listSQL := "SELECT id, application_id, name, slug, vars, created_at FROM environments WHERE application_id = $1 ORDER BY id"
-	rows, err := s.db.Query(listSQL, req.GetApplicationId())
-	if err != nil {
-		return nil, errors.Wrap(err, "querying db for environments")
-	}
-	var envs []*pb.Environment
-	for rows.Next() {
-		var env pb.Environment
-		var vars []byte
-		dest := []interface{}{
-			&env.Id,
-			&env.ApplicationId,
-			&env.Name,
-			&env.Slug,
-			&vars,
-			&env.CreatedAt,
-		}
-		if err := rows.Scan(dest...); err != nil {
-			return nil, errors.Wrap(err, "scanning db row")
-		}
-		if err := json.Unmarshal(vars, &env.Vars); err != nil {
-			return nil, errors.Wrap(err, "unmarshalling env vars JSON")
-		}
-		envs = append(envs, &env)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "iterating over db result set")
-	}
-	res := &pb.ListEnvironmentResponse{Environments: envs}
-	return res, nil
-}
-
-func (s *server) GetEnvironment(ctx context.Context, req *pb.GetEnvironmentRequest) (*pb.Environment, error) {
-	getSQL := "SELECT id, application_id, name, slug, vars, created_at FROM environments WHERE id = $1"
-	var env pb.Environment
-	var vars []byte
-	dest := []interface{}{
-		&env.Id,
-		&env.ApplicationId,
-		&env.Name,
-		&env.Slug,
-		&vars,
-		&env.CreatedAt,
-	}
-	if err := s.db.QueryRow(getSQL, req.GetId()).Scan(dest...); err != nil {
-		return nil, errors.Wrap(err, "scanning db row")
-	}
-	if err := json.Unmarshal(vars, &env.Vars); err != nil {
-		return nil, errors.Wrap(err, "unmarshalling env vars JSON")
-	}
-	return &env, nil
-}
-
-func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*pb.Environment, error) {
-	// TODO(paulsmith): can we even do this in XO??
-	insertSQL := "INSERT INTO environments (application_id, name, slug, vars) VALUES ($1, $2, $3, $4) RETURNING id, created_at"
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(req.Vars); err != nil {
-		return nil, errors.Wrap(err, "encoding env vars as JSON")
-	}
-
-	args := []interface{}{
-		req.GetApplicationId(),
-		req.GetName(),
-		slugify(req.GetName()),
-		buf.String(),
-	}
-
-	var id int
-
-	if err := s.db.QueryRow(insertSQL, args...).Scan(&id, &req.CreatedAt); err != nil {
-		return nil, errors.Wrap(err, "inserting in to db")
-	}
-
-	req.Id = int32(id)
-
-	return req, nil
-}
-
-func (s *server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironmentRequest) (*pb.Empty, error) {
-	deleteSQL := "DELETE FROM environments WHERE id = $1"
-	if _, err := s.db.Exec(deleteSQL, req.GetId()); err != nil {
-		return nil, errors.Wrap(err, "deleting row from db")
-	}
-	return &pb.Empty{}, nil
-}
-
-func (s *server) CopyEnvironment(context.Context, *pb.CopyEnvironmentRequest) (*pb.Environment, error) {
-	return nil, nil
-}
 
 func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
 	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
@@ -501,22 +37,26 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 	}
 	var deployments []*pb.Deployment
 	for rows.Next() {
-		var d pb.Deployment
-		d.Application = &pb.Application{}
-		d.Env = &pb.Environment{}
+		d := &pb.Deployment{
+			Application: &pb.Application{},
+			Env:         &pb.Environment{},
+			CreatedAt:   new(gpb.Timestamp),
+		}
+		var createdAt time.Time
 		dest := []interface{}{
 			&d.Id,
 			&d.Application.Id,
 			&d.Env.Id,
 			&d.Committish,
 			&d.State,
-			&d.CreatedAt,
+			&createdAt,
 			&d.Env.Name,
 		}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, errors.Wrap(err, "scanning db row")
 		}
-		deployments = append(deployments, &d)
+		setPbTimestamp(d.CreatedAt, createdAt)
+		deployments = append(deployments, d)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "iteration over result set")
@@ -1395,81 +935,4 @@ func exportDockerImageToFile(dir string, image string) (string, error) {
 	}
 
 	return path, nil
-}
-
-// Users
-func (s *server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*pb.User, error) {
-	password := []byte(user.Password)
-
-	// Hashing the password with the default cost of 10
-	hashedPassword, err := bcrypt.GenerateFromPassword(password, bcrypt.DefaultCost)
-	if err != nil {
-		panic(err)
-	}
-
-	model := &models.User{
-		ID:                int(user.Id),
-		Name:              user.GetName(),
-		Email:             user.GetEmail(),
-		EncryptedPassword: string(hashedPassword),
-	}
-
-	if err := model.Insert(s.db); err != nil {
-		return nil, errors.Wrap(err, "inserting into db")
-	}
-
-	user.Id = int32(model.ID)
-
-	newUser := &pb.User{
-		Id:                int32(model.ID),
-		Name:              model.Name,
-		Email:             model.Email,
-		EncryptedPassword: model.EncryptedPassword,
-	}
-
-	return newUser, nil
-}
-
-func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
-	model, err := models.UserByEmail(s.db, req.Email)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting user by email from db")
-	}
-
-	user := &pb.User{
-		Id:                     int32(model.ID),
-		Name:                   model.Name,
-		Email:                  model.Email,
-		EncryptedPassword:      model.EncryptedPassword,
-		GithubOauthAccessToken: model.GithubOauthAccessToken,
-	}
-
-	return user, nil
-}
-
-func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.User, error) {
-	user_req := &pb.GetUserRequest{Email: req.Email}
-	user, err := s.GetUser(ctx, user_req)
-	err = bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password))
-
-	if err != nil {
-		return nil, errors.Wrap(err, "incorrect password")
-	}
-
-	return user, nil
-}
-
-func (s *server) AssignGithubOmniauthTokenToUser(ctx context.Context, user *pb.User) (*pb.User, error) {
-	model, err := models.UserByEmail(s.db, user.Email)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting user by email from db")
-	}
-
-	model.GithubOauthAccessToken = user.GithubOauthAccessToken
-
-	if err := model.Update(s.db); err != nil {
-		return nil, errors.Wrap(err, "updating in db")
-	}
-
-	return user, nil
 }

@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"github.com/adhocteam/soapbox"
+	"github.com/adhocteam/soapbox/buildinfo"
 	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/adhocteam/soapbox/soapboxd"
-	"github.com/adhocteam/soapbox/version"
 	_ "github.com/lib/pq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -27,9 +27,9 @@ func main() {
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Printf("        version: %s\n", version.Version)
-		fmt.Printf("     git commit: %s\n", version.GitCommit)
-		fmt.Printf("     build time: %s\n", version.BuildTime)
+		fmt.Printf("        version: %s\n", buildinfo.Version)
+		fmt.Printf("     git commit: %s\n", buildinfo.GitCommit)
+		fmt.Printf("     build time: %s\n", buildinfo.BuildTime)
 		return
 	}
 

@@ -2,10 +2,12 @@ SOAPBOX_PKGS := $(shell go list ./... | grep -v /vendor/)
 
 LDFLAGS :=
 
+VERSION = $(shell cat VERSION)
 GIT_COMMIT = $(shell git rev-parse --short HEAD)
 
-LDFLAGS += -X github.com/adhocteam/soapbox/version.GitCommit=${GIT_COMMIT}
-LDFLAGS += -X "github.com/adhocteam/soapbox/version.BuildTime=$(shell date)"
+LDFLAGS += -X github.com/adhocteam/soapbox/buildinfo.Version=${VERSION}
+LDFLAGS += -X github.com/adhocteam/soapbox/buildinfo.GitCommit=${GIT_COMMIT}
+LDFLAGS += -X "github.com/adhocteam/soapbox/buildinfo.BuildTime=$(shell date)"
 
 all:
 	go install -ldflags '$(LDFLAGS)' $(SOAPBOX_PKGS)

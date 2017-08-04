@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/adhocteam/soapbox/buildinfo"
 	pb "github.com/adhocteam/soapbox/proto"
-	"github.com/adhocteam/soapbox/version"
 
 	"google.golang.org/grpc"
 )
@@ -22,9 +22,9 @@ func main() {
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Printf("        version: %s\n", version.Version)
-		fmt.Printf("     git commit: %s\n", version.GitCommit)
-		fmt.Printf("     build time: %s\n", version.BuildTime)
+		fmt.Printf("        version: %s\n", buildinfo.Version)
+		fmt.Printf("     git commit: %s\n", buildinfo.GitCommit)
+		fmt.Printf("     build time: %s\n", buildinfo.BuildTime)
 		return
 	}
 
@@ -142,8 +142,8 @@ func getVersion(ctx context.Context, client pb.VersionClient, args []string) err
 	if err != nil {
 		return fmt.Errorf("getting version: %v", err)
 	}
-	fmt.Println("soapboxd")
-	fmt.Println("--------")
+	fmt.Println("Soapbox API")
+	fmt.Println("-----------")
 	fmt.Printf("    version: %s\n", resp.Version)
 	fmt.Printf(" git commit: %s\n", resp.GitCommit)
 	fmt.Printf(" build time: %s\n", resp.BuildTime)

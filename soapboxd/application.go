@@ -60,7 +60,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	app.Id = int32(model.ID)
 
 	// start a terraform job in the background
-	//	go s.createAppInfrastructure(app)
+	go s.createAppInfrastructure(app)
 
 	return app, nil
 }

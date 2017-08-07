@@ -10,7 +10,7 @@ service Applications {
     rpc CreateApplication (Application) returns (Application) {}
     rpc GetApplication (GetApplicationRequest) returns (Application) {}
     rpc GetApplicationMetrics (GetApplicationMetricsRequest) returns (ApplicationMetricsResponse) {}
-    rpc DeployCleanup (DeployCleanup) returns (Soapbox.Empty) {}
+    rpc DeployCleanup (DeployCleanupRequest) returns (soapbox.Empty) {}
 }
 
 enum ApplicationType {
@@ -79,7 +79,7 @@ message GetApplicationMetricsRequest {
     int32 id = 1;
     MetricType metric_type = 2;
 
-message DeployCleanup {
-    string application_name;
-    bool dry_run;
+message DeployCleanupRequest {
+    string application_name = 1;
+    bool dry_run = 2;
 }

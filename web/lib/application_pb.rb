@@ -26,6 +26,10 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.GetApplicationRequest" do
     optional :id, :int32, 1
   end
+  add_message "soapbox.DeployCleanupRequest" do
+    optional :application_name, :string, 1
+    optional :dry_run, :bool, 2
+  end
   add_enum "soapbox.ApplicationType" do
     value :SERVER, 0
     value :CRONJOB, 1
@@ -41,6 +45,7 @@ module Soapbox
   Application = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Application").msgclass
   ListApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationResponse").msgclass
   GetApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetApplicationRequest").msgclass
+  DeployCleanupRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.DeployCleanupRequest").msgclass
   ApplicationType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ApplicationType").enummodule
   CreationState = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreationState").enummodule
 end

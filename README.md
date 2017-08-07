@@ -74,6 +74,9 @@ profile page, and grant the requested permissions.
 
 ### Making changes to protobufs
 
+Before beginning, make sure you have
+[installed protobuf](https://github.com/google/protobuf#protocol-compiler-installation).
+
 Soapbox
 uses
 [Protocol Buffers](https://developers.google.com/protocol-buffers/)

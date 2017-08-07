@@ -174,7 +174,7 @@ func deployCleanup(ctx context.Context, client pb.ApplicationsClient, args []str
 		return fmt.Errorf("1 argument is required: application name")
 	}
 
-	resp, err := client.DeployCleanup(ctx, &pb.DeployCleanupRequest{
+	_, err := client.DeployCleanup(ctx, &pb.DeployCleanupRequest{
 		ApplicationName: args[0],
 		DryRun:          dryRun,
 	})

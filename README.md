@@ -77,22 +77,13 @@ profile page, and grant the requested permissions.
 Before beginning, make sure you have
 [installed protobuf](https://github.com/google/protobuf#protocol-compiler-installation).
 
-Soapbox
-uses
+Soapbox uses
 [Protocol Buffers](https://developers.google.com/protocol-buffers/)
 via [gRPC](https://grpc.io/) for clients and servers to exchange
 messages and call API methods. These definitions are stored in the
 `soapboxpb` directory in `.proto` files. If you change these files,
 you must re-generate the Go and Ruby code that the API server and the
-Rails app rely on, respectively.
-
-``` shell
-# Go code
-$ go generate ./...
-$ go install ./...
-# Ruby code
-$ make -C web
-```
+Rails app rely on, respectively, by running `make protobufs`.
 
 ### Go dependencies
 

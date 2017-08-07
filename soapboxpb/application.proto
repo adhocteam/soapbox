@@ -9,6 +9,7 @@ service Applications {
     rpc ListApplications (soapbox.Empty) returns (ListApplicationResponse) {}
     rpc CreateApplication (Application) returns (Application) {}
     rpc GetApplication (GetApplicationRequest) returns (Application) {}
+    rpc DeployCleanup (DeployCleanup) returns (Soapbox.Empty) {}
 }
 
 enum ApplicationType {
@@ -48,4 +49,9 @@ message ListApplicationResponse {
 
 message GetApplicationRequest {
     int32 id = 1;
+}
+
+message DeployCleanup {
+    string application_name;
+    bool dry_run;
 }

@@ -343,3 +343,54 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 func setPbTimestamp(ts *gpb.Timestamp, t time.Time) {
 	ts.Seconds = t.Unix()
 }
+
+func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanup) (*pb.Application, error) {
+	sess, _ := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{Region: aws.String("us-east-1")},
+	})
+	svc := autoscaling.New(sess)
+
+	descAsgInput := autoscaling.DescribeAutoScalingGroupsInput{}
+	asgRes, err := svc.DescribeAutoScalingGroups(&descAsgInput)
+	if err != nil {
+		return fmt.Errorf("describing autoscaling groups: %s", err)
+	}
+
+	var inUseLcs map[string]bool
+	inUseLcs = make(map[string]bool)
+	for _, asg := range asgRes.AutoScalingGroups {
+		inUseLcs[*asg.LaunchConfigurationName] = true
+	}
+
+	descLcInput := autoscaling.DescribeLaunchConfigurationsInput{}
+	lcRes, err := svc.DescribeLaunchConfigurations(&descLcInput)
+	if err != nil {
+		return fmt.Errorf("describing autoscaling groups: %s", err)
+	}
+
+	var unusedLcs []string
+	for _, lc := range lcRes.LaunchConfigurations {
+		if !inUseLcs[*lc.LaunchConfigurationName] {
+			unusedLcs = append(unusedLcs, *lc.LaunchConfigurationName)
+		}
+	}
+
+	for _, lc := range unusedLcs {
+		if strings.HasPrefix(lc, req.ApplicationName) {
+			if !req.DryRun {
+				fmt.Println("deleting:", lc)
+				delLcInput := autoscaling.DeleteLaunchConfigurationInput{
+					LaunchConfigurationName: aws.String(lc),
+				}
+				_, err := svc.DeleteLaunchConfiguration(&delLcInput)
+				if err != nil {
+					return fmt.Errorf("deleting launch config: %s", err)
+				}
+			} else {
+				fmt.Println("would delete:", lc)
+			}
+		}
+	}
+
+	return &pb.Empty{}, nil
+}

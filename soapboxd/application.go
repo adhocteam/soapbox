@@ -2,6 +2,7 @@ package soapboxd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,9 @@ import (
 
 	"github.com/adhocteam/soapbox/models"
 	pb "github.com/adhocteam/soapbox/proto"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -344,7 +348,7 @@ func setPbTimestamp(ts *gpb.Timestamp, t time.Time) {
 	ts.Seconds = t.Unix()
 }
 
-func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanup) (*pb.Application, error) {
+func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanupRequest) (*pb.Empty, error) {
 	sess, _ := session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{Region: aws.String("us-east-1")},
 	})
@@ -353,7 +357,7 @@ func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanup) (*pb.
 	descAsgInput := autoscaling.DescribeAutoScalingGroupsInput{}
 	asgRes, err := svc.DescribeAutoScalingGroups(&descAsgInput)
 	if err != nil {
-		return fmt.Errorf("describing autoscaling groups: %s", err)
+		return nil, fmt.Errorf("describing autoscaling groups: %s", err)
 	}
 
 	var inUseLcs map[string]bool
@@ -365,7 +369,7 @@ func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanup) (*pb.
 	descLcInput := autoscaling.DescribeLaunchConfigurationsInput{}
 	lcRes, err := svc.DescribeLaunchConfigurations(&descLcInput)
 	if err != nil {
-		return fmt.Errorf("describing autoscaling groups: %s", err)
+		return nil, fmt.Errorf("describing autoscaling groups: %s", err)
 	}
 
 	var unusedLcs []string
@@ -382,10 +386,11 @@ func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanup) (*pb.
 				delLcInput := autoscaling.DeleteLaunchConfigurationInput{
 					LaunchConfigurationName: aws.String(lc),
 				}
-				_, err := svc.DeleteLaunchConfiguration(&delLcInput)
-				if err != nil {
-					return fmt.Errorf("deleting launch config: %s", err)
-				}
+				fmt.Printf("fuck you golang %#v", delLcInput)
+				///_, err := svc.DeleteLaunchConfiguration(&delLcInput)
+				///if err != nil {
+				///	return nil, fmt.Errorf("deleting launch config: %s", err)
+				///}
 			} else {
 				fmt.Println("would delete:", lc)
 			}

@@ -8,14 +8,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/adhocteam/soapbox/buildinfo"
 	pb "github.com/adhocteam/soapbox/proto"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"google.golang.org/grpc"
 )
 
@@ -165,7 +161,7 @@ func deployCleanup(ctx context.Context, client pb.ApplicationsClient, args []str
 		return fmt.Errorf("1 argument is required: application name")
 	}
 
-	resp, err := client.DeployCleanup(ctx, &pb.DeployCleanup{
+	resp, err := client.DeployCleanup(ctx, &pb.DeployCleanupRequest{
 		ApplicationName: args[0],
 		DryRun:          dryRun,
 	})

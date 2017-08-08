@@ -360,6 +360,10 @@ func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanupRequest
 		return nil, fmt.Errorf("describing autoscaling groups: %s", err)
 	}
 
+	if len(asgRes.AutoScalingGroups) == 0 {
+		return nil, fmt.Errorf("No ASGs found")
+	}
+
 	var inUseLcs map[string]bool
 	inUseLcs = make(map[string]bool)
 	for _, asg := range asgRes.AutoScalingGroups {
@@ -372,6 +376,10 @@ func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanupRequest
 		return nil, fmt.Errorf("describing autoscaling groups: %s", err)
 	}
 
+	if len(lcRes.LaunchConfigurations) == 0 {
+		return nil, fmt.Errorf("No Launch Configurations found")
+	}
+
 	var unusedLcs []string
 	for _, lc := range lcRes.LaunchConfigurations {
 		if !inUseLcs[*lc.LaunchConfigurationName] {
@@ -379,18 +387,21 @@ func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanupRequest
 		}
 	}
 
+	if len(unusedLcs) == 0 {
+		return nil, fmt.Errorf("No unused Launch Configurations found")
+	}
+
 	for _, lc := range unusedLcs {
 		if strings.HasPrefix(lc, req.ApplicationName) {
 			if !req.DryRun {
-				fmt.Println("deleting:", lc)
+				log.Println("deleting:", lc)
 				delLcInput := autoscaling.DeleteLaunchConfigurationInput{
 					LaunchConfigurationName: aws.String(lc),
 				}
-				fmt.Printf("fuck you golang %#v", delLcInput)
-				///_, err := svc.DeleteLaunchConfiguration(&delLcInput)
-				///if err != nil {
-				///	return nil, fmt.Errorf("deleting launch config: %s", err)
-				///}
+				_, err := svc.DeleteLaunchConfiguration(&delLcInput)
+				if err != nil {
+					return nil, fmt.Errorf("deleting launch config: %s", err)
+				}
 			} else {
 				fmt.Println("would delete:", lc)
 			}

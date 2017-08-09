@@ -91,7 +91,7 @@ func (s *server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest
 
 func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
 	req.State = "rollout-wait"
-	query := `INSERT INTO deployments (application_id, environment_id, committish, current_state) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
+	query := `INSERT INTO deployments (application_id, environment_id, committish, current_state) VALUES ($1, $2, $3, $4) RETURNING id`
 	appId := int(req.GetApplication().GetId())
 	args := []interface{}{
 		appId,
@@ -101,7 +101,6 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	}
 	dest := []interface{}{
 		&req.Id,
-		&req.CreatedAt,
 	}
 	if err := s.db.QueryRow(query, args...).Scan(dest...); err != nil {
 		return nil, errors.Wrap(err, "inserting new row into db")

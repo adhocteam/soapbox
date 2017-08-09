@@ -2,7 +2,9 @@ syntax = "proto3";
 package soapbox;
 option go_package = "proto";
 
+import "config.proto";
 import "soapbox.proto";
+
 import "google/protobuf/timestamp.proto";
 
 service Environments {
@@ -10,7 +12,6 @@ service Environments {
     rpc GetEnvironment (GetEnvironmentRequest) returns (Environment) {}
     rpc CreateEnvironment (Environment) returns (Environment) {}
     rpc DestroyEnvironment (DestroyEnvironmentRequest) returns (soapbox.Empty) {}
-    rpc CopyEnvironment (CopyEnvironmentRequest) returns (Environment) {}
 }
 
 message ListEnvironmentRequest{
@@ -30,19 +31,10 @@ message Environment {
     int32 application_id = 2;
     string name = 3;
     string slug = 4;
-    repeated EnvironmentVariable vars = 5;
     google.protobuf.Timestamp created_at = 6;
-}
-
-message EnvironmentVariable {
-    string name = 1;
-    string value = 2;
 }
 
 message DestroyEnvironmentRequest {
     int32 id = 1;
 }
 
-message CopyEnvironmentRequest {
-    int32 id = 1;
-}

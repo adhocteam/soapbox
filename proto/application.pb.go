@@ -6,6 +6,7 @@ Package proto is a generated protocol buffer package.
 
 It is generated from these files:
 	application.proto
+	config.proto
 	deployment.proto
 	environment.proto
 	soapbox.proto
@@ -16,6 +17,13 @@ It has these top-level messages:
 	Application
 	ListApplicationResponse
 	GetApplicationRequest
+	ListConfigurationRequest
+	ListConfigurationResponse
+	GetLatestConfigurationRequest
+	Configuration
+	ConfigVar
+	CreateConfigurationRequest
+	DeleteConfigurationRequest
 	ListDeploymentRequest
 	ListDeploymentResponse
 	GetDeploymentRequest
@@ -28,9 +36,7 @@ It has these top-level messages:
 	ListEnvironmentResponse
 	GetEnvironmentRequest
 	Environment
-	EnvironmentVariable
 	DestroyEnvironmentRequest
-	CopyEnvironmentRequest
 	Empty
 	User
 	CreateUserRequest

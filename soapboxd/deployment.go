@@ -344,7 +344,6 @@ service nginx reload
 			Environment string
 			Image       string
 			Release     string
-			Variables   []*pb.EnvironmentVariable
 		}{
 			app.slug,
 			// TODO(paulsmith): un-hardcode
@@ -354,7 +353,6 @@ service nginx reload
 			"",
 			image,
 			committish,
-			env.vars,
 		})
 	})
 
@@ -706,14 +704,12 @@ func newAppFromProtoBuf(appPb *pb.Application) *application {
 type environment struct {
 	name string
 	slug string
-	vars []*pb.EnvironmentVariable
 }
 
 func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
 	return &environment{
 		name: envPb.GetName(),
 		slug: envPb.GetSlug(),
-		vars: envPb.GetVars(),
 	}
 }
 

@@ -51,6 +51,7 @@ func main() {
 	config := getConfig()
 	apiServer := soapboxd.NewServer(db, nil, config)
 	pb.RegisterApplicationsServer(server, apiServer)
+	pb.RegisterConfigurationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
 	pb.RegisterDeploymentsServer(server, apiServer)
 	pb.RegisterUsersServer(server, apiServer)

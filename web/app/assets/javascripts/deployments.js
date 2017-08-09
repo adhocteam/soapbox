@@ -43,6 +43,9 @@
                 element.classList.add('latest');
                 element.classList.remove('active');
               }
+              if (deploymentStatus === 'failed') {
+                element.classList.add('complete');
+              }
               element.dataset.state = req.responseText;
               element.getElementsByTagName("span")[0].innerHTML = req.responseText;
             } else {

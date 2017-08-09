@@ -65,11 +65,20 @@ body {
           <li class="nav-item active">
             <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
           </li>
+          <% if session[:current_user_email] %>
+            <li class="nav-item">
+              <a class="nav-link" href="/user/profile">Profile</a>
+            </li>
+          <% else %>
+            <li class="nav-item">
+              <a class="nav-link" href="/user/login">Log In</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/user/new">Sign Up</a>
+            </li>
+          <% end %>
           <li class="nav-item">
             <a class="nav-link disabled" href="#">Settings</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link disabled" href="#">Profile</a>
           </li>
           <li class="nav-item">
             <a class="nav-link disabled" href="#">Help</a>
@@ -96,7 +105,10 @@ body {
         </nav>
 
         <main class="col-sm-9 offset-sm-3 col-md-10 offset-md-2 pt-3">
-          <%= yield %>
+            <%= yield %>
+	    <footer>
+		<p><small>Copyright 2017 Ad Hoc. <%= link_to 'About', about_path %></small></p>
+	    </footer>
         </main>
       </div>
     </div>

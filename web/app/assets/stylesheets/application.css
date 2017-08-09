@@ -21,3 +21,10 @@ form .required label {
 form .required label:after {
     content: " *";
 }
+
+main footer {
+    border-top: 1px dotted #ccc;
+    text-align: center;
+    margin: 40px 0 40px;
+    padding: 40px 0 40px;
+}

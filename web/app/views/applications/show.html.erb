@@ -42,7 +42,7 @@
                 <%= @deployment.env.name %>
               </td>
               <td>
-                <%= Time.parse(@deployment.created_at).strftime('%m-%d-%Y %I:%M:%S%p') %>
+                <%= Time.at(@deployment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %>
               </td>
           </tr>
         <% else %>
@@ -53,7 +53,7 @@
         <% end %>
       </tbody>
     </table>
-    <p class="card-text text-muted"><small>Created: <%= DateTime.strptime(@app.created_at, '%Y-%m-%dT%H:%M:%S').strftime('%b %-d, %Y') %></small></p>
+    <p class="card-text text-muted"><small>Created: <%= Time.at(@app.created_at.seconds).strftime('%b %-d, %Y') %></small></p>
     <%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
     <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
   </div>

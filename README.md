@@ -53,6 +53,23 @@ $ bin/rails server &
 $ open http://localhost:3000/
 ```
 
+### GitHub OAuth
+
+In order to use Soapbox with private repositories, you must grant the
+application access through OAuth.
+1. Go to the [OAuth applications](https://github.com/settings/developers)
+page and click on `Register a new application`.
+2. Give your application a name and a homepage URL (this could be
+`localhost:3000` or a registered domain).
+3. For `Authorization callback URL`, enter your homepage URL followed by
+`/auth/github/callback`.
+4. When you submit, you will see a `Client ID` and a `Client Secret`.
+Set these as the environment variables `GITHUB_OAUTH_CLIENT_ID` and
+`GITHUB_OAUTH_CLIENT_SECRET` (be sure to restart your Rails server after
+these are set).
+5. Create a user in the Soapbox web UI, click `Link to GitHub` on your
+profile page, and grant the requested permissions.
+
 ## Developing Soapbox
 
 ### Making changes to protobufs

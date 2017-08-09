@@ -1,0 +1,41 @@
+<div class="card" >
+    <div class="card-block" >
+	<h4 class="card-title">Create your Soapbox account</h4>
+
+	<p class="card-text">After signing in, link your GitHub account to allow deploying from private repositories.</p>
+
+	<%= form_for :user, url: user_path do |f| %>
+	    <% if @form.errors.any? %>
+		<div class="alert alert-danger" role="alert" >
+		    <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented
+		    this user from being created.
+		</div>
+	    <% end %>
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:name) %>">
+		<%= f.label :name, class: "col-form-label" %>
+		<%= f.text_field :name, value: @form.name, class: "form-control form-control-lg" %>
+		<% @form.errors.full_messages_for(:name).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+      <div class="form-group required<%= ' has-danger' if @form.errors.include?(:email) %>">
+		<%= f.label :email, class: "col-form-label" %>
+		<%= f.text_field :email, value: @form.email, class: "form-control form-control-lg" %>
+		<% @form.errors.full_messages_for(:email).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+      <div class="form-group required<%= ' has-danger' if @form.errors.include?(:password) %>">
+		<%= f.label :password, class: "col-form-label" %>
+		<%= f.password_field :password, value: @form.password, class: "form-control form-control-lg" %>
+		<% @form.errors.full_messages_for(:password).each do |msg| %>
+		    <div class="form-control-feedback"><%= msg %></div>
+		<% end %>
+	    </div>
+	    <div>
+		<%= link_to 'Cancel', root_path, class: "btn" %>
+		<%= f.submit "Create user", class: "btn btn-primary" %>
+	    </div>
+	<% end %>
+    </div>
+</div>

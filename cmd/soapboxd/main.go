@@ -11,9 +11,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/adhocteam/soapbox/api"
-	"github.com/adhocteam/soapbox/soapbox"
-	pb "github.com/adhocteam/soapbox/soapboxpb"
+	"github.com/adhocteam/soapbox"
+	"github.com/adhocteam/soapbox/buildinfo"
+	pb "github.com/adhocteam/soapbox/proto"
+	"github.com/adhocteam/soapbox/soapboxd"
 	_ "github.com/lib/pq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -21,8 +22,16 @@ import (
 
 func main() {
 	port := flag.Int("port", 9090, "port to listen on")
+	printVersion := flag.Bool("V", false, "print version and exit")
 
 	flag.Parse()
+
+	if *printVersion {
+		fmt.Printf("        version: %s\n", buildinfo.Version)
+		fmt.Printf("     git commit: %s\n", buildinfo.GitCommit)
+		fmt.Printf("     build time: %s\n", buildinfo.BuildTime)
+		return
+	}
 
 	if err := checkJobDependencies(); err != nil {
 		log.Fatalf("checking for dependencies: %v", err)
@@ -40,10 +49,12 @@ func main() {
 
 	server := grpc.NewServer(serverInterceptor())
 	config := getConfig()
-	apiServer := api.NewServer(db, nil, config)
+	apiServer := soapboxd.NewServer(db, nil, config)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
 	pb.RegisterDeploymentsServer(server, apiServer)
+	pb.RegisterUsersServer(server, apiServer)
+	pb.RegisterVersionServer(server, apiServer)
 	log.Printf("soapboxd listening on 0.0.0.0:%d", *port)
 	log.Fatal(server.Serve(ln))
 }

@@ -47,3 +47,14 @@ create table deployments (
        current_state deployment_state_type not null default 'DEPLOYMENT_ROLLOUT_WAIT',
        created_at timestamp with time zone not null default now()
 );
+
+create table users (
+       id serial not null primary key,
+       name text not null,
+       email text not null,
+       encrypted_password text not null,
+       github_oauth_access_token text not null default '',
+       created_at timestamp with time zone not null default now(),
+       updated_at timestamp with time zone not null default now(),
+       unique (email)
+);

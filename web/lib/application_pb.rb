@@ -4,6 +4,7 @@
 require 'google/protobuf'
 
 require 'soapbox_pb'
+require 'google/protobuf/timestamp_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.Application" do
     optional :id, :int32, 1
@@ -14,7 +15,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :dockerfile_path, :string, 6
     optional :entrypoint_override, :string, 7
     optional :type, :enum, 8, "soapbox.ApplicationType"
-    optional :created_at, :string, 9
+    optional :created_at, :message, 9, "google.protobuf.Timestamp"
     optional :slug, :string, 10
     optional :internal_dns, :string, 11
     optional :creation_state, :enum, 12, "soapbox.CreationState"

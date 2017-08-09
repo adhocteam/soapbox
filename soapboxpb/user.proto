@@ -1,0 +1,42 @@
+syntax = "proto3";
+package soapbox;
+option go_package = "proto";
+
+import "google/protobuf/timestamp.proto";
+
+service Users {
+    rpc CreateUser (CreateUserRequest) returns (User) {}
+    rpc GetUser (GetUserRequest) returns (User) {}
+    rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {}
+    rpc AssignGithubOmniauthTokenToUser (User) returns (User) {}
+}
+
+message User {
+    int32 id = 1;
+    string name = 2;
+    string email = 3;
+    string encrypted_password = 4;
+    string github_oauth_access_token = 5;
+    google.protobuf.Timestamp created_at = 6;
+}
+
+message CreateUserRequest {
+    int32 id = 1;
+    string name = 2;
+    string email = 3;
+    string password = 4;
+}
+
+message GetUserRequest {
+    string email = 1;
+}
+
+message LoginUserRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginUserResponse {
+    string error = 1;
+    User user = 2;
+}

@@ -29,10 +29,13 @@
         req.onreadystatechange = () => {
           if (req.readyState == XMLHttpRequest.DONE ) {
             if (req.status == 200) {
-              const deploymentStatus = req.responseText;
-              if (deploymentStatus === 'success') {
+              const applicationStatus = req.responseText;
+              if (applicationStatus === 'SUCCEEDED') {
                 element.classList.add('latest');
                 element.classList.remove('active');
+              }
+              if (applicationStatus === 'FAILED') {
+                element.classList.add('complete');
               }
               const currentState = JSON.parse(req.responseText).creation_state
               element.dataset.state = currentState;

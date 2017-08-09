@@ -34,7 +34,7 @@ create table environments (
 create table configurations (
        environment_id integer references environments on delete cascade,
        version integer not null default 1, -- TODO(paulsmith): might want to do auto-incrementing here with a sequence + trigger
-       created_at timestamp with time zone not null default now()
+       created_at timestamp with time zone not null default now(),
        unique (environment_id, version)
 );
 

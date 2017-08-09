@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"text/template"
 	"time"
 
 	"github.com/adhocteam/soapbox"

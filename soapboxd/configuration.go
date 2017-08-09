@@ -1,9 +1,11 @@
 package soapboxd
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/adhocteam/soapbox/proto"
+	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
@@ -38,45 +40,52 @@ func (s *server) ListConfigurations(ctx context.Context, req *proto.ListConfigur
 }
 
 func (s *server) GetLatestConfiguration(ctx context.Context, req *proto.GetLatestConfigurationRequest) (*proto.Configuration, error) {
+	// TODO(paulsmith): FIXME return error or message with error
+	// semantics if we get nothing back from the db, instead of
+	// returning a zero-value configuration (in the case where an
+	// environment doesn't have any configurations)
 	query := `
-SELECT c.version, c.created_at, cv.name, cv.value
-FROM configurations c INNER JOIN config_vars cv ON c.environment_id = cv.environment_ID AND c.version = cv.version
-WHERE c.environment_id = $1
-ORDER BY c.version DESC
+SELECT version, created_at
+FROM configurations
+WHERE environment_id = $1
+ORDER BY version DESC
 LIMIT 1
 `
-	config := &proto.Configuration{}
-	configVars := config.ConfigVars
+	config := &proto.Configuration{
+		CreatedAt: new(gpb.Timestamp),
+	}
 	envID := req.GetEnvironmentId()
-	rows, err := s.db.Query(query, envID)
+	var createdAt time.Time
+	if err := s.db.QueryRow(query, envID).Scan(&config.Version, &createdAt); err != nil {
+		return nil, errors.Wrap(err, "querying configurations table")
+	}
+	setPbTimestamp(config.CreatedAt, createdAt)
+	fmt.Printf("config: %+v\n", config)
+	var configVars []*proto.ConfigVar
+	query = `
+SELECT name, value
+FROM config_vars
+WHERE environment_id = $1 AND version = $2
+`
+	rows, err := s.db.Query(query, envID, config.Version)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying configurations / config_vars tables")
+		return nil, errors.Wrap(err, "querying config_vars table")
 	}
 	for rows.Next() {
-		if config.EnvironmentId == 0 {
-			config.EnvironmentId = envID
-		}
-		var configVar *proto.ConfigVar
-		var createdAt time.Time
-		var version int32
+		configVar := &proto.ConfigVar{}
 		dest := []interface{}{
-			&version,
-			&createdAt,
 			&configVar.Name,
 			&configVar.Value,
 		}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, errors.Wrap(err, "scanning db row")
 		}
-		if config.Version == 0 {
-			config.Version = version
-		}
-		setPbTimestamp(config.CreatedAt, createdAt)
 		configVars = append(configVars, configVar)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "db iteration")
 	}
+	config.ConfigVars = configVars
 	return config, nil
 }
 
@@ -94,7 +103,7 @@ func (s *server) CreateConfiguration(ctx context.Context, req *proto.CreateConfi
 	}
 	configVarsQuery := `
 INSERT INTO config_vars (environment_id, version, name, value) 
-VALUES ($1, $2, $3, $4
+VALUES ($1, $2, $3, $4)
 `
 	stmt, err := tx.Prepare(configVarsQuery)
 	if err != nil {
@@ -111,6 +120,8 @@ RETURNING created_at`
 	if err := tx.QueryRow(configQuery, envID, newVersion).Scan(&createdAt); err != nil {
 		return nil, errors.Wrap(err, "inserting into configurations table")
 	}
+
+	fmt.Printf("config vars: %+v\n", req.ConfigVars)
 
 	for _, cv := range req.ConfigVars {
 		args := []interface{}{
@@ -132,6 +143,7 @@ RETURNING created_at`
 		EnvironmentId: envID,
 		Version:       newVersion,
 		ConfigVars:    req.ConfigVars,
+		CreatedAt:     new(gpb.Timestamp),
 	}
 	setPbTimestamp(resp.CreatedAt, createdAt)
 

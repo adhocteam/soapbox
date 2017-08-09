@@ -17,8 +17,6 @@
 		    <div class="form-control-feedback"><%= msg %></div>
 		<% end %>
 	    </div>
-	    <div id="env-vars-app">
-	    </div>
 	    <div>
 		<%= link_to 'Cancel', application_environments_path, class: "btn" %>
 		<%= f.submit "Create environment", class: "btn btn-primary" %>
@@ -26,11 +24,3 @@
 	<% end %>
     </div>
 </div>
-
-<script>
- document.addEventListener("DOMContentLoaded", () => {
-     let el = document.getElementById("env-vars-app");
-     let initial = <%= @form.environment_variables.to_json.html_safe %>;
-     new EnvironmentVariablesApp(el, initial);
- });
-</script>

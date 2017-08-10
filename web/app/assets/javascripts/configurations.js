@@ -121,23 +121,39 @@
 	initial.forEach(pair => {
 	    props.pairs.push(pair);
 	});
-	let saveBtnProps = {
-	    disabled: () => !pairs.length || arraysEqual(initial, pairs)
-	};
 	const render = () => {
 	    empty(el);
 	    el.appendChild(ConfigVars(props));
-	    el.appendChild(SaveBtn(saveBtnProps));
+	    el.appendChild(SaveBtn({
+		disabled: () => !pairs.length || arraysEqual(initial, pairs)
+	    }));
+	    el.appendChild(CancelBtn({
+		disabled: () => arraysEqual(initial, pairs),
+		onCancel: () => {
+		    pairs = props.pairs = initial;
+		    render();
+		}
+	    }));
 	};
 	render();
     }
 
     const SaveBtn = (props) => {
 	return button({
-	    className: "btn btn-secondary",
-	    onclick: e => handleClick(e),
+	    className: "btn btn-primary",
 	    disabled: props.disabled()
 	}, "Save");
+    };
+
+    const CancelBtn = (props) => {
+	return button({
+	    className: "btn btn-secondary",
+	    onclick: e => {
+		e.preventDefault();
+		props.onCancel();
+	    },
+	    disabled: props.disabled()
+	}, "Cancel");
     };
 
     window.ConfigVarsApp = ConfigVarsApp;

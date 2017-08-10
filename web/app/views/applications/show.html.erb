@@ -26,7 +26,7 @@
         </tr>
         <tr>
           <th>GitHub repository</th>
-          <td colspan="3"><a href="<%= @app.github_repo_url %>"><code><%= @app.github_repo_url %></code></a></td>
+          <td colspan="3"><a href="<%= @app.github_repo_url.gsub(%r{https://.*@}, 'https://') %>"><code><%= @app.github_repo_url.gsub(%r{https://.*@}, 'https://') %></code></a></td>
         </tr>
         <% if @deployment %>
           <tr id="current-deployment"
@@ -38,7 +38,7 @@
                 <span name="deployment-state"><%= @deployment.state %></span>
               </td>
               <td>
-                <code><%= link_to @deployment.committish, "#{@app.github_repo_url}/commit/#{@deployment.committish}" %></code> /
+                <code><%= link_to @deployment.committish, "#{@app.github_repo_url.gsub(%r{https://.*@}, 'https://')}/commit/#{@deployment.committish}" %></code> /
                 <%= @deployment.env.name %>
               </td>
               <td>

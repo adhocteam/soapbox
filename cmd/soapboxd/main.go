@@ -23,6 +23,7 @@ import (
 func main() {
 	port := flag.Int("port", 9090, "port to listen on")
 	printVersion := flag.Bool("V", false, "print version and exit")
+	logTiming := flag.Bool("log-timing", false, "print log of method call timings")
 
 	flag.Parse()
 
@@ -47,7 +48,12 @@ func main() {
 		log.Fatalf("couldn't listen on port %d: %v", *port, err)
 	}
 
-	server := grpc.NewServer(serverInterceptor())
+	var opts []grpc.ServerOption
+	if *logTiming {
+		opts = append(opts, serverInterceptor())
+	}
+
+	server := grpc.NewServer(opts...)
 	config := getConfig()
 	apiServer := soapboxd.NewServer(db, nil, config)
 	pb.RegisterApplicationsServer(server, apiServer)

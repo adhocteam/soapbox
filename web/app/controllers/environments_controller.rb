@@ -31,8 +31,6 @@ class EnvironmentsController < ApplicationController
   def show
     env_id = params[:id].to_i
     @environment = get_environment(env_id)
-    req = Soapbox::GetLatestConfigurationRequest.new(environment_id: env_id)
-    @configuration = $api_configurations_client.get_latest_configuration(req)
   end
 
   def destroy

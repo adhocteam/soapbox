@@ -6,10 +6,12 @@
     </div>
     <div class="card-block">
 	<h5>Configuration</h5>
-	<p>
-	    <i>Latest version: <b><%= @configuration.version %></b></i>
-	    / <a href="#">Previous versions</a>
-	</p>
+	<% if !@configuration.nil? %>
+	    <p>
+		<i>Latest version: <b><%= @configuration.version %></b></i>
+		/ <a href="#">Previous versions</a>
+	    </p>
+	<% end %>
 
 	<%= form_for :configuration, url: application_environment_configurations_path, html: {class: "config-vars"} do |f| %>
 	    <% if @form.errors.any? %>

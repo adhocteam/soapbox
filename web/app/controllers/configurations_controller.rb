@@ -4,8 +4,13 @@ class ConfigurationsController < ApplicationController
   before_action :set_context, only: [:index, :create]
 
   def index
-    @configuration = get_latest_config(@environment)
-    @form = form_from_config(@configuration)
+    begin
+      @configuration = get_latest_config(@environment)
+      @form = form_from_config(@configuration)
+    rescue GRPC::NotFound
+      @configuration = nil
+      @form = CreateConfigurationForm.new
+    end
   end
 
   def create

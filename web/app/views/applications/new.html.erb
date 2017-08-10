@@ -27,7 +27,11 @@
 	    </div>
 	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:github_repo_url) %>">
 		<%= f.label :github_repo_url, 'GitHub repository URL', class: "col-form-label" %>
-		<%= f.text_field :github_repo_url, value: @form.github_repo_url, placeholder: "https://github.com/org/repo.git", class: "form-control" %>
+    <% if current_user&.github_oauth_access_token %>
+      <%= f.select :github_repo_url, ([['Enter repo URL manually...', nil]] + @repos), {include_blank: true}, {class: "form-control", onchange: 'manualGithubRepo(this);'} %>
+    <% else %>
+		  <%= f.text_field :github_repo_url, value: @form.github_repo_url, placeholder: "https://github.com/org/repo.git", class: "form-control" %>
+    <% end %>
 		<% @form.errors.full_messages_for(:github_repo_url).each do |msg| %>
 		    <div class="form-control-feedback"><%= msg %></div>
 		<% end %>

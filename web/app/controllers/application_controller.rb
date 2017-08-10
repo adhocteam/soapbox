@@ -2,6 +2,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   helper_method :current_user
   helper_method :refresh_user
+  helper_method :octokit
 
   # Finds the User with the ID stored in the session with the key
   # :current_user_email
@@ -22,5 +23,11 @@ class ApplicationController < ActionController::Base
 
   def authorize!
     redirect_to root_path unless current_user
+  end
+
+  def octokit
+    if current_user && current_user.github_oauth_access_token
+      @octokit ||= Octokit::Client.new(access_token: current_user.github_oauth_access_token)
+    end
   end
 end

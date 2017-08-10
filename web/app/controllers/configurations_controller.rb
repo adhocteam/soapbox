@@ -1,10 +1,11 @@
 require 'config_pb'
 
 class ConfigurationsController < ApplicationController
-  before_action :set_context, only: [:new, :create]
+  before_action :set_context, only: [:index, :create]
 
-  def new
-    @form = CreateConfigurationForm.new
+  def index
+    @configuration = get_latest_config(@environment)
+    @form = form_from_config(@configuration)
   end
 
   def create
@@ -21,7 +22,7 @@ class ConfigurationsController < ApplicationController
       $api_configurations_client.create_configuration(req)
       redirect_to application_environment_path(id: env_id)
     else
-      render :new
+      render :index
     end
   end
 
@@ -32,5 +33,19 @@ class ConfigurationsController < ApplicationController
     @app = $api_client.get_application(req)
     req = Soapbox::GetEnvironmentRequest.new(id: params[:environment_id].to_i)
     @environment = $api_environment_client.get_environment(req)
+  end
+
+  def get_latest_config(env)
+    req = Soapbox::GetLatestConfigurationRequest.new(environment_id: env.id)
+    $api_configurations_client.get_latest_configuration(req)
+  end
+
+  def form_from_config(config)
+    names, values = [], []
+    config.config_vars.each_with_index do |var, i|
+      names[i] = var.name
+      values[i] = var.value
+    end
+    CreateConfigurationForm.new({ names: names, values: values })
   end
 end

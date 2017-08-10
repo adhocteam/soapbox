@@ -5,32 +5,13 @@
   </div>
   <div class="card-block" >
     <h4 class="card-title"><%= @environment.name %></h4>
-    <div class="text-right mb-3">
-	<%= link_to '+ New Configuration', new_application_environment_configuration_path(environment_id: params[:id].to_i), class: "btn btn-primary" %>
-    </div>
-    <h5>Configuration</h5>
-    <p><i>Latest version: <%= @configuration.version %></i></p>
-    <h6>Config vars</h6>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @configuration.config_vars.each do |config_var| %>
-          <tr scope="row">
-            <td>
-		<code><%= config_var.name %></code>
-            </td>
-            <td>
-		<code><%= config_var.value %></code>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <p class="card-text text-muted"><small>Created: <%= Time.at(@configuration.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %></small></p>
+    <ul class="card-text">
+	<li>
+	    <%= link_to 'Configuration', application_environment_configurations_path(environment_id: params[:id].to_i) %>
+	</li>
+    </ul>
+    <p class="card-text text-muted">
+	<small>Created: <%= Time.at(@configuration.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %></small>
+    </p>
   </div>
 </div>

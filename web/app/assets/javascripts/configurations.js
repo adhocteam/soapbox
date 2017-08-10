@@ -75,7 +75,7 @@
 	
 	return (
 	    div({className: "form-group required"},
-		label({className: "col-form-label"}, "Config Vars"),
+		label({className: "col-form-label"}, "Config vars"),
 		div({className: "config-vars"},
 		    list,
 		    div({className: "config-var-pair form-inline"},
@@ -95,6 +95,7 @@
     }
 
     function ConfigVarsApp(el, initial) {
+	initial = initial || [];
 	let pairs = [];
 	let props = {
 	    pairs: pairs,
@@ -117,15 +118,43 @@
 		render();
 	    }
 	};
-	(initial || []).forEach(pair => {
+	initial.forEach(pair => {
 	    props.pairs.push(pair);
 	});
+	let saveBtnProps = {
+	    disabled: () => !pairs.length || arraysEqual(initial, pairs)
+	};
 	const render = () => {
 	    empty(el);
 	    el.appendChild(ConfigVars(props));
+	    el.appendChild(SaveBtn(saveBtnProps));
 	};
 	render();
     }
 
+    const SaveBtn = (props) => {
+	return button({
+	    className: "btn btn-secondary",
+	    onclick: e => handleClick(e),
+	    disabled: props.disabled()
+	}, "Save");
+    };
+
     window.ConfigVarsApp = ConfigVarsApp;
+
+    function arraysEqual(a, b) {
+	if (!a || !b) return false;
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+	    if (a[i] instanceof Array &&
+		b[i] instanceof Array) {
+		if (!arraysEqual(a[i], b[i])) {
+		    return false;
+		}
+	    } else if (a[i] !== b[i]) {
+		return false;
+	    }
+	}
+	return true;
+    }
 })(window);

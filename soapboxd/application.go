@@ -2,6 +2,7 @@ package soapboxd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,9 @@ import (
 
 	"github.com/adhocteam/soapbox/models"
 	pb "github.com/adhocteam/soapbox/proto"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/autoscaling"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -342,4 +346,67 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 
 func setPbTimestamp(ts *gpb.Timestamp, t time.Time) {
 	ts.Seconds = t.Unix()
+}
+
+func (s *server) DeployCleanup(ctx context.Context, req *pb.DeployCleanupRequest) (*pb.Empty, error) {
+	sess, _ := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{Region: aws.String("us-east-1")},
+	})
+	svc := autoscaling.New(sess)
+
+	descAsgInput := autoscaling.DescribeAutoScalingGroupsInput{}
+	asgRes, err := svc.DescribeAutoScalingGroups(&descAsgInput)
+	if err != nil {
+		return nil, fmt.Errorf("describing autoscaling groups: %s", err)
+	}
+
+	if len(asgRes.AutoScalingGroups) == 0 {
+		return nil, fmt.Errorf("No ASGs found")
+	}
+
+	var inUseLcs map[string]bool
+	inUseLcs = make(map[string]bool)
+	for _, asg := range asgRes.AutoScalingGroups {
+		inUseLcs[*asg.LaunchConfigurationName] = true
+	}
+
+	descLcInput := autoscaling.DescribeLaunchConfigurationsInput{}
+	lcRes, err := svc.DescribeLaunchConfigurations(&descLcInput)
+	if err != nil {
+		return nil, fmt.Errorf("describing autoscaling groups: %s", err)
+	}
+
+	if len(lcRes.LaunchConfigurations) == 0 {
+		return nil, fmt.Errorf("No Launch Configurations found")
+	}
+
+	var unusedLcs []string
+	for _, lc := range lcRes.LaunchConfigurations {
+		if !inUseLcs[*lc.LaunchConfigurationName] {
+			unusedLcs = append(unusedLcs, *lc.LaunchConfigurationName)
+		}
+	}
+
+	if len(unusedLcs) == 0 {
+		return nil, fmt.Errorf("No unused Launch Configurations found")
+	}
+
+	for _, lc := range unusedLcs {
+		if strings.HasPrefix(lc, req.ApplicationName) {
+			if !req.DryRun {
+				log.Println("deleting:", lc)
+				delLcInput := autoscaling.DeleteLaunchConfigurationInput{
+					LaunchConfigurationName: aws.String(lc),
+				}
+				_, err := svc.DeleteLaunchConfiguration(&delLcInput)
+				if err != nil {
+					return nil, fmt.Errorf("deleting launch config: %s", err)
+				}
+			} else {
+				fmt.Println("would delete:", lc)
+			}
+		}
+	}
+
+	return &pb.Empty{}, nil
 }

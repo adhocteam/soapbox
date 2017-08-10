@@ -15,10 +15,13 @@ import (
 	"google.golang.org/grpc"
 )
 
+var dryRun bool
+
 func main() {
 	serverAddr := flag.String("server", "127.0.0.1:9090", "host:port of server")
 	printVersion := flag.Bool("V", false, "print version and exit")
 
+	flag.BoolVar(&dryRun, "dry-run", false, "do not perform any changes")
 	flag.Parse()
 
 	if *printVersion {
@@ -57,6 +60,8 @@ func main() {
 			log.Fatalf("getting version: %v", err)
 		}
 		return
+	case "cleanup":
+		cmd = deployCleanup
 	default:
 		log.Fatalf("unknown command %q", flag.Arg(0))
 	}
@@ -147,5 +152,23 @@ func getVersion(ctx context.Context, client pb.VersionClient, args []string) err
 	fmt.Printf("    version: %s\n", resp.Version)
 	fmt.Printf(" git commit: %s\n", resp.GitCommit)
 	fmt.Printf(" build time: %s\n", resp.BuildTime)
+	return nil
+}
+
+func deployCleanup(ctx context.Context, client pb.ApplicationsClient, args []string) error {
+	args = args[1:]
+	if len(args) < 1 {
+		return fmt.Errorf("1 argument is required: application name")
+	}
+
+	_, err := client.DeployCleanup(ctx, &pb.DeployCleanupRequest{
+		ApplicationName: args[0],
+		DryRun:          dryRun,
+	})
+
+	if err != nil {
+		return fmt.Errorf("Cleaning up deploys: %v", err)
+	}
+
 	return nil
 }

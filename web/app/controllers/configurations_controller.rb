@@ -1,4 +1,4 @@
-require 'config_pb'
+require 'configuration_pb'
 
 class ConfigurationsController < ApplicationController
   before_action :set_context, only: [:index, :create]

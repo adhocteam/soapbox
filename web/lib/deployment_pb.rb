@@ -17,6 +17,10 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.GetDeploymentRequest" do
     optional :id, :int32, 1
   end
+  add_message "soapbox.GetLatestDeploymentRequest" do
+    optional :application_id, :int32, 1
+    optional :environment_id, :int32, 2
+  end
   add_message "soapbox.Deployment" do
     optional :id, :int32, 1
     optional :application, :message, 2, "soapbox.Application"
@@ -43,6 +47,7 @@ module Soapbox
   ListDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListDeploymentRequest").msgclass
   ListDeploymentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListDeploymentResponse").msgclass
   GetDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentRequest").msgclass
+  GetLatestDeploymentRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetLatestDeploymentRequest").msgclass
   Deployment = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Deployment").msgclass
   StartDeploymentResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.StartDeploymentResponse").msgclass
   GetDeploymentStatusRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetDeploymentStatusRequest").msgclass

@@ -16,6 +16,7 @@ module Soapbox
 
       rpc :ListDeployments, ListDeploymentRequest, ListDeploymentResponse
       rpc :GetDeployment, GetDeploymentRequest, Deployment
+      rpc :GetLatestDeployment, GetLatestDeploymentRequest, Deployment
       rpc :StartDeployment, Deployment, StartDeploymentResponse
       rpc :GetDeploymentStatus, GetDeploymentStatusRequest, GetDeploymentStatusResponse
       rpc :TeardownDeployment, TeardownDeploymentRequest, Empty

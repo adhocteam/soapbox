@@ -4,12 +4,21 @@ class EnvironmentsController < ApplicationController
   before_action :set_application, only: [:index, :create, :new, :show]
 
   def index
-    req = Soapbox::ListEnvironmentRequest.new(application_id: params[:application_id].to_i)
+    app_id = params[:application_id].to_i
+    req = Soapbox::ListEnvironmentRequest.new(application_id: app_id)
     res = $api_environment_client.list_environments(req)
     if res.environments.count == 0
       redirect_to new_application_environment_path
     else
-      @environments = res.environments
+      @environments = []
+      res.environments.each do |env|
+        begin
+          latest_deploy = get_latest_deploy(app_id, env.id)
+        rescue GRPC::NotFound
+          latest_deploy = nil
+        end
+        @environments << [env, latest_deploy]
+      end
     end
   end
 
@@ -49,5 +58,10 @@ class EnvironmentsController < ApplicationController
   def get_environment(id)
     req = Soapbox::GetEnvironmentRequest.new(id: id)
     $api_environment_client.get_environment(req)
+  end
+
+  def get_latest_deploy(app_id, env_id)
+    req = Soapbox::GetLatestDeploymentRequest.new(application_id: app_id, environment_id: env_id)
+    $api_deployment_client.get_latest_deployment(req)
   end
 end

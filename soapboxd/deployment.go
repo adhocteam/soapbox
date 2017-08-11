@@ -2,6 +2,7 @@ package soapboxd
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -15,6 +16,9 @@ import (
 	"strconv"
 	"text/template"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/adhocteam/soapbox"
 	"github.com/adhocteam/soapbox/models"
@@ -87,7 +91,40 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 
 func (s *server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest) (*pb.Deployment, error) {
 	return nil, nil
+}
 
+// GetLatestDeployment gets latest deployment for an application environment.
+func (s *server) GetLatestDeployment(ctx context.Context, req *pb.GetLatestDeploymentRequest) (*pb.Deployment, error) {
+	appID := req.GetApplicationId()
+	envID := req.GetEnvironmentId()
+	query := `
+SELECT id, committish, current_state, created_at
+FROM deployments
+WHERE application_id = $1 AND environment_id = $2
+ORDER BY id DESC
+LIMIT 1
+`
+	var createdAt time.Time
+	dep := &pb.Deployment{
+		CreatedAt: new(gpb.Timestamp),
+	}
+	dep.Application = &pb.Application{Id: appID}
+	dep.Env = &pb.Environment{Id: envID}
+	dest := []interface{}{
+		&dep.Id,
+		&dep.Committish,
+		&dep.State,
+		&createdAt,
+	}
+	if err := s.db.QueryRow(query, appID, envID).Scan(dest...); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Error(codes.NotFound, "no deployment found for application environment")
+		} else {
+			return nil, errors.Wrap(err, "querying deployments table")
+		}
+	}
+	setPbTimestamp(dep.CreatedAt, createdAt)
+	return dep, nil
 }
 
 func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {

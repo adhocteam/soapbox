@@ -26,10 +26,24 @@ create table environments (
        application_id integer references applications on delete cascade,
        name text not null,
        slug text not null,
-       vars jsonb not null default '[]',
        created_at timestamp with time zone not null default now(),
        unique (application_id, name),
        unique (application_id, slug)
+);
+
+create table configurations (
+       environment_id integer references environments on delete cascade,
+       version integer not null default 1, -- TODO(paulsmith): might want to do auto-incrementing here with a sequence + trigger
+       created_at timestamp with time zone not null default now(),
+       unique (environment_id, version)
+);
+
+create table config_vars (
+       environment_id integer references environments on delete cascade,
+       version integer not null,
+       name text not null,
+       value text not null,
+       unique (environment_id, version, name)
 );
 
 create table deployments (

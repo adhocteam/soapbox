@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -118,7 +119,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
 	env, err := s.GetEnvironment(ctx, &envReq)
 	if err != nil {
-		return nil, fmt.Errorf("getting environment: %v", err)
+		return nil, errors.Wrap(err, "getting environment")
 	}
 	req.Env = env
 
@@ -188,6 +189,16 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		return err
 	})
 
+	env := newEnvFromProtoBuf(dep.GetEnv())
+	var config *pb.Configuration
+	do(func() error {
+		var err error
+		config, err = s.GetLatestConfiguration(context.TODO(), &pb.GetLatestConfigurationRequest{
+			EnvironmentId: env.id,
+		})
+		return err
+	})
+
 	// get a temp dir to work in
 	var tempdir string
 	do(func() error {
@@ -245,8 +256,6 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	setState("evaluate-wait")
 
-	env := newEnvFromProtoBuf(dep.GetEnv())
-
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
 	userDataTmpl := `#!/bin/bash
@@ -265,6 +274,7 @@ RELEASE_BUCKET="{{.Bucket}}"
 RELEASE="{{.Release}}" # Version string/committish
 ENV="{{.Environment}}"
 IMAGE="{{.Image}}"
+CONFIG_VERSION="{{.ConfigVersion}}"
 
 # Retrieve the release from s3
 $AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
@@ -320,7 +330,7 @@ service nginx reload
 
 # Set the X-Soapbox-App-Version HTTP header
 sed -i.bak \
-  "s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\"/" \
+  $"s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\";\nadd_header X-Soapbox-Config-Version \"$CONFIG_VERSION\";\nadd_header X-Soapbox-Environment \"$ENV\"/" \
   /etc/nginx/nginx.conf
 
 # Safely remove backup
@@ -338,23 +348,24 @@ service nginx reload
 	var userData bytes.Buffer
 	do(func() error {
 		return tmpl.Execute(&userData, struct {
-			Slug        string
-			ListenPort  int
-			Bucket      string
-			Environment string
-			Image       string
-			Release     string
-			Variables   []*pb.EnvironmentVariable
+			Slug          string
+			ListenPort    int
+			Bucket        string
+			Environment   string
+			Image         string
+			Release       string
+			Variables     []*pb.ConfigVar
+			ConfigVersion string
 		}{
 			app.slug,
 			// TODO(paulsmith): un-hardcode
 			8080,
 			soapboxImageBucket,
-			// TODO(paulsmith): unused in user-data script atm
-			"",
+			env.slug,
 			image,
 			committish,
-			env.vars,
+			config.ConfigVars,
+			strconv.Itoa(int(config.Version)),
 		})
 	})
 
@@ -704,16 +715,16 @@ func newAppFromProtoBuf(appPb *pb.Application) *application {
 }
 
 type environment struct {
+	id   int32
 	name string
 	slug string
-	vars []*pb.EnvironmentVariable
 }
 
 func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
 	return &environment{
+		id:   envPb.GetId(),
 		name: envPb.GetName(),
 		slug: envPb.GetSlug(),
-		vars: envPb.GetVars(),
 	}
 }
 

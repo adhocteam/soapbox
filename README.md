@@ -31,7 +31,7 @@ $ go install ./...
 
 3. **Run the API server:**
 ``` shell
-$ PGDATABASE=soapbox_dev PGSSLMODE=disable soapboxd &
+$ PGDATABASE=soapbox_dev PGSSLMODE=disable AWS_REGION=us-east-1 soapboxd &
 ```
 * If your database user is password protected, you may need to pass `PGPASSWORD=yourpgpass` to the command above as well.
 

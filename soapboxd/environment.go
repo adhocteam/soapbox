@@ -79,6 +79,7 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 	}
 
 	req.Id = int32(id)
+	req.CreatedAt = new(gpb.Timestamp)
 	setPbTimestamp(req.CreatedAt, createdAt)
 
 	return req, nil

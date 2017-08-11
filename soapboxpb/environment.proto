@@ -2,7 +2,7 @@ syntax = "proto3";
 package soapbox;
 option go_package = "proto";
 
-import "config.proto";
+import "configuration.proto";
 import "soapbox.proto";
 
 import "google/protobuf/timestamp.proto";

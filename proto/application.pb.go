@@ -6,7 +6,7 @@ Package proto is a generated protocol buffer package.
 
 It is generated from these files:
 	application.proto
-	config.proto
+	configuration.proto
 	deployment.proto
 	environment.proto
 	soapbox.proto

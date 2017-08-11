@@ -3,7 +3,7 @@
 
 require 'google/protobuf'
 
-require 'config_pb'
+require 'configuration_pb'
 require 'soapbox_pb'
 require 'google/protobuf/timestamp_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do

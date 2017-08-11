@@ -50,7 +50,9 @@
         const handleClick = e => {
             e.preventDefault();
             props.onAdd([state.name, state.value]);
-            const div = e.target.parentElement;
+            const div = document.querySelector(
+                "div.config-vars div:last-child"
+            );
             const input = div.querySelector("input");
             input.value = "";
             input.focus();

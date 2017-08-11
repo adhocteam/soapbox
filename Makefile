@@ -23,3 +23,6 @@ models:
 
 server:
 	AWS_REGION=us-east-1 PGSSLMODE=disable PGDATABASE=soapbox_dev soapboxd
+
+docker-image:
+	docker build -t soapbox/soapbox:$(GIT_COMMIT) .

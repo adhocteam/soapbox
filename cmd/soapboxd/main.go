@@ -67,8 +67,11 @@ func main() {
 }
 
 func checkJobDependencies() error {
-	if _, err := exec.LookPath("terraform"); err != nil {
-		return fmt.Errorf("terraform not found: %v", err)
+	binaries := []string{"terraform", "docker", "git"}
+	for _, bin := range binaries {
+		if _, err := exec.LookPath(bin); err != nil {
+			return fmt.Errorf("%s not found: %v", bin, err)
+		}
 	}
 	return nil
 }

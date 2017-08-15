@@ -47,8 +47,6 @@
               element.classList.add("complete");
             }
             element.dataset.state = req.responseText;
-            //            element.getElementsByTagName("span")[0].innerHTML =
-            //              req.responseText;
           } else {
             console.log("error occurred while polling");
           }

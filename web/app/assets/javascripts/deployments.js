@@ -30,7 +30,7 @@
       const appId = this.appId;
       const { state, id } = element.dataset;
 
-      if (["success", "failed"].includes(state)) {
+      if (["DEPLOYMENT_SUCCEEDED", "DEPLOYMENT_FAILED"].includes(state)) {
         return this.stop();
       }
       const req = new XMLHttpRequest();
@@ -39,11 +39,11 @@
         if (req.readyState == XMLHttpRequest.DONE) {
           if (req.status == 200) {
             const deploymentStatus = req.responseText;
-            if (deploymentStatus === "success") {
+            if (deploymentStatus === "DEPLOYMENT_SUCCEEDED") {
               element.classList.add("latest");
               element.classList.remove("active");
             }
-            if (deploymentStatus === "failed") {
+            if (deploymentStatus === "DEPLOYMENT_FAILED") {
               element.classList.add("complete");
             }
             element.dataset.state = req.responseText;

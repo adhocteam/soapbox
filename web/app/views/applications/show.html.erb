@@ -38,26 +38,24 @@
             data-state="<%= @deployment.state %>"
             data-id="<%= @deployment.id %>">
             <th>Latest deployment</th>
-              <td>
-                <%= ['success', 'failed'].include?(@deployment.state) ?  nil : render("shared/spinner") %>
-		  <span class="deploy-status <%=
-					     case @deployment.state
-					     when "success" then "deploy-status-success"
-					     when "failed" then "deploy-status-failed"
-					     when "rollout-wait", "evaluate-wait", "rollforward" then "deploy-status-inprogress"
-					     else "deploy-status-unknown"
-					     end
-					     %>" title="<%= @deployment.state || 'unknown' %>"></span>
-
-
-              </td>
-              <td>
+            <td>
+		<%= [:DEPLOYMENT_SUCCEEDED, :DEPLOYMENT_FAILED].include?(deployment.state) || index != 0 ? nil : render("shared/spinner") %>
+		<span class="deploy-status <%=
+					   case @deployment.state
+					   when :DEPLOYMENT_SUCCEEDED then "deploy-status-success"
+					   when :DEPLOYMENT_FAILED then "deploy-status-failed"
+					   when :DEPLOYMENT_ROLLOUT_WAIT, :DEPLOYMENT_EVALUATE_WAIT, :DEPLOYMENT_ROLL_FORWARD then "deploy-status-inprogress"
+					   else "deploy-status-unknown"
+					   end
+					   %>" title="<%= @deployment.state || 'unknown' %>"></span>
+            </td>
+            <td>
                 <code><%= link_to @deployment.committish[0..7], "#{@app.github_repo_url}/commit/#{@deployment.committish}" %></code> /
                 <%= @deployment.env.name %>
-              </td>
-              <td>
+            </td>
+            <td>
                 <%= Time.at(@deployment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %>
-              </td>
+            </td>
           </tr>
         <% else %>
           <tr>

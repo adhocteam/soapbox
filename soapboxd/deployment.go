@@ -34,13 +34,501 @@ import (
 	"golang.org/x/net/context"
 )
 
+<<<<<<< HEAD:api/api.go
+type server struct {
+	db         *sql.DB
+	httpClient *http.Client
+	config     *soapbox.Config
+}
+
+type state string
+
+func NewServer(db *sql.DB, httpClient *http.Client, config *soapbox.Config) *server {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	return &server{
+		db:         db,
+		httpClient: httpClient,
+		config:     config,
+	}
+}
+
+func newNullString(s string) sql.NullString {
+	return sql.NullString{String: s, Valid: true}
+}
+
+func nullString(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return ""
+}
+
+func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*pb.Application, error) {
+	// verify access to the GitHub repo (if private, then need
+	// OAuth2 token: this is not the responsibility of this
+	// module, the caller should supply this server with an HTTP
+	// client configured with the token)
+	err := canAccessURL(s.httpClient, app.GetGithubRepoUrl())
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't connect to Github repo")
+	}
+
+	// supply a default Dockerfile path ("Dockerfile")
+	dockerfilePath := app.GetDockerfilePath()
+	if dockerfilePath == "" {
+		dockerfilePath = "Dockerfile"
+	}
+
+	app.Slug = slugify(app.GetName())
+
+	model := &models.Application{
+		ID:                 int(app.Id),
+		Name:               app.GetName(),
+		Slug:               app.GetSlug(),
+		Description:        newNullString(app.Description),
+		ExternalDNS:        newNullString(app.ExternalDns),
+		GithubRepoURL:      newNullString(app.GithubRepoUrl),
+		DockerfilePath:     newNullString(app.DockerfilePath),
+		EntrypointOverride: newNullString(app.EntrypointOverride),
+		Type:               appTypePbToModel(app.Type),
+		InternalDNS:        newNullString(app.InternalDns),
+		CreatedAt:          time.Now(),
+		UpdatedAt:          time.Now(),
+		CreationState:      models.CreationStateTypeCreateInfrastructureWait,
+	}
+
+	if err := model.Insert(s.db); err != nil {
+		return nil, errors.Wrap(err, "inserting into db")
+	}
+
+	app.Id = int32(model.ID)
+
+	// start a terraform job in the background
+	go s.createAppInfrastructure(app)
+
+	return app, nil
+}
+
+func (s *server) createAppInfrastructure(app *pb.Application) {
+	setState := func(state pb.CreationState) {
+		app.CreationState = state
+		updateSQL := "UPDATE applications SET creation_state = $1 WHERE id = $2"
+		if _, err := s.db.Exec(updateSQL, creationStateTypePbToModel(state), app.GetId()); err != nil {
+			errors.Wrap(err, "updating applications table")
+		}
+	}
+
+	do := func(f func() error) {
+		if app.CreationState != pb.CreationState_FAILED {
+			if err := f(); err != nil {
+				log.Printf("app creation failed: %v", err)
+				setState(pb.CreationState_FAILED)
+			}
+		}
+	}
+
+	switch app.GetCreationState() {
+	case pb.CreationState_CREATE_INFRASTRUCTURE_WAIT:
+		// run terraform apply on VPC config TODO(paulsmith):
+		// bundle the terraform configs with the Soapbox app
+		// and make them available in a well-known location
+		terraformPath := filepath.Join("ops", "aws", "terraform")
+		scriptsPath := filepath.Join(terraformPath, "scripts")
+
+		slug := app.GetSlug()
+		var networkDir, deploymentDir string
+
+		do(func() error {
+			log.Printf("generating terraform configuration - network")
+			cmd := exec.Command("./init_app_tf.sh",
+				"-a", slug,
+				"-e", "test", // TODO(paulsmith): FIXME
+				"-t", "network")
+			cmd.Dir = scriptsPath
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running init_app_tf.sh for network")
+			}
+			networkDir = strings.TrimSpace(buf.String())
+			return nil
+		})
+
+		if networkDir != "" {
+			defer os.RemoveAll(networkDir)
+		}
+
+		do(func() error {
+			log.Printf("running terraform plan - network")
+			cmd := exec.Command("terraform", "plan",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = networkDir
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			log.Printf("running terraform apply - network")
+			cmd := exec.Command("terraform", "apply",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = networkDir
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			log.Printf("generating terraform configuration - deployment")
+			cmd := exec.Command("./init_app_tf.sh",
+				"-a", slug,
+				"-e", "test", // TODO(paulsmith): FIXME
+				"-t", "deployment")
+			cmd.Dir = scriptsPath
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running init_app_tf.sh for deployment")
+			}
+			deploymentDir = strings.TrimSpace(buf.String())
+			return nil
+		})
+
+		if deploymentDir != "" {
+			defer os.RemoveAll(deploymentDir)
+		}
+
+		do(func() error {
+			cmd := exec.Command("terraform", "get")
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
+			return cmd.Run()
+		})
+
+		do(func() error {
+			log.Printf("running terraform plan - deployment")
+			cmd := exec.Command("terraform", "plan",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			log.Printf("running terraform apply - deployment")
+			cmd := exec.Command("terraform", "apply",
+				"-var", "application_name="+slug,
+				"-var", "environment=test", // TODO(paulsmith): FIXME
+				"-no-color")
+			cmd.Dir = filepath.Join(deploymentDir, "asg")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			return cmd.Run()
+		})
+
+		do(func() error {
+			setState(pb.CreationState_SUCCEEDED)
+			log.Printf("done")
+			return nil
+		})
+	case pb.CreationState_SUCCEEDED:
+		log.Printf("creation already succeeded, doing nothing")
+	case pb.CreationState_FAILED:
+		// TODO(paulsmith): advance this to
+		// CREATE_INFRASTRUCTURE_WAIT state with some retry
+		// logic like max attempts
+		log.Printf("creation previously failed, should retry")
+	}
+}
+
+type httpHead interface {
+	Head(url string) (*http.Response, error)
+}
+
+func canAccessURL(client httpHead, url string) error {
+	resp, err := client.Head(url)
+	if err != nil {
+		return errors.Wrapf(err, "couldn't make HTTP HEAD request to %s", url)
+	}
+	io.Copy(ioutil.Discard, resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode/100 != 2 {
+		return errors.Wrapf(err, "non-success HTTP status response from %s: %d", url, resp.StatusCode)
+	}
+	return nil
+}
+
+var (
+	slugSpaceRe      = regexp.MustCompile(`\s+`)
+	slugNotAllowedRe = regexp.MustCompile(`[^a-z0-9-]`)
+	slugRepeatDashRe = regexp.MustCompile(`-{2,}`)
+)
+
+func slugify(s string) string {
+	s = strings.TrimSpace(strings.ToLower(s))
+	s = slugSpaceRe.ReplaceAllString(s, "-")
+	s = slugNotAllowedRe.ReplaceAllString(s, "")
+	s = slugRepeatDashRe.ReplaceAllString(s, "-")
+	return s
+}
+
+const (
+	listAppsSQL = `SELECT id, name, description, created_at FROM applications ORDER BY created_at ASC`
+)
+
+func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApplicationResponse, error) {
+	rows, err := s.db.Query(listAppsSQL)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying db for apps list")
+	}
+
+	var apps []*pb.Application
+
+	for rows.Next() {
+		var a pb.Application
+		dest := []interface{}{&a.Id, &a.Name, &a.Description, &a.CreatedAt}
+		if err := rows.Scan(dest...); err != nil {
+			return nil, errors.Wrap(err, "scanning db row")
+		}
+		apps = append(apps, &a)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "iterating over db rows")
+	}
+
+	resp := &pb.ListApplicationResponse{
+		Applications: apps,
+	}
+
+	return resp, nil
+}
+
+func appTypeModelToPb(at models.AppType) pb.ApplicationType {
+	switch at {
+	case models.AppTypeServer:
+		return pb.ApplicationType_SERVER
+	case models.AppTypeCronjob:
+		return pb.ApplicationType_CRONJOB
+	}
+	panic("shouldn't reach here")
+}
+
+func appTypePbToModel(at pb.ApplicationType) models.AppType {
+	switch at {
+	case pb.ApplicationType_SERVER:
+		return models.AppTypeServer
+	case pb.ApplicationType_CRONJOB:
+		return models.AppTypeCronjob
+	}
+	panic("shouldn't reach here")
+}
+
+func creationStateTypeModelToPb(cst models.CreationStateType) pb.CreationState {
+	switch cst {
+	case models.CreationStateTypeCreateInfrastructureWait:
+		return pb.CreationState_CREATE_INFRASTRUCTURE_WAIT
+	case models.CreationStateTypeSucceeded:
+		return pb.CreationState_SUCCEEDED
+	case models.CreationStateTypeFailed:
+		return pb.CreationState_FAILED
+	default:
+		panic("shouldn't get here")
+	}
+}
+
+func creationStateTypePbToModel(cst pb.CreationState) models.CreationStateType {
+	switch cst {
+	case pb.CreationState_CREATE_INFRASTRUCTURE_WAIT:
+		return models.CreationStateTypeCreateInfrastructureWait
+	case pb.CreationState_SUCCEEDED:
+		return models.CreationStateTypeSucceeded
+	case pb.CreationState_FAILED:
+		return models.CreationStateTypeFailed
+	default:
+		panic("shouldn't get here")
+	}
+}
+
+func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
+	model, err := models.ApplicationByID(s.db, int(req.Id))
+	if err != nil {
+		return nil, errors.Wrap(err, "getting application by ID from db")
+	}
+
+	app := &pb.Application{
+		Id:   int32(model.ID),
+		Name: model.Name,
+		Slug: model.Slug,
+		Type: appTypeModelToPb(model.Type),
+	}
+
+	if model.Description.Valid {
+		app.Description = model.Description.String
+	}
+	if model.InternalDNS.Valid {
+		app.InternalDns = model.InternalDNS.String
+	}
+	if model.ExternalDNS.Valid {
+		app.ExternalDns = model.ExternalDNS.String
+	}
+	if model.GithubRepoURL.Valid {
+		app.GithubRepoUrl = model.GithubRepoURL.String
+	}
+	if model.DockerfilePath.Valid {
+		app.DockerfilePath = model.DockerfilePath.String
+	}
+	if model.EntrypointOverride.Valid {
+		app.EntrypointOverride = model.EntrypointOverride.String
+	}
+	// TODO(paulsmith): have a global timestamp format across the
+	// Go and Rails apps
+	app.CreatedAt = model.CreatedAt.Format(timestampFormat)
+
+	app.CreationState = creationStateTypeModelToPb(model.CreationState)
+
+	return app, nil
+}
+
+const timestampFormat = "2006-01-02T15:04:05"
+
+func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRequest) (*pb.ListEnvironmentResponse, error) {
+	listSQL := "SELECT id, application_id, name, slug, vars, created_at FROM environments WHERE application_id = $1 ORDER BY id"
+	rows, err := s.db.Query(listSQL, req.GetApplicationId())
+	if err != nil {
+		return nil, errors.Wrap(err, "querying db for environments")
+	}
+	var envs []*pb.Environment
+	for rows.Next() {
+		var env pb.Environment
+		var vars []byte
+		dest := []interface{}{
+			&env.Id,
+			&env.ApplicationId,
+			&env.Name,
+			&env.Slug,
+			&vars,
+			&env.CreatedAt,
+		}
+		if err := rows.Scan(dest...); err != nil {
+			return nil, errors.Wrap(err, "scanning db row")
+		}
+		if err := json.Unmarshal(vars, &env.Vars); err != nil {
+			return nil, errors.Wrap(err, "unmarshalling env vars JSON")
+		}
+		envs = append(envs, &env)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "iterating over db result set")
+	}
+	res := &pb.ListEnvironmentResponse{Environments: envs}
+	return res, nil
+}
+
+func (s *server) GetEnvironment(ctx context.Context, req *pb.GetEnvironmentRequest) (*pb.Environment, error) {
+	getSQL := "SELECT id, application_id, name, slug, vars, created_at FROM environments WHERE id = $1"
+	var env pb.Environment
+	var vars []byte
+	dest := []interface{}{
+		&env.Id,
+		&env.ApplicationId,
+		&env.Name,
+		&env.Slug,
+		&vars,
+		&env.CreatedAt,
+	}
+	if err := s.db.QueryRow(getSQL, req.GetId()).Scan(dest...); err != nil {
+		return nil, errors.Wrap(err, "scanning db row")
+	}
+	if err := json.Unmarshal(vars, &env.Vars); err != nil {
+		return nil, errors.Wrap(err, "unmarshalling env vars JSON")
+	}
+	return &env, nil
+}
+
+func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*pb.Environment, error) {
+	// TODO(paulsmith): can we even do this in XO??
+	insertSQL := "INSERT INTO environments (application_id, name, slug, vars) VALUES ($1, $2, $3, $4) RETURNING id, created_at"
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(req.Vars); err != nil {
+		return nil, errors.Wrap(err, "encoding env vars as JSON")
+	}
+
+	args := []interface{}{
+		req.GetApplicationId(),
+		req.GetName(),
+		slugify(req.GetName()),
+		buf.String(),
+	}
+
+	var id int
+
+	if err := s.db.QueryRow(insertSQL, args...).Scan(&id, &req.CreatedAt); err != nil {
+		return nil, errors.Wrap(err, "inserting in to db")
+	}
+
+	req.Id = int32(id)
+
+	return req, nil
+}
+
+func (s *server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironmentRequest) (*pb.Empty, error) {
+	deleteSQL := "DELETE FROM environments WHERE id = $1"
+	if _, err := s.db.Exec(deleteSQL, req.GetId()); err != nil {
+		return nil, errors.Wrap(err, "deleting row from db")
+	}
+	return &pb.Empty{}, nil
+}
+
+func (s *server) CopyEnvironment(context.Context, *pb.CopyEnvironmentRequest) (*pb.Environment, error) {
+	return nil, nil
+}
+
+type deploymentState struct {
+	*pb.DeploymentState
+}
+
+func (c deploymentState) Scan(src interface{}) error {
+	switch val := src.(type) {
+	case []byte:
+		return c.UnmarshalText(val)
+	default:
+		return fmt.Errorf("invalid DeploymentStateType: %#v", src)
+	}
+}
+
+func (c deploymentState) UnmarshalText(b []byte) error {
+	if state, exists := pb.DeploymentState_value[string(b)]; exists {
+		*c.DeploymentState = pb.DeploymentState(state)
+	} else if !exists {
+		return fmt.Errorf("unknown value for deployment state: %v", string(b))
+	}
+
+	return nil
+}
+
+=======
+>>>>>>> bc1576fc56d592ed49fa8e5af7ea3fb8ff86989f:soapboxd/deployment.go
 func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
 	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
 	if err != nil {
-		return nil, errors.Wrap(err, "querying db")
+		return nil, errors.Wrap(err, "querying db in ListDeployments")
 	}
 	var deployments []*pb.Deployment
+
+	defer rows.Close()
 	for rows.Next() {
 		d := &pb.Deployment{
 			Application: &pb.Application{},
@@ -53,8 +541,13 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 			&d.Application.Id,
 			&d.Env.Id,
 			&d.Committish,
+<<<<<<< HEAD:api/api.go
+			deploymentState{&d.State},
+			&d.CreatedAt,
+=======
 			&d.State,
 			&createdAt,
+>>>>>>> bc1576fc56d592ed49fa8e5af7ea3fb8ff86989f:soapboxd/deployment.go
 			&d.Env.Name,
 		}
 		if err := rows.Scan(dest...); err != nil {
@@ -128,14 +621,19 @@ LIMIT 1
 }
 
 func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
+<<<<<<< HEAD:api/api.go
+	req.State = pb.DeploymentState_DEPLOYMENT_ROLLOUT_WAIT
+	query := `INSERT INTO deployments (application_id, environment_id, committish, current_state) VALUES ($1, $2, $3, $4) RETURNING id, created_at`
+=======
 	req.State = "rollout-wait"
 	query := `INSERT INTO deployments (application_id, environment_id, committish, current_state) VALUES ($1, $2, $3, $4) RETURNING id`
+>>>>>>> bc1576fc56d592ed49fa8e5af7ea3fb8ff86989f:soapboxd/deployment.go
 	appId := int(req.GetApplication().GetId())
 	args := []interface{}{
 		appId,
 		req.GetEnv().GetId(),
 		req.GetCommittish(),
-		req.GetState(),
+		pb.DeploymentStateToString(req.GetState()),
 	}
 	dest := []interface{}{
 		&req.Id,
@@ -188,22 +686,22 @@ var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 const deployStateTagName = "deploystate"
 
 func (s *server) startDeployment(dep *pb.Deployment) {
-	setState := func(state string) {
-		if dep.State == "failed" {
+	setState := func(state pb.DeploymentState) {
+		if dep.State == pb.DeploymentState_DEPLOYMENT_FAILED {
 			return
 		}
 		dep.State = state
 		updateSQL := "UPDATE deployments SET current_state = $1 WHERE id = $2"
-		if _, err := s.db.Exec(updateSQL, state, dep.GetId()); err != nil {
+		if _, err := s.db.Exec(updateSQL, pb.DeploymentStateToString(state), dep.GetId()); err != nil {
 			log.Printf("updating deployments table: %v", err)
 		}
 	}
 
 	do := func(f func() error) {
-		if dep.State != "failed" {
+		if dep.State != pb.DeploymentState_DEPLOYMENT_FAILED {
 			if err := f(); err != nil {
 				log.Printf("error: %v", err)
-				setState("failed")
+				setState(pb.DeploymentState_DEPLOYMENT_FAILED)
 			}
 		}
 	}
@@ -291,7 +789,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		return newS3Storage(app.sess).uploadFile(soapboxImageBucket, objectKey, filename)
 	})
 
-	setState("evaluate-wait")
+	setState(pb.DeploymentState_DEPLOYMENT_EVALUATE_WAIT)
 
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
@@ -487,7 +985,7 @@ service nginx reload
 		return target.waitUntilInstancesReady(blueASG)
 	})
 
-	setState("rollforward")
+	setState(pb.DeploymentState_DEPLOYMENT_ROLL_FORWARD)
 
 	log.Printf("detaching (stale) green ASG from load balancer")
 	do(func() error {
@@ -511,7 +1009,7 @@ service nginx reload
 
 	// TODO(paulsmith): health check?
 
-	setState("success")
+	setState(pb.DeploymentState_DEPLOYMENT_SUCCEEDED)
 }
 
 type targetGroup struct {

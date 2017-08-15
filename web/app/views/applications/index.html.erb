@@ -5,13 +5,17 @@
 	    <%= link_to '+ New Application', new_application_path, class: "btn btn-primary" %>
 	</div>
 	<ul class="applications-list list-unstyled">
-	    <% @applications.each do |app| %>
+	    <% @applications.each do |app, latest_deploy| %>
 	        <li>
 	            <h3>
 	                <%= link_to app.name, application_path(app.id) %>
 	            </h3>
-	            <div class="">
-	                <small>Last deployed on July 28, 2017</small>
+	            <div class="app-latest-deploy">
+			<% if latest_deploy %>
+	                    <small>Last deployed on <%= Time.at(latest_deploy.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %></small>
+			<% else %>
+			    <small>Not yet deployed!</small>
+			<% end %>
 	            </div>
 	        </li>
 	    <% end %>

@@ -4,7 +4,7 @@
     const Name = props => {
         return input({
             name: props.name ? props.name : "",
-            className: "form-control mr-2",
+            className: "form-control mr-2 col-md-5",
             type: "text",
             value: props.value ? props.value : "",
             placeholder: "NAME",
@@ -16,7 +16,7 @@
     const Value = props => {
         return textarea({
             name: props.name ? props.name : "",
-            className: "form-control mr-2",
+            className: "form-control mr-2 col-md-5",
             value: props.value ? props.value : "",
             placeholder: "VALUE",
             readOnly: props.readOnly,
@@ -50,7 +50,9 @@
         const handleClick = e => {
             e.preventDefault();
             props.onAdd([state.name, state.value]);
-            const div = e.target.parentElement;
+            const div = document.querySelector(
+                "div.config-vars div:last-child"
+            );
             const input = div.querySelector("input");
             input.value = "";
             input.focus();

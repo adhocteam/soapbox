@@ -5,27 +5,13 @@
   </div>
   <div class="card-block" >
     <h4 class="card-title"><%= @environment.name %></h4>
-    <h5>Environment Variables</h5>
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @environment.vars.each do |env_var| %>
-          <tr scope="row">
-            <td>
-		<code><%= env_var.name %></code>
-            </td>
-            <td>
-		<code><%= env_var.value %></code>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-    <p class="card-text text-muted"><small>Created: FIXME</small></p>
+    <ul class="card-text">
+	<li>
+	    <%= link_to 'Configuration', application_environment_configurations_path(environment_id: params[:id].to_i) %>
+	</li>
+    </ul>
+    <p class="card-text text-muted">
+	<small>Created: <%= Time.at(@environment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %></small>
+    </p>
   </div>
 </div>

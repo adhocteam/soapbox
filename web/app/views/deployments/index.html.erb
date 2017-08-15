@@ -57,8 +57,16 @@
       			    <%= deployment.env.name %>
       			</td>
       			<td>
-              <%= [:DEPLOYMENT_SUCCEEDED, :DEPLOYMENT_FAILED].include?(deployment.state) || index != 0 ? nil : render("shared/spinner") %>
-              <span name="deployment-state"><%= deployment.state %></span>
+			    <%= [:DEPLOYMENT_SUCCEEDED, :DEPLOYMENT_FAILED].include?(deployment.state) || index != 0 ? nil : render("shared/spinner") %>
+			    <span class="deploy-status <%=
+						       case deployment.state
+						       when :DEPLOYMENT_SUCCEEDED then "deploy-status-success"
+						       when :DEPLOYMENT_FAILED then "deploy-status-failed"
+						       when :DEPLOYMENT_ROLLOUT_WAIT, :DEPLOYMENT_EVALUATE_WAIT, :DEPLOYMENT_ROLL_FORWARD then "deploy-status-inprogress"
+						       else "deploy-status-unknown"
+						       end
+						       %>" title="<%= deployment.state || 'unknown' %>"></span>
+
       			</td>
 			<td>
       			    <%= Time.at(deployment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %>

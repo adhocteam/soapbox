@@ -18,7 +18,6 @@ module Soapbox
       rpc :GetEnvironment, GetEnvironmentRequest, Environment
       rpc :CreateEnvironment, Environment, Environment
       rpc :DestroyEnvironment, DestroyEnvironmentRequest, Empty
-      rpc :CopyEnvironment, CopyEnvironmentRequest, Environment
     end
 
     Stub = Service.rpc_stub_class

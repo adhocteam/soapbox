@@ -2,6 +2,7 @@ package soapboxd
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -12,8 +13,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"text/template"
 	"time"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/adhocteam/soapbox"
 	"github.com/adhocteam/soapbox/models"
@@ -579,7 +584,40 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 
 func (s *server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest) (*pb.Deployment, error) {
 	return nil, nil
+}
 
+// GetLatestDeployment gets latest deployment for an application environment.
+func (s *server) GetLatestDeployment(ctx context.Context, req *pb.GetLatestDeploymentRequest) (*pb.Deployment, error) {
+	appID := req.GetApplicationId()
+	envID := req.GetEnvironmentId()
+	query := `
+SELECT id, committish, current_state, created_at
+FROM deployments
+WHERE application_id = $1 AND environment_id = $2
+ORDER BY id DESC
+LIMIT 1
+`
+	var createdAt time.Time
+	dep := &pb.Deployment{
+		CreatedAt: new(gpb.Timestamp),
+	}
+	dep.Application = &pb.Application{Id: appID}
+	dep.Env = &pb.Environment{Id: envID}
+	dest := []interface{}{
+		&dep.Id,
+		&dep.Committish,
+		&dep.State,
+		&createdAt,
+	}
+	if err := s.db.QueryRow(query, appID, envID).Scan(dest...); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, status.Error(codes.NotFound, "no deployment found for application environment")
+		} else {
+			return nil, errors.Wrap(err, "querying deployments table")
+		}
+	}
+	setPbTimestamp(dep.CreatedAt, createdAt)
+	return dep, nil
 }
 
 func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
@@ -616,7 +654,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
 	env, err := s.GetEnvironment(ctx, &envReq)
 	if err != nil {
-		return nil, fmt.Errorf("getting environment: %v", err)
+		return nil, errors.Wrap(err, "getting environment")
 	}
 	req.Env = env
 
@@ -686,6 +724,16 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		return err
 	})
 
+	env := newEnvFromProtoBuf(dep.GetEnv())
+	var config *pb.Configuration
+	do(func() error {
+		var err error
+		config, err = s.GetLatestConfiguration(context.TODO(), &pb.GetLatestConfigurationRequest{
+			EnvironmentId: env.id,
+		})
+		return err
+	})
+
 	// get a temp dir to work in
 	var tempdir string
 	do(func() error {
@@ -743,8 +791,6 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	setState(pb.DeploymentState_DEPLOYMENT_EVALUATE_WAIT)
 
-	env := newEnvFromProtoBuf(dep.GetEnv())
-
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
 	userDataTmpl := `#!/bin/bash
@@ -763,6 +809,7 @@ RELEASE_BUCKET="{{.Bucket}}"
 RELEASE="{{.Release}}" # Version string/committish
 ENV="{{.Environment}}"
 IMAGE="{{.Image}}"
+CONFIG_VERSION="{{.ConfigVersion}}"
 
 # Retrieve the release from s3
 $AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
@@ -818,7 +865,7 @@ service nginx reload
 
 # Set the X-Soapbox-App-Version HTTP header
 sed -i.bak \
-  "s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\"/" \
+  $"s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\";\nadd_header X-Soapbox-Config-Version \"$CONFIG_VERSION\";\nadd_header X-Soapbox-Environment \"$ENV\"/" \
   /etc/nginx/nginx.conf
 
 # Safely remove backup
@@ -836,23 +883,24 @@ service nginx reload
 	var userData bytes.Buffer
 	do(func() error {
 		return tmpl.Execute(&userData, struct {
-			Slug        string
-			ListenPort  int
-			Bucket      string
-			Environment string
-			Image       string
-			Release     string
-			Variables   []*pb.EnvironmentVariable
+			Slug          string
+			ListenPort    int
+			Bucket        string
+			Environment   string
+			Image         string
+			Release       string
+			Variables     []*pb.ConfigVar
+			ConfigVersion string
 		}{
 			app.slug,
 			// TODO(paulsmith): un-hardcode
 			8080,
 			soapboxImageBucket,
-			// TODO(paulsmith): unused in user-data script atm
-			"",
+			env.slug,
 			image,
 			committish,
-			env.vars,
+			config.ConfigVars,
+			strconv.Itoa(int(config.Version)),
 		})
 	})
 
@@ -1202,16 +1250,16 @@ func newAppFromProtoBuf(appPb *pb.Application) *application {
 }
 
 type environment struct {
+	id   int32
 	name string
 	slug string
-	vars []*pb.EnvironmentVariable
 }
 
 func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
 	return &environment{
+		id:   envPb.GetId(),
 		name: envPb.GetName(),
 		slug: envPb.GetSlug(),
-		vars: envPb.GetVars(),
 	}
 }
 

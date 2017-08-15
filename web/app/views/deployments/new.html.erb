@@ -11,7 +11,7 @@
         </div>
       <% end %>
       <div class="form-group required<%= ' has-danger' if @form.errors.include?(:committish) %>">
-        <%= f.label :committish, class: "col-form-label" %>
+        <%= f.label :committish, 'Git commit SHA1 or tag', class: "col-form-label" %>
         <%= f.text_field :committish, value: @form.committish, class: "form-control" %>
       </div>
       <div class="form-group required<%= ' has-danger' if @form.errors.include?(:environment_id) %>">

@@ -7,7 +7,25 @@ class ApplicationsController < ApplicationController
     if res.applications.count == 0
       redirect_to new_application_path
     else
-      @applications = res.applications
+      @applications = []
+      apps = res.applications
+      apps.each do |app|
+        envs = get_environments(app.id)
+        latest_deploy = nil
+        envs.each do |env|
+          begin
+            deploy = get_latest_deploy(app.id, env.id)
+            if latest_deploy.nil?
+              latest_deploy = deploy
+            elsif latest_deploy.created_at.seconds < deploy.created_at.seconds
+              latest_deploy = deploy
+            end
+          rescue GRPC::NotFound
+            next
+          end
+        end
+        @applications << [app, latest_deploy]
+      end
     end
   end
 
@@ -46,5 +64,17 @@ class ApplicationsController < ApplicationController
       format.html
       format.json { render json: @app.as_json }
     end
+  end
+
+  private
+
+  def get_environments(app_id)
+    req = Soapbox::ListEnvironmentRequest.new(application_id: app_id)
+    $api_environment_client.list_environments(req).environments
+  end
+
+  def get_latest_deploy(app_id, env_id)
+    req = Soapbox::GetLatestDeploymentRequest.new(application_id: app_id, environment_id: env_id)
+    $api_deployment_client.get_latest_deployment(req)
   end
 end

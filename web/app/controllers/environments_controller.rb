@@ -1,15 +1,24 @@
 require 'environment_pb'
 
 class EnvironmentsController < ApplicationController
-  before_action :set_application, only: [:index, :create, :new, :show, :copy]
+  before_action :set_application, only: [:index, :create, :new, :show]
 
   def index
-    req = Soapbox::ListEnvironmentRequest.new(application_id: params[:application_id].to_i)
+    app_id = params[:application_id].to_i
+    req = Soapbox::ListEnvironmentRequest.new(application_id: app_id)
     res = $api_environment_client.list_environments(req)
     if res.environments.count == 0
       redirect_to new_application_environment_path
     else
-      @environments = res.environments
+      @environments = []
+      res.environments.each do |env|
+        begin
+          latest_deploy = get_latest_deploy(app_id, env.id)
+        rescue GRPC::NotFound
+          latest_deploy = nil
+        end
+        @environments << [env, latest_deploy]
+      end
     end
   end
 
@@ -20,12 +29,7 @@ class EnvironmentsController < ApplicationController
   def create
     @form = CreateEnvironmentForm.new(params[:environment])
     if @form.valid?
-      vars = []
-      @form.environment_variables.each do |pair|
-        name, value = pair
-        vars << Soapbox::EnvironmentVariable.new(name: name, value: value)
-      end
-      env = Soapbox::Environment.new(application_id: params[:application_id].to_i, name: @form.name, vars: vars)
+      env = Soapbox::Environment.new(application_id: params[:application_id].to_i, name: @form.name)
       $api_environment_client.create_environment(env)
       redirect_to application_environments_path
     else
@@ -34,7 +38,8 @@ class EnvironmentsController < ApplicationController
   end
 
   def show
-    @environment = get_environment(params[:id].to_i)
+    env_id = params[:id].to_i
+    @environment = get_environment(env_id)
   end
 
   def destroy
@@ -43,18 +48,6 @@ class EnvironmentsController < ApplicationController
     redirect_to application_environments_path
   end
 
-  def copy
-    env = get_environment(params[:id].to_i)
-    names, values = [], []
-    env.vars.each do |var|
-      names << var.name
-      values << var.value
-    end
-    env.name += " copy"
-    @form = CreateEnvironmentForm.new({name: env.name, names: names, values: values})
-    render :new
-  end
-    
   private
 
   def set_application
@@ -65,5 +58,10 @@ class EnvironmentsController < ApplicationController
   def get_environment(id)
     req = Soapbox::GetEnvironmentRequest.new(id: id)
     $api_environment_client.get_environment(req)
+  end
+
+  def get_latest_deploy(app_id, env_id)
+    req = Soapbox::GetLatestDeploymentRequest.new(application_id: app_id, environment_id: env_id)
+    $api_deployment_client.get_latest_deployment(req)
   end
 end

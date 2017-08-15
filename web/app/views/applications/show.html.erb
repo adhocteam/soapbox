@@ -20,8 +20,13 @@
             id="current-application"
             data-id="<%= @app.id %>"
             data-state="<%= @app.creation_state %>">
-            <%= @app.creation_state == :CREATE_INFRASTRUCTURE_WAIT ? render("shared/spinner") : nil %>
-            <span><%= @app.creation_state %></span>
+	      <%=
+	      case @app.creation_state
+	      when :CREATE_INFRASTRUCTURE_WAIT then render("shared/spinner")
+	      when :SUCCEEDED then 'Ready'
+	      when :FAILED then 'Failed to build'
+	      end
+	      %>
           </td>
         </tr>
         <tr>
@@ -32,13 +37,22 @@
           <tr id="current-deployment"
             data-state="<%= @deployment.state %>"
             data-id="<%= @deployment.id %>">
-            <th>Current deployment</th>
+            <th>Latest deployment</th>
               <td>
                 <%= ['success', 'failed'].include?(@deployment.state) ?  nil : render("shared/spinner") %>
-                <span name="deployment-state"><%= @deployment.state %></span>
+		  <span class="deploy-status <%=
+					     case @deployment.state
+					     when "success" then "deploy-status-success"
+					     when "failed" then "deploy-status-failed"
+					     when "rollout-wait", "evaluate-wait", "rollforward" then "deploy-status-inprogress"
+					     else "deploy-status-unknown"
+					     end
+					     %>" title="<%= @deployment.state || 'unknown' %>"></span>
+
+
               </td>
               <td>
-                <code><%= link_to @deployment.committish, "#{@app.github_repo_url}/commit/#{@deployment.committish}" %></code> /
+                <code><%= link_to @deployment.committish[0..7], "#{@app.github_repo_url}/commit/#{@deployment.committish}" %></code> /
                 <%= @deployment.env.name %>
               </td>
               <td>
@@ -47,7 +61,7 @@
           </tr>
         <% else %>
           <tr>
-            <th>Current deployment</th>
+            <th>Latest deployment</th>
             <td><%= link_to "Create your first deployment", new_application_deployment_path(@app.id) %></td>
           </tr>
         <% end %>

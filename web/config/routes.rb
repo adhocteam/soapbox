@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   resources :applications do
     resources :environments do
       get :copy, on: :member
+      resources :configurations
     end
     resources :deployments
   end

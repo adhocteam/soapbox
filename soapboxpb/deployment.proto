@@ -10,6 +10,7 @@ import "google/protobuf/timestamp.proto";
 service Deployments {
     rpc ListDeployments (ListDeploymentRequest) returns (ListDeploymentResponse) {}
     rpc GetDeployment (GetDeploymentRequest) returns (Deployment) {}
+    rpc GetLatestDeployment (GetLatestDeploymentRequest) returns (Deployment) {}
     rpc StartDeployment (Deployment) returns (StartDeploymentResponse) {}
     rpc GetDeploymentStatus (GetDeploymentStatusRequest) returns (GetDeploymentStatusResponse) {}
     rpc TeardownDeployment (TeardownDeploymentRequest) returns (soapbox.Empty) {}
@@ -25,6 +26,11 @@ message ListDeploymentResponse {
 
 message GetDeploymentRequest {
     int32 id = 1;
+}
+
+message GetLatestDeploymentRequest {
+    int32 application_id = 1;
+    int32 environment_id = 2;
 }
 
 message Deployment {

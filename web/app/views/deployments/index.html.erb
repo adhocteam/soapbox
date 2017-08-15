@@ -58,7 +58,15 @@
       			</td>
       			<td>
 			    <%= ['success', 'failed'].include?(deployment.state) || index != 0 ? nil : render("shared/spinner") %>
-			    <span name="deployment-state"><%= deployment.state %></span>
+			    <span class="deploy-status <%=
+						       case deployment.state
+						       when "success" then "deploy-status-success"
+						       when "failed" then "deploy-status-failed"
+						       when "rollout-wait", "evaluate-wait", "rollforward" then "deploy-status-inprogress"
+						       else "deploy-status-unknown"
+						       end
+						       %>" title="<%= deployment.state || 'unknown' %>"></span>
+
       			</td>
 			<td>
       			    <%= Time.at(deployment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %>

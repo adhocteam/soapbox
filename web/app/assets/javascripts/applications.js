@@ -52,4 +52,17 @@
   }
 
   window.ApplicationsApp = ApplicationsApp;
+
+  window.manualGithubRepo = function (select) {
+    if (select.value == '') {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'form-control form-control-lg';
+      input.id = 'application_github_repo_url';
+      input.name = 'application[github_repo_url]';
+      var parent = select.parentNode;
+      parent.insertBefore(input, select);
+      parent.removeChild(select);
+    }
+  };
 })(window);

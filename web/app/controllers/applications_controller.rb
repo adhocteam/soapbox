@@ -2,6 +2,8 @@ require 'application_pb'
 require 'deployment_pb'
 
 class ApplicationsController < ApplicationController
+  before_action :find_repositories, only: [:new], if: :current_user
+
   def index
     res = $api_client.list_applications(Soapbox::Empty.new)
     if res.applications.count == 0
@@ -67,6 +69,16 @@ class ApplicationsController < ApplicationController
   end
 
   private
+
+  def find_repositories
+    @repos = octokit.repositories(nil, sort: :pushed, per_page: 1000).map do |repo|
+      if repo[:private]
+        [repo[:clone_url], repo[:clone_url].gsub('https://', "https://#{current_user.github_oauth_access_token}@")]
+      else
+        repo[:clone_url]
+      end
+    end
+  end
 
   def get_environments(app_id)
     req = Soapbox::ListEnvironmentRequest.new(application_id: app_id)

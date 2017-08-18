@@ -350,6 +350,7 @@ exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
 {{range .Variables -}}
 	--env {{.Name}} \
 {{end -}}
+--env PORT \
 --rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
 EOF
 

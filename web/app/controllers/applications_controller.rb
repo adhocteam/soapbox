@@ -62,6 +62,9 @@ class ApplicationsController < ApplicationController
     res = $api_deployment_client.list_deployments(req)
     @deployment = res.deployments.sort_by { |d| -d.created_at.seconds }.first
 
+    # strip the oauth token from the URL if present and remove trailing `.git`
+    @github_url = @app.github_repo_url.gsub(%r{https://.*@}, 'https://').gsub(/\.git$/, '')
+
     respond_to do |format|
       format.html
       format.json { render json: @app.as_json }

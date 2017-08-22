@@ -2,6 +2,7 @@ require 'user_pb'
 
 class UsersController < ApplicationController
   before_action :assign_user, only: %i[show omniauth]
+  skip_before_action :require_login, except: %i[show omniauth]
 
   def new
     @form = CreateUserForm.new

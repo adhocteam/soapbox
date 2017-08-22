@@ -24,9 +24,12 @@
 		<% end %>
 	    </div>
 	    <div>
-		<%= link_to 'Cancel', root_path, class: "btn" %>
 		<%= f.submit "Login", class: "btn btn-primary" %>
+		<%= link_to 'Cancel', root_path, class: "btn" %>
 	    </div>
 	<% end %>
+    <p>
+       Don't have an account? <%= link_to 'Create one here!', new_user_path %>
+    </p>
     </div>
 </div>

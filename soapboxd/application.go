@@ -2,6 +2,7 @@ package soapboxd
 
 import (
 	"bytes"
+	"database/sql"
 	"io"
 	"io/ioutil"
 	"log"
@@ -39,6 +40,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 
 	model := &models.Application{
 		ID:                 int(app.Id),
+		UserID:             sql.NullInt64{Int64: int64(app.UserId), Valid: true},
 		Name:               app.GetName(),
 		Slug:               app.GetSlug(),
 		Description:        newNullString(app.Description),
@@ -222,9 +224,9 @@ func canAccessURL(client httpHead, url string) error {
 	return nil
 }
 
-func (s *server) ListApplications(ctx context.Context, _ *pb.Empty) (*pb.ListApplicationResponse, error) {
-	const query = `SELECT id, name, description, created_at FROM applications ORDER BY created_at ASC`
-	rows, err := s.db.Query(query)
+func (s *server) ListApplications(ctx context.Context, req *pb.ListApplicationRequest) (*pb.ListApplicationResponse, error) {
+	const query = `SELECT id, name, description, created_at FROM applications WHERE user_id = $1 ORDER BY created_at ASC`
+	rows, err := s.db.Query(query, req.UserId)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying db for apps list")
 	}

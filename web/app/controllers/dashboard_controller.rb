@@ -2,7 +2,8 @@ require 'application_pb'
 
 class DashboardController < ApplicationController
   def index
-    res = $api_client.list_applications(Soapbox::Empty.new)
+    req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)
+    res = $api_client.list_applications(req)
     apps = res.applications
     @num_applications = apps.count
     @num_deployments = 0

@@ -5,7 +5,8 @@ class ApplicationsController < ApplicationController
   before_action :find_repositories, only: [:new], if: :current_user
 
   def index
-    res = $api_client.list_applications(Soapbox::Empty.new)
+    req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)
+    res = $api_client.list_applications(req)
     if res.applications.count == 0
       redirect_to new_application_path
     else
@@ -32,7 +33,7 @@ class ApplicationsController < ApplicationController
   end
 
   def new
-    @form = CreateApplicationForm.new
+    @form = CreateApplicationForm.new(user_id: current_user.id)
   end
 
   def create

@@ -72,23 +72,27 @@ profile page, and grant the requested permissions.
 
 ## Developing Soapbox
 
+### Installing protoc
+1. Download the latest protoc for your platform [here](https://github.com/google/protobuf/releases)
+2. Unzip the file
+3. Copy the `bin/` folder to `/usr/local/bin`
+4. Copy the 'include/' folder to `/usr/local/include`
+
 ### Making changes to protobufs
 
-Soapbox
-uses
+Soapbox uses
 [Protocol Buffers](https://developers.google.com/protocol-buffers/)
 via [gRPC](https://grpc.io/) for clients and servers to exchange
 messages and call API methods. These definitions are stored in the
 `soapboxpb` directory in `.proto` files. If you change these files,
 you must re-generate the Go and Ruby code that the API server and the
-Rails app rely on, respectively.
+Rails app rely on, respectively. Additionally, if you make a change to
+the database, you must update `schema.sql`.
 
 ``` shell
-# Go code
-$ go generate ./...
-$ go install ./...
-# Ruby code
-$ make -C web
+$ make protobufs
+$ make models
+$ make all
 ```
 
 ### Go dependencies

@@ -3,6 +3,7 @@ require "rails_helper"
 RSpec.describe ApplicationsController, type: :controller do
   describe "GET #show" do
     let(:app) {::Soapbox::Application.new(
+          user_id: 1,
           name: "test_app",
           github_repo_url: "https://ouath_data@github.com/bananas/shorts.git"
         )
@@ -25,6 +26,9 @@ RSpec.describe ApplicationsController, type: :controller do
         ::Soapbox::ListDeploymentResponse.new(
           deployments: [dep]
         )
+      }
+      allow_any_instance_of(ApplicationController).to receive(:current_user) {
+        ::Soapbox::User.new(id: 1)
       }
     end
 

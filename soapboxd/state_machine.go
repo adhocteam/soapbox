@@ -29,6 +29,13 @@ type fsm struct {
 	transitions []*transition
 }
 
+func newFsm(initial string) *fsm {
+	s := &fsm{
+		current: state(initial),
+	}
+	return s
+}
+
 func (m *fsm) lookup(s state, e event) *transition {
 	for _, t := range m.transitions {
 		if t.src == s && t.event == e {

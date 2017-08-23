@@ -34,6 +34,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// TODO(paulsmith): platform config
+const soapboxImageBucket = "soapbox-app-images"
+
 func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
 	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
@@ -160,7 +163,22 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	}
 	req.Env = env
 
-	go s.startDeployment(req)
+	deploy := &deployState{}
+	deploy.app = newAppFromProtoBuf(req.GetApplication())
+	deploy.sess, err = session.NewSession()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting AWS session")
+	}
+	deploy.env = newEnvFromProtoBuf(req.GetEnv())
+	deploy.config, err = s.GetLatestConfiguration(context.TODO(), &pb.GetLatestConfigurationRequest{
+		EnvironmentId: deploy.env.id,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting latest app configuration")
+	}
+	deploy.committish = req.GetCommittish()
+
+	go s.advanceDeployment(deploy)
 	res := &pb.StartDeploymentResponse{
 		Id: req.GetId(),
 	}
@@ -187,204 +205,123 @@ var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 
 const deployStateTagName = "deploystate"
 
-func (s *server) startDeployment(dep *pb.Deployment) {
-	setState := func(state string) {
-		if dep.State == "failed" {
-			return
+/*
+
+states:
+
+start
+rollout-wait
+evaluate-wait
+rollforward-wait
+success
+fail
+
+events:
+
+rollout-start
+rollout-inprogress
+rollout-finish
+evaluate-start
+evaluate-inprogress
+evaluate-finish
+rollforward-inprogress
+rollforward-finish
+...
+
+*/
+
+type deployState struct {
+	app        *application
+	sess       *session.Session
+	env        *environment
+	config     *pb.Configuration
+	committish string
+}
+
+func dockerImageName(app *application, committish string) string {
+	return fmt.Sprintf("soapbox/%s:%s", app.slug, committish)
+}
+
+func rollout(s *server, dep *deployState, ch chan string) handler {
+	return func(state, event) error {
+		app := dep.app
+
+		// get a temp dir to work in
+		tempdir, err := ioutil.TempDir("", "sandbox")
+		if err != nil {
+			return errors.Wrap(err, "making temp dir")
 		}
-		dep.State = state
-		updateSQL := "UPDATE deployments SET current_state = $1 WHERE id = $2"
-		if _, err := s.db.Exec(updateSQL, state, dep.GetId()); err != nil {
-			log.Printf("updating deployments table: %v", err)
+		if tempdir != "" {
+			defer os.RemoveAll(tempdir)
 		}
-	}
 
-	do := func(f func() error) {
-		if dep.State != "failed" {
-			if err := f(); err != nil {
-				log.Printf("error: %v", err)
-				setState("failed")
-			}
+		// clone the repo at the committish
+		const appdir = "appdir"
+		cmd := exec.Command("git", "clone", app.githubRepoUrl, appdir)
+		cmd.Dir = tempdir
+		log.Printf("cloning repo")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return errors.Wrapf(err, "running git clone: %s", out)
 		}
+
+		committish := dep.committish
+		cmd = exec.Command("git", "checkout", committish)
+		cmd.Dir = filepath.Join(tempdir, appdir)
+		log.Println("checking out committish")
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return errors.Wrapf(err, "running git checkout: %s", out)
+		}
+
+		if sha1Re.MatchString(committish) {
+			// use short committish from here on out
+			committish = committish[:7]
+		}
+
+		image := dockerImageName(app, committish)
+
+		// build the docker image from the repo
+		cmd = exec.Command("docker", "build", "-t", image, ".")
+		cmd.Dir = filepath.Join(tempdir, appdir)
+		log.Printf("building docker image: %s", image)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			return errors.Wrapf(err, "running docker build: %s", out)
+		}
+
+		// export the docker image to a file
+		log.Printf("saving docker image %s to file", image)
+		filename, err := exportDockerImageToFile(tempdir, image)
+		if err != nil {
+			return errors.Wrap(err, "exporting docker image to file")
+		}
+
+		// upload docker image to S3 bucket
+		log.Println("upload docker image to S3")
+		objectKey := fmt.Sprintf("%s/%s-%s.tar.gz", app.slug, app.slug, committish)
+		storage := newS3Storage(app.sess)
+		if err := storage.uploadFile(soapboxImageBucket, objectKey, filename); err != nil {
+			return errors.Wrap(err, "uploading docker image to S3")
+		}
+
+		ch <- "rollout-finish"
+		return nil
 	}
+}
 
-	doCmd := func(cmd *exec.Cmd) {
-		do(func() error {
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				log.Printf("command %s %v:\n%s", cmd.Path, cmd.Args, out)
-			}
-			return err
-		})
-	}
+func evaluate(s *server, deploy *deployState, ch chan string) handler {
+	return func(state, event) error {
+		app := deploy.app
+		env := deploy.env
+		committish := deploy.committish
+		config := deploy.config
 
-	app := newAppFromProtoBuf(dep.GetApplication())
-
-	do(func() error {
-		var err error
-		app.sess, err = session.NewSession()
-		return err
-	})
-
-	env := newEnvFromProtoBuf(dep.GetEnv())
-	var config *pb.Configuration
-	do(func() error {
-		var err error
-		config, err = s.GetLatestConfiguration(context.TODO(), &pb.GetLatestConfigurationRequest{
-			EnvironmentId: env.id,
-		})
-		return err
-	})
-
-	// get a temp dir to work in
-	var tempdir string
-	do(func() error {
-		var err error
-		tempdir, err = ioutil.TempDir("", "sandbox")
-		return err
-	})
-
-	if tempdir != "" {
-		defer os.RemoveAll(tempdir)
-	}
-
-	// clone the repo at the committish
-	const appdir = "appdir"
-	cmd := exec.Command("git", "clone", app.githubRepoUrl, appdir)
-	cmd.Dir = tempdir
-	log.Printf("cloning repo")
-	doCmd(cmd)
-
-	committish := dep.GetCommittish()
-	cmd = exec.Command("git", "checkout", committish)
-	cmd.Dir = filepath.Join(tempdir, appdir)
-	log.Println("checking out committish")
-	doCmd(cmd)
-
-	if sha1Re.MatchString(committish) {
-		// use short committish from here on out
-		committish = committish[:7]
-	}
-
-	image := fmt.Sprintf("soapbox/%s:%s", app.slug, committish)
-
-	// build the docker image from the repo
-	cmd = exec.Command("docker", "build", "-t", image, ".")
-	cmd.Dir = filepath.Join(tempdir, appdir)
-	log.Printf("building docker image: %s", image)
-	doCmd(cmd)
-
-	// export the docker image to a file
-	log.Printf("saving docker image %s to file", image)
-	var filename string
-	do(func() error {
-		var err error
-		filename, err = exportDockerImageToFile(tempdir, image)
-		return err
-	})
-
-	// upload docker image to S3 bucket
-	log.Println("upload docker image to S3")
-	const soapboxImageBucket = "soapbox-app-images"
-	objectKey := fmt.Sprintf("%s/%s-%s.tar.gz", app.slug, app.slug, committish)
-	do(func() error {
-		return newS3Storage(app.sess).uploadFile(soapboxImageBucket, objectKey, filename)
-	})
-
-	setState("evaluate-wait")
-
-	// start an ec2 instance, passing a user-data script which
-	// installs the docker image and gets the container running
-	userDataTmpl := `#!/bin/bash
-
-set -xeuo pipefail
-
-# log all script output
-exec > >(tee /var/log/user-data.log) 2>&1
-
-AWS=/usr/bin/aws
-DOCKER=/usr/bin/docker
-
-APP_NAME="{{.Slug}}"
-PORT="{{.ListenPort}}"
-RELEASE_BUCKET="{{.Bucket}}"
-RELEASE="{{.Release}}" # Version string/committish
-ENV="{{.Environment}}"
-IMAGE="{{.Image}}"
-CONFIG_VERSION="{{.ConfigVersion}}"
-
-# Retrieve the release from s3
-$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
-
-# Install the docker image
-$DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
-
-# Set up the runit dirs
-mkdir -p "/etc/sv/$APP_NAME"
-mkdir -p "/etc/sv/$APP_NAME/env"
-
-# Place env vars in /etc/sv/$APP_NAME/env
-{{- range .Variables}}
-cat << EOF > /etc/sv/$APP_NAME/env/{{.Name}}
-{{.Value}}
-EOF
-{{end}}
-
-# Logging configuration
-mkdir -p "/etc/sv/$APP_NAME/log"
-mkdir -p "/var/log/$APP_NAME"
-
-# Create the logging run script
-cat << EOF > /etc/sv/$APP_NAME/log/run
-#!/bin/sh
-exec svlogd -tt /var/log/$APP_NAME
-EOF
-
-# Mark the log/run file executable
-chmod +x /etc/sv/$APP_NAME/log/run
-
-# Create the run script for the app
-cat << EOF > /etc/sv/$APP_NAME/run
-#!/bin/bash
-exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
-{{range .Variables -}}
-	--env {{.Name}} \
-{{end -}}
---rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
-EOF
-
-# Mark the run file executable
-chmod +x /etc/sv/$APP_NAME/run
-
-# Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
-ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
-
-# Switch to /etc/nginx/app.conf
-mv /etc/nginx/app.conf /etc/nginx/nginx.conf
-
-# nginx is now proxying to the app itself
-service nginx reload
-
-# Set the X-Soapbox-App-Version HTTP header
-sed -i.bak \
-  $"s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\";\nadd_header X-Soapbox-Config-Version \"$CONFIG_VERSION\";\nadd_header X-Soapbox-Environment \"$ENV\"/" \
-  /etc/nginx/nginx.conf
-
-# Safely remove backup
-rm -f /etc/nginx/nginx.conf.bak
-
-# Pick up changes to response header
-service nginx reload
-`
-	var tmpl *template.Template
-	do(func() error {
-		var err error
-		tmpl, err = template.New("user-data.tmpl").Parse(userDataTmpl)
-		return err
-	})
-	var userData bytes.Buffer
-	do(func() error {
-		return tmpl.Execute(&userData, struct {
+		// start an ec2 instance, passing a user-data script which
+		// installs the docker image and gets the container running
+		tmpl, err := template.New("user-data.tmpl").Parse(userDataTmpl)
+		if err != nil {
+			return errors.Wrap(err, "parsing user data template")
+		}
+		var userData bytes.Buffer
+		if err := tmpl.Execute(&userData, struct {
 			Slug          string
 			ListenPort    int
 			Bucket        string
@@ -399,119 +336,165 @@ service nginx reload
 			8080,
 			soapboxImageBucket,
 			env.slug,
-			image,
+			dockerImageName(app, committish),
 			committish,
 			config.ConfigVars,
 			strconv.Itoa(int(config.Version)),
-		})
-	})
+		}); err != nil {
+			return errors.Wrap(err, "executing user data template")
+		}
 
-	var securityGroupId string
-	do(func() error {
-		var err error
-		securityGroupId, err = app.getAppSecurityGroupId(env)
-		return err
-	})
-
-	var launchConfig string
-	do(func() error {
-		var err error
-		launchConfig, err = createLaunchConfig(s.config, app, env, committish, securityGroupId, time.Now(), userData.String())
-		return err
-	})
-
-	log.Printf("created launch config: %s", launchConfig)
-
-	var blueASG, greenASG *autoScalingGroup
-	do(func() error {
-		var err error
-		blueASG, greenASG, err = app.blueGreenASGs(env)
-		return err
-	})
-
-	log.Printf("blue ASG is currently: %s", blueASG.name)
-	log.Printf("green ASG is currently: %s", greenASG.name)
-
-	const nAZs = 2 // number of availability zones
-
-	log.Printf("ensuring blue ASG has no instances")
-	do(func() error {
-		return blueASG.ensureEmpty()
-	})
-
-	log.Printf("updating blue ASG with new launch config")
-	do(func() error {
-		return blueASG.updateLaunchConfig(launchConfig)
-	})
-
-	defer func() {
-		log.Printf("cleaning up: terminating instances in blue ASG")
-		blueASG, err := app.getASGByColor(env, "blue")
+		securityGroupId, err := app.getAppSecurityGroupId(env)
 		if err != nil {
-			log.Printf("getting blue ASG: %v", err)
+			return errors.Wrap(err, "getting app security group ID")
 		}
+
+		launchConfig, err := createLaunchConfig(
+			s.config,
+			app,
+			env,
+			committish,
+			securityGroupId,
+			time.Now(),
+			userData.String(),
+		)
+		if err != nil {
+			return errors.Wrap(err, "creating launch config")
+		}
+
+		log.Printf("created launch config: %s", launchConfig)
+
+		blueASG, greenASG, err := app.blueGreenASGs(env)
+		if err != nil {
+			return errors.Wrap(err, "creating blue & green ASGs")
+		}
+
+		log.Printf("blue ASG is currently: %s", blueASG.name)
+		log.Printf("green ASG is currently: %s", greenASG.name)
+
+		const nAZs = 2 // number of availability zones
+
+		log.Printf("ensuring blue ASG has no instances")
 		if err := blueASG.ensureEmpty(); err != nil {
-			log.Printf("ensuring blue ASG is empty: %v", err)
+			return errors.Wrap(err, "ensuring empty blue ASG")
 		}
-		log.Printf("cleaning up: blue ASG empty")
+
+		log.Printf("updating blue ASG with new launch config")
+		if err := blueASG.updateLaunchConfig(launchConfig); err != nil {
+			return errors.Wrap(err, "updating blue ASG launch config")
+		}
+
+		defer func() {
+			log.Printf("cleaning up: terminating instances in blue ASG")
+			blueASG, err := app.getASGByColor(env, "blue")
+			if err != nil {
+				log.Printf("getting blue ASG: %v", err)
+			}
+			if err := blueASG.ensureEmpty(); err != nil {
+				log.Printf("ensuring blue ASG is empty: %v", err)
+			}
+			log.Printf("cleaning up: blue ASG empty")
+		}()
+
+		log.Printf("tagging blue ASG with release info")
+		if err := blueASG.updateTags([]tag{{key: "release", value: committish}}); err != nil {
+			return errors.Wrap(err, "updating blue ASG tags")
+		}
+
+		log.Printf("starting up blue ASG instances")
+		if err := blueASG.resize(nAZs, nAZs*2, nAZs); err != nil {
+			return errors.Wrap(err, "resizing blue ASG")
+		}
+
+		log.Printf("waiting for blue ASG instances to be ready")
+		if err := blueASG.waitUntilInstancesReady(nAZs); err != nil {
+			return errors.Wrap(err, "waiting until blue ASG instances ready")
+		}
+		log.Printf("blue ASG instances ready")
+
+		target, err := greenASG.getTargetGroup()
+		if err != nil {
+			return errors.Wrap(err, "getting target group")
+		}
+
+		log.Printf("attaching blue ASG to load balancer")
+		if err := blueASG.attachToLBTargetGroup(target.arn); err != nil {
+			return errors.Wrap(err, "attaching blue ASG to ALB target group")
+		}
+
+		log.Printf("waiting for blue ASG instances to pass health checks in load balancer")
+		if err := target.waitUntilInstancesReady(blueASG); err != nil {
+			return errors.Wrap(err, "waiting until instances ready in ALB target")
+		}
+
+		ch <- "evaluate-finish"
+		return nil
+	}
+}
+
+func rollforward(s *server, deploy *deployState, ch chan string) handler {
+	return func(state, event) error {
+		app := deploy.app
+		env := deploy.env
+
+		blueASG, greenASG, err := app.blueGreenASGs(env)
+		if err != nil {
+			return errors.Wrap(err, "creating blue & green ASGs")
+		}
+
+		target, err := greenASG.getTargetGroup()
+		if err != nil {
+			return errors.Wrap(err, "getting target group")
+		}
+
+		log.Printf("detaching (stale) green ASG from load balancer")
+		if err := greenASG.detachFromLBTargetGroup(target.arn); err != nil {
+			return errors.Wrap(err, "detaching green ASG from ALB target")
+		}
+
+		// TODO(paulsmith): there is a race condition because we can't
+		// update the tags atomically, so a reader might see both
+		// groups as green, or blue, or some indeterminate combination
+		// ... risk is pretty low ATM but we should address this
+		// somehow later.
+		log.Printf("swapping blue/green pointers")
+		if err := greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}}); err != nil {
+			return errors.Wrap(err, "updating tags on green ASG")
+		}
+		if err := blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}}); err != nil {
+			return errors.Wrap(err, "updating tags on blue ASG")
+		}
+
+		log.Printf("done")
+
+		// TODO(paulsmith): health check?
+
+		ch <- "rollforward-finish"
+		return nil
+	}
+}
+
+func (s *server) advanceDeployment(deploy *deployState) {
+	events := make(chan string)
+	m := newFsm("start")
+	m.addTransition("start", "rollout-start", "rollout-wait", rollout(s, deploy, events))
+	m.addTransition("rollout-wait", "rollout-finish", "evaluate-wait", evaluate(s, deploy, events))
+	m.addTransition("evaluate-wait", "evaluate-finish", "rollforward-wait", rollforward(s, deploy, events))
+
+	go func() {
+		if m.current == "start" {
+			events <- "rollout-start"
+		}
 	}()
 
-	log.Printf("tagging blue ASG with release info")
-	do(func() error {
-		return blueASG.updateTags([]tag{{key: "release", value: committish}})
-	})
-
-	log.Printf("starting up blue ASG instances")
-	do(func() error {
-		return blueASG.resize(nAZs, nAZs*2, nAZs)
-	})
-
-	log.Printf("waiting for blue ASG instances to be ready")
-	do(func() error { return blueASG.waitUntilInstancesReady(nAZs) })
-	log.Printf("blue ASG instances ready")
-
-	var target *targetGroup
-	do(func() error {
-		var err error
-		target, err = greenASG.getTargetGroup()
-		return err
-	})
-
-	log.Printf("attaching blue ASG to load balancer")
-	do(func() error {
-		return blueASG.attachToLBTargetGroup(target.arn)
-	})
-
-	log.Printf("waiting for blue ASG instances to pass health checks in load balancer")
-	do(func() error {
-		return target.waitUntilInstancesReady(blueASG)
-	})
-
-	setState("rollforward")
-
-	log.Printf("detaching (stale) green ASG from load balancer")
-	do(func() error {
-		return greenASG.detachFromLBTargetGroup(target.arn)
-	})
-
-	// TODO(paulsmith): there is a race condition because we can't
-	// update the tags atomically, so a reader might see both
-	// groups as green, or blue, or some indeterminate combination
-	// ... risk is pretty low ATM but we should address this
-	// somehow later.
-	log.Printf("swapping blue/green pointers")
-	do(func() error {
-		return greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}})
-	})
-	do(func() error {
-		return blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}})
-	})
-
-	log.Printf("done")
-
-	// TODO(paulsmith): health check?
-
-	setState("success")
+	for {
+		select {
+		case ev := <-events:
+			if err := m.step(event(ev)); err != nil {
+				// failed. ....
+			}
+		}
+	}
 }
 
 type targetGroup struct {
@@ -983,3 +966,85 @@ func exportDockerImageToFile(dir string, image string) (string, error) {
 
 	return path, nil
 }
+
+var userDataTmpl = `#!/bin/bash
+
+set -xeuo pipefail
+
+# log all script output
+exec > >(tee /var/log/user-data.log) 2>&1
+
+AWS=/usr/bin/aws
+DOCKER=/usr/bin/docker
+
+APP_NAME="{{.Slug}}"
+PORT="{{.ListenPort}}"
+RELEASE_BUCKET="{{.Bucket}}"
+RELEASE="{{.Release}}" # Version string/committish
+ENV="{{.Environment}}"
+IMAGE="{{.Image}}"
+CONFIG_VERSION="{{.ConfigVersion}}"
+
+# Retrieve the release from s3
+$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
+
+# Install the docker image
+$DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
+
+# Set up the runit dirs
+mkdir -p "/etc/sv/$APP_NAME"
+mkdir -p "/etc/sv/$APP_NAME/env"
+
+# Place env vars in /etc/sv/$APP_NAME/env
+{{- range .Variables}}
+cat << EOF > /etc/sv/$APP_NAME/env/{{.Name}}
+{{.Value}}
+EOF
+{{end}}
+
+# Logging configuration
+mkdir -p "/etc/sv/$APP_NAME/log"
+mkdir -p "/var/log/$APP_NAME"
+
+# Create the logging run script
+cat << EOF > /etc/sv/$APP_NAME/log/run
+#!/bin/sh
+exec svlogd -tt /var/log/$APP_NAME
+EOF
+
+# Mark the log/run file executable
+chmod +x /etc/sv/$APP_NAME/log/run
+
+# Create the run script for the app
+cat << EOF > /etc/sv/$APP_NAME/run
+#!/bin/bash
+exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
+{{range .Variables -}}
+	--env {{.Name}} \
+{{end -}}
+--rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
+EOF
+
+# Mark the run file executable
+chmod +x /etc/sv/$APP_NAME/run
+
+# Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
+ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
+
+# Switch to /etc/nginx/app.conf
+mv /etc/nginx/app.conf /etc/nginx/nginx.conf
+
+# nginx is now proxying to the app itself
+service nginx reload
+
+# Set the X-Soapbox-App-Version HTTP header
+sed -i.bak \
+  $"s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\";\nadd_header X-Soapbox-Config-Version \"$CONFIG_VERSION\";\nadd_header X-Soapbox-Environment \"$ENV\"/" \
+  /etc/nginx/nginx.conf
+
+# Safely remove backup
+rm -f /etc/nginx/nginx.conf.bak
+
+# Pick up changes to response header
+service nginx reload
+`

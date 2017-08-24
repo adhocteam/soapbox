@@ -23,10 +23,12 @@ $ psql -f db/schema.sql -d soapbox_dev
 ``` shell
 $ mkdir -p $(go env GOPATH)/src/github.com/adhocteam
 $ go get github.com/adhocteam/soapbox/...
-$ cd $(go env GOPATH)/src/github.com/adhocteam/soapbox
-$ go get -u github.com/golang/dep/cmd/dep
-$ go get -d -v ./...
-$ go install ./...
+```
+
+You may need to add the `bin` directory under `$GOPATH` (the `go` tool uses `$HOME/go` for GOPATH if you don't set it explicitly in your environment), if you didn't do that when you installed Go initially.
+
+```shell
+$ export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
 3. **Run the API server:**

@@ -1,0 +1,7 @@
+[v8-stable]
+name=Adiscon CentOS-6 - local packages for \$basearch
+baseurl=http://rpms.adiscon.com/v8-stable/epel-6/\$basearch
+enabled=1
+gpgcheck=0
+gpgkey=http://rpms.adiscon.com/RPM-GPG-KEY-Adiscon
+protect=1

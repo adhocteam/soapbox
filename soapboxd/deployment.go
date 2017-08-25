@@ -340,6 +340,11 @@ cat << EOF > /etc/sv/$APP_NAME/log/run
 exec svlogd -tt /var/log/$APP_NAME
 EOF
 
+# Configure logs to forward to rsyslogd
+cat << EOF > /var/log/$APP_NAME/config
+U127.0.0.1
+EOF
+
 # Mark the log/run file executable
 chmod +x /etc/sv/$APP_NAME/log/run
 

@@ -2,7 +2,6 @@ package soapboxd
 
 import (
 	"bytes"
-	"database/sql"
 	"io"
 	"io/ioutil"
 	"log"
@@ -40,7 +39,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 
 	model := &models.Application{
 		ID:                 int(app.Id),
-		UserID:             sql.NullInt64{Int64: int64(app.UserId), Valid: true},
+		UserID:             int(app.UserId),
 		Name:               app.GetName(),
 		Slug:               app.GetSlug(),
 		Description:        newNullString(app.Description),

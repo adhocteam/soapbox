@@ -18,7 +18,7 @@ create table users (
 create table applications (
        -- TODO(paulsmith): use app generated ID
        id serial not null primary key,
-       user_id integer references users,
+       user_id integer not null references users,
        name text not null,
        type app_type not null,
        slug text not null,

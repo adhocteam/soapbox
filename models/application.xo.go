@@ -12,7 +12,7 @@ import (
 // Application represents a row from 'public.applications'.
 type Application struct {
 	ID                 int               `json:"id"`                  // id
-	UserID             sql.NullInt64     `json:"user_id"`             // user_id
+	UserID             int               `json:"user_id"`             // user_id
 	Name               string            `json:"name"`                // name
 	Type               AppType           `json:"type"`                // type
 	Slug               string            `json:"slug"`                // slug
@@ -174,7 +174,7 @@ func (a *Application) Delete(db XODB) error {
 //
 // Generated from foreign key 'applications_user_id_fkey'.
 func (a *Application) User(db XODB) (*User, error) {
-	return UserByID(db, int(a.UserID.Int64))
+	return UserByID(db, a.UserID)
 }
 
 // ApplicationByID retrieves a row from 'public.applications' as a Application.

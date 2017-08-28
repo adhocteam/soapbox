@@ -67,3 +67,32 @@ create table deployments (
        current_state text not null default '',
        created_at timestamp with time zone not null default now()
 );
+
+create table users (
+       id serial not null primary key,
+       name text not null,
+       email text not null,
+       encrypted_password text not null,
+       github_oauth_access_token text not null default '',
+       created_at timestamp with time zone not null default now(),
+       updated_at timestamp with time zone not null default now(),
+       unique (email)
+);
+
+create type activity_type as enum (
+        'application_created',
+        'deployment_started',
+        'deployment_success',
+        'deployment_failure',
+        'environment_created');
+
+create table activities (
+        id serial not null primary key,
+        user_id integer references users, -- null user_id means that soapbox performed the action
+        activity activity_type,
+        application_id integer references applications,
+        deployment_id integer references deployments,
+        environment_id integer references environments,
+        created_at timestamp with time zone not null default now(),
+        updated_at timestamp with time zone not null default now()
+);

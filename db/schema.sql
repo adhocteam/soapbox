@@ -4,9 +4,21 @@ create type creation_state_type as enum (
        'SUCCEEDED',
        'FAILED');
 
+create table users (
+      id serial not null primary key,
+      name text not null,
+      email text not null,
+      encrypted_password text not null,
+      github_oauth_access_token text not null default '',
+      created_at timestamp with time zone not null default now(),
+      updated_at timestamp with time zone not null default now(),
+      unique (email)
+);
+
 create table applications (
        -- TODO(paulsmith): use app generated ID
        id serial not null primary key,
+       user_id integer not null references users,
        name text not null,
        type app_type not null,
        slug text not null,
@@ -54,15 +66,4 @@ create table deployments (
        -- TODO(paulsmith): enum? some type safety on valid values of 'current_state'?
        current_state text not null default '',
        created_at timestamp with time zone not null default now()
-);
-
-create table users (
-       id serial not null primary key,
-       name text not null,
-       email text not null,
-       encrypted_password text not null,
-       github_oauth_access_token text not null default '',
-       created_at timestamp with time zone not null default now(),
-       updated_at timestamp with time zone not null default now(),
-       unique (email)
 );

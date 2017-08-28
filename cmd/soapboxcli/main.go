@@ -102,7 +102,16 @@ func createApplication(ctx context.Context, client pb.ApplicationsClient, args [
 }
 
 func listApplications(ctx context.Context, client pb.ApplicationsClient, args []string) error {
-	apps, err := client.ListApplications(ctx, new(pb.Empty))
+	args = args[1:]
+	if len(args) < 1 {
+		return fmt.Errorf("1 argument required: User ID")
+	}
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return fmt.Errorf("invalid ID: %v", err)
+	}
+	req := &pb.ListApplicationRequest{UserId: int32(id)}
+	apps, err := client.ListApplications(ctx, req)
 	if err != nil {
 		return fmt.Errorf("error listing applications: %v", err)
 	}

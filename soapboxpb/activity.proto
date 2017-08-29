@@ -18,9 +18,13 @@ enum ActivityType {
 
 message Activity {
     ActivityType type = 1;
-    int32 user_id = 2;
-    int32 application_id = 3;
-    int32 deployment_id = 4;
-    int32 environment_id = 5;
-    int32 configuration_id = 6;
+    MaybeInt user_id = 2;
+    MaybeInt application_id = 3;
+    MaybeInt deployment_id = 4;
+    MaybeInt environment_id = 5;
+}
+
+message MaybeInt {
+    bool present = 1;
+    int32 value = 2;
 }

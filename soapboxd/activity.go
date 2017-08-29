@@ -1,14 +1,20 @@
 package soapboxd
 
 import (
-	"time"
-
 	"github.com/adhocteam/soapbox/models"
 	"github.com/adhocteam/soapbox/proto"
 	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
+
+// return value if present, nil otherwise. Is there a better golang way to type this?
+func unwrap(value *pb.MaybeInt) interface{} {
+	if value != nil && value.Present {
+		return value.Value
+	}
+	return nil
+}
 
 func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Empty, error) {
 	translations := map[pb.ActivityType]models.ActivityType{
@@ -19,26 +25,24 @@ func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Em
 		pb.ActivityType_ENVIRONMENT_CREATED: models.ActivityTypeEnvironmentCreated,
 	}
 
-	tx, err := s.db.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "beginning transaction")
-	}
+	userID := unwrap(activity.UserId)
+	applicationID := unwrap(activity.ApplicationId)
+	deploymentID := unwrap(activity.DeploymentId)
+	environmentID := unwrap(activity.EnvironmentId)
 
 	insertQuery := `
-	INSERT INTO activities (user_id, activity, application_id, deployment_id, environment_id, configuration_id) 
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO activities (user_id, activity, application_id, deployment_id, environment_id) 
+	VALUES ($1, $2, $3, $4, $5)
 	`
-	var createdAt time.Time
 	var activityType = translations[activity.Type]
-	err = tx.QueryRow(insertQuery,
-		activity.UserId,
+	_, err := s.db.Exec(insertQuery,
+		userID,
 		activityType,
-		activity.ApplicationId,
-		activity.DeploymentId,
-		activity.EnvironmentId,
-		activity.ConfigurationId).Scan(&createdAt)
+		applicationID,
+		deploymentID,
+		environmentID)
 	if err != nil {
-		return nil, errors.Wrap(err, "preparing insert query")
+		return nil, errors.Wrap(err, "inserting into activities")
 	}
 
 	return &proto.Empty{}, nil

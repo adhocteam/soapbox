@@ -18,7 +18,6 @@ type Activity struct {
 	DeploymentID  sql.NullInt64 `json:"deployment_id"`  // deployment_id
 	EnvironmentID sql.NullInt64 `json:"environment_id"` // environment_id
 	CreatedAt     time.Time     `json:"created_at"`     // created_at
-	UpdatedAt     time.Time     `json:"updated_at"`     // updated_at
 
 	// xo fields
 	_exists, _deleted bool
@@ -45,14 +44,14 @@ func (a *Activity) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by sequence
 	const sqlstr = `INSERT INTO public.activities (` +
-		`user_id, activity, application_id, deployment_id, environment_id, created_at, updated_at` +
+		`user_id, activity, application_id, deployment_id, environment_id, created_at` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7` +
+		`$1, $2, $3, $4, $5, $6` +
 		`) RETURNING id`
 
 	// run query
-	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UpdatedAt)
-	err = db.QueryRow(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UpdatedAt).Scan(&a.ID)
+	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt)
+	err = db.QueryRow(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt).Scan(&a.ID)
 	if err != nil {
 		return err
 	}
@@ -79,14 +78,14 @@ func (a *Activity) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE public.activities SET (` +
-		`user_id, activity, application_id, deployment_id, environment_id, created_at, updated_at` +
+		`user_id, activity, application_id, deployment_id, environment_id, created_at` +
 		`) = ( ` +
-		`$1, $2, $3, $4, $5, $6, $7` +
-		`) WHERE id = $8`
+		`$1, $2, $3, $4, $5, $6` +
+		`) WHERE id = $7`
 
 	// run query
-	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UpdatedAt, a.ID)
-	_, err = db.Exec(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UpdatedAt, a.ID)
+	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.ID)
+	_, err = db.Exec(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.ID)
 	return err
 }
 
@@ -112,18 +111,18 @@ func (a *Activity) Upsert(db XODB) error {
 
 	// sql query
 	const sqlstr = `INSERT INTO public.activities (` +
-		`id, user_id, activity, application_id, deployment_id, environment_id, created_at, updated_at` +
+		`id, user_id, activity, application_id, deployment_id, environment_id, created_at` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8` +
+		`$1, $2, $3, $4, $5, $6, $7` +
 		`) ON CONFLICT (id) DO UPDATE SET (` +
-		`id, user_id, activity, application_id, deployment_id, environment_id, created_at, updated_at` +
+		`id, user_id, activity, application_id, deployment_id, environment_id, created_at` +
 		`) = (` +
-		`EXCLUDED.id, EXCLUDED.user_id, EXCLUDED.activity, EXCLUDED.application_id, EXCLUDED.deployment_id, EXCLUDED.environment_id, EXCLUDED.created_at, EXCLUDED.updated_at` +
+		`EXCLUDED.id, EXCLUDED.user_id, EXCLUDED.activity, EXCLUDED.application_id, EXCLUDED.deployment_id, EXCLUDED.environment_id, EXCLUDED.created_at` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UpdatedAt)
-	_, err = db.Exec(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UpdatedAt)
+	XOLog(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt)
+	_, err = db.Exec(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt)
 	if err != nil {
 		return err
 	}
@@ -200,7 +199,7 @@ func ActivityByID(db XODB, id int) (*Activity, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, user_id, activity, application_id, deployment_id, environment_id, created_at, updated_at ` +
+		`id, user_id, activity, application_id, deployment_id, environment_id, created_at ` +
 		`FROM public.activities ` +
 		`WHERE id = $1`
 
@@ -210,7 +209,7 @@ func ActivityByID(db XODB, id int) (*Activity, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.UserID, &a.Activity, &a.ApplicationID, &a.DeploymentID, &a.EnvironmentID, &a.CreatedAt, &a.UpdatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.UserID, &a.Activity, &a.ApplicationID, &a.DeploymentID, &a.EnvironmentID, &a.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

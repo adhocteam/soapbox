@@ -15,6 +15,9 @@ module Soapbox
       self.service_name = 'soapbox.Activities'
 
       rpc :AddActivity, Activity, Empty
+      rpc :ListActivities, Empty, ListActivitiesResponse
+      rpc :ListApplicationActivities, GetApplicationRequest, ListActivitiesResponse
+      rpc :ListDeploymentActivities, GetDeploymentRequest, ListActivitiesResponse
     end
 
     Stub = Service.rpc_stub_class

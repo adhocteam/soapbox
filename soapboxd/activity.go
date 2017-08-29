@@ -1,9 +1,12 @@
 package soapboxd
 
 import (
+	"time"
+
 	"github.com/adhocteam/soapbox/models"
 	"github.com/adhocteam/soapbox/proto"
 	pb "github.com/adhocteam/soapbox/proto"
+	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
@@ -46,4 +49,50 @@ func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Em
 	}
 
 	return &proto.Empty{}, nil
+}
+
+func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActivitiesResponse, error) {
+	const query = `
+		SELECT id, user_id, application_id, deployment_id,
+		environment_id, created_at
+		FROM activities
+		ORDER BY created_at ASC
+		LIMIT 50`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing activites")
+	}
+
+	var activities []*pb.Activity
+
+	for rows.Next() {
+		activity := &pb.Activity{
+			CreatedAt: new(gpb.Timestamp),
+		}
+
+		var createdAt time.Time
+		dest := []interface{}{
+			&activity.Id,
+			&activity.UserId,
+			&activity.ApplicationId,
+			&activity.DeploymentId,
+			&activity.EnvironmentId,
+			&createdAt,
+		}
+		if err := rows.Scan(dest...); err != nil {
+			return nil, errors.Wrap(err, "scanning db row")
+		}
+
+		setPbTimestamp(activity.CreatedAt, createdAt)
+		activities = append(activities, activity)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "iterating over db rows")
+	}
+
+	return &pb.ListActivitiesResponse{Activities: activities}, nil
+}
+
+func (s *server) ListApplicationActivities(ctx context.Context, app *pb.GetApplicationRequest) (*pb.ListActivitiesResponse, error) {
 }

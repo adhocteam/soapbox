@@ -3,9 +3,15 @@ package soapbox;
 option go_package = "proto";
 
 import "soapbox.proto";
+import "application.proto";
+import "deployment.proto";
+import "google/protobuf/timestamp.proto";
 
 service Activities {
     rpc AddActivity (Activity) returns (soapbox.Empty) {}
+    rpc ListActivities (soapbox.Empty) returns (ListActivitiesResponse) {}
+    rpc ListApplicationActivities (GetApplicationRequest) returns (ListActivitiesResponse) {}
+    rpc ListDeploymentActivities (GetDeploymentRequest) returns (ListActivitiesResponse) {}
 }
 
 enum ActivityType {
@@ -16,12 +22,18 @@ enum ActivityType {
     ENVIRONMENT_CREATED = 4;
 }
 
+message ListActivitiesResponse {
+    repeated Activity activities = 1;
+}
+
 message Activity {
-    ActivityType type = 1;
-    MaybeInt user_id = 2;
-    MaybeInt application_id = 3;
-    MaybeInt deployment_id = 4;
-    MaybeInt environment_id = 5;
+    int32 id = 1;
+    ActivityType type = 2;
+    MaybeInt user_id = 3;
+    MaybeInt application_id = 4;
+    MaybeInt deployment_id = 5;
+    MaybeInt environment_id = 6;
+    google.protobuf.Timestamp created_at = 7;
 }
 
 message MaybeInt {

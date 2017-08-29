@@ -93,6 +93,5 @@ create table activities (
         application_id integer references applications,
         deployment_id integer references deployments,
         environment_id integer references environments,
-        created_at timestamp with time zone not null default now(),
-        updated_at timestamp with time zone not null default now()
+        created_at timestamp with time zone not null default now()
 );

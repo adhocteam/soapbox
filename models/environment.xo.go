@@ -42,14 +42,14 @@ func (e *Environment) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by sequence
 	const sqlstr = `INSERT INTO public.environments (` +
-		`application_id, application_id, name, slug, created_at` +
+		`application_id, name, slug, created_at` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5` +
+		`$1, $2, $3, $4` +
 		`) RETURNING id`
 
 	// run query
-	XOLog(sqlstr, e.ApplicationID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt)
-	err = db.QueryRow(sqlstr, e.ApplicationID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt).Scan(&e.ID)
+	XOLog(sqlstr, e.ApplicationID, e.Name, e.Slug, e.CreatedAt)
+	err = db.QueryRow(sqlstr, e.ApplicationID, e.Name, e.Slug, e.CreatedAt).Scan(&e.ID)
 	if err != nil {
 		return err
 	}
@@ -76,14 +76,14 @@ func (e *Environment) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE public.environments SET (` +
-		`application_id, application_id, name, slug, created_at` +
+		`application_id, name, slug, created_at` +
 		`) = ( ` +
-		`$1, $2, $3, $4, $5` +
-		`) WHERE id = $6`
+		`$1, $2, $3, $4` +
+		`) WHERE id = $5`
 
 	// run query
-	XOLog(sqlstr, e.ApplicationID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt, e.ID)
-	_, err = db.Exec(sqlstr, e.ApplicationID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt, e.ID)
+	XOLog(sqlstr, e.ApplicationID, e.Name, e.Slug, e.CreatedAt, e.ID)
+	_, err = db.Exec(sqlstr, e.ApplicationID, e.Name, e.Slug, e.CreatedAt, e.ID)
 	return err
 }
 
@@ -109,18 +109,18 @@ func (e *Environment) Upsert(db XODB) error {
 
 	// sql query
 	const sqlstr = `INSERT INTO public.environments (` +
-		`id, application_id, application_id, name, slug, created_at` +
+		`id, application_id, name, slug, created_at` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6` +
+		`$1, $2, $3, $4, $5` +
 		`) ON CONFLICT (id) DO UPDATE SET (` +
-		`id, application_id, application_id, name, slug, created_at` +
+		`id, application_id, name, slug, created_at` +
 		`) = (` +
-		`EXCLUDED.id, EXCLUDED.application_id, EXCLUDED.application_id, EXCLUDED.name, EXCLUDED.slug, EXCLUDED.created_at` +
+		`EXCLUDED.id, EXCLUDED.application_id, EXCLUDED.name, EXCLUDED.slug, EXCLUDED.created_at` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, e.ID, e.ApplicationID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt)
-	_, err = db.Exec(sqlstr, e.ID, e.ApplicationID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt)
+	XOLog(sqlstr, e.ID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt)
+	_, err = db.Exec(sqlstr, e.ID, e.ApplicationID, e.Name, e.Slug, e.CreatedAt)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func EnvironmentByApplicationIDName(db XODB, applicationID sql.NullInt64, name s
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, application_id, application_id, name, slug, created_at ` +
+		`id, application_id, name, slug, created_at ` +
 		`FROM public.environments ` +
 		`WHERE application_id = $1 AND name = $2`
 
@@ -186,7 +186,7 @@ func EnvironmentByApplicationIDName(db XODB, applicationID sql.NullInt64, name s
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, applicationID, name).Scan(&e.ID, &e.ApplicationID, &e.ApplicationID, &e.Name, &e.Slug, &e.CreatedAt)
+	err = db.QueryRow(sqlstr, applicationID, name).Scan(&e.ID, &e.ApplicationID, &e.Name, &e.Slug, &e.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func EnvironmentByApplicationIDSlug(db XODB, applicationID sql.NullInt64, slug s
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, application_id, application_id, name, slug, created_at ` +
+		`id, application_id, name, slug, created_at ` +
 		`FROM public.environments ` +
 		`WHERE application_id = $1 AND slug = $2`
 
@@ -212,7 +212,7 @@ func EnvironmentByApplicationIDSlug(db XODB, applicationID sql.NullInt64, slug s
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, applicationID, slug).Scan(&e.ID, &e.ApplicationID, &e.ApplicationID, &e.Name, &e.Slug, &e.CreatedAt)
+	err = db.QueryRow(sqlstr, applicationID, slug).Scan(&e.ID, &e.ApplicationID, &e.Name, &e.Slug, &e.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func EnvironmentByID(db XODB, id int) (*Environment, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, application_id, application_id, name, slug, created_at ` +
+		`id, application_id, name, slug, created_at ` +
 		`FROM public.environments ` +
 		`WHERE id = $1`
 
@@ -238,7 +238,7 @@ func EnvironmentByID(db XODB, id int) (*Environment, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&e.ID, &e.ApplicationID, &e.ApplicationID, &e.Name, &e.Slug, &e.CreatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&e.ID, &e.ApplicationID, &e.Name, &e.Slug, &e.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

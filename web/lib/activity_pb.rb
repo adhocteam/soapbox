@@ -7,11 +7,14 @@ require 'soapbox_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.Activity" do
     optional :type, :enum, 1, "soapbox.ActivityType"
-    optional :user_id, :int32, 2
-    optional :application_id, :int32, 3
-    optional :deployment_id, :int32, 4
-    optional :environment_id, :int32, 5
-    optional :configuration_id, :int32, 6
+    optional :user_id, :message, 2, "soapbox.MaybeInt"
+    optional :application_id, :message, 3, "soapbox.MaybeInt"
+    optional :deployment_id, :message, 4, "soapbox.MaybeInt"
+    optional :environment_id, :message, 5, "soapbox.MaybeInt"
+  end
+  add_message "soapbox.MaybeInt" do
+    optional :present, :bool, 1
+    optional :value, :int32, 2
   end
   add_enum "soapbox.ActivityType" do
     value :APPLICATION_CREATED, 0
@@ -24,5 +27,6 @@ end
 
 module Soapbox
   Activity = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Activity").msgclass
+  MaybeInt = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.MaybeInt").msgclass
   ActivityType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ActivityType").enummodule
 end

@@ -34,7 +34,7 @@ func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Em
 	environmentID := unwrap(activity.EnvironmentId)
 
 	insertQuery := `
-	INSERT INTO activities (user_id, activity, application_id, deployment_id, environment_id) 
+	INSERT INTO activities (user_id, activity, application_id, deployment_id, environment_id)
 	VALUES ($1, $2, $3, $4, $5)
 	`
 	var activityType = translations[activity.Type]

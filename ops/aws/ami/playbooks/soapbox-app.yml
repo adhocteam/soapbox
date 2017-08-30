@@ -67,8 +67,8 @@
         - regexp: "^#$UDPServerRun"
           line: "$UDPServerRun 514"
 
-    - name: install /etc/rsyslog.d/elasticsearch.conf from template
-      template:
+    - name: install /etc/rsyslog.d/elasticsearch.conf
+      copy:
         src: "files/elasticsearch.conf"
         dest: "/etc/rsyslog.d/elasticsearch.conf"
 

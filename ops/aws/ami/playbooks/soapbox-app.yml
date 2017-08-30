@@ -56,6 +56,17 @@
         - src: files/init.conf
           dest: /etc/nginx/nginx.conf
 
+    - name: Uncomment UDP server lines from /etc/rsyslog.conf
+      lineinfile:
+        dest: /etc/rsyslog.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - regexp: "^#$ModLoad"
+          line: "$ModLoad imudp"
+        - regexp: "^#$UDPServerRun"
+          line: "$UDPServerRun 514"
+
     - name: install /etc/rsyslog.d/elasticsearch.conf from template
       template:
         src: "files/elasticsearch.conf"

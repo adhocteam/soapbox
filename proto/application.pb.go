@@ -37,7 +37,7 @@ var ApplicationType_value = map[string]int32{
 func (x ApplicationType) String() string {
 	return proto1.EnumName(ApplicationType_name, int32(x))
 }
-func (ApplicationType) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (ApplicationType) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 type CreationState int32
 
@@ -61,7 +61,7 @@ var CreationState_value = map[string]int32{
 func (x CreationState) String() string {
 	return proto1.EnumName(CreationState_name, int32(x))
 }
-func (CreationState) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (CreationState) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 type Application struct {
 	Id                 int32                      `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
@@ -82,7 +82,7 @@ type Application struct {
 func (m *Application) Reset()                    { *m = Application{} }
 func (m *Application) String() string            { return proto1.CompactTextString(m) }
 func (*Application) ProtoMessage()               {}
-func (*Application) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*Application) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
 func (m *Application) GetId() int32 {
 	if m != nil {
@@ -182,7 +182,7 @@ type ListApplicationRequest struct {
 func (m *ListApplicationRequest) Reset()                    { *m = ListApplicationRequest{} }
 func (m *ListApplicationRequest) String() string            { return proto1.CompactTextString(m) }
 func (*ListApplicationRequest) ProtoMessage()               {}
-func (*ListApplicationRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (*ListApplicationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
 func (m *ListApplicationRequest) GetUserId() int32 {
 	if m != nil {
@@ -198,7 +198,7 @@ type ListApplicationResponse struct {
 func (m *ListApplicationResponse) Reset()                    { *m = ListApplicationResponse{} }
 func (m *ListApplicationResponse) String() string            { return proto1.CompactTextString(m) }
 func (*ListApplicationResponse) ProtoMessage()               {}
-func (*ListApplicationResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (*ListApplicationResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 func (m *ListApplicationResponse) GetApplications() []*Application {
 	if m != nil {
@@ -214,7 +214,7 @@ type GetApplicationRequest struct {
 func (m *GetApplicationRequest) Reset()                    { *m = GetApplicationRequest{} }
 func (m *GetApplicationRequest) String() string            { return proto1.CompactTextString(m) }
 func (*GetApplicationRequest) ProtoMessage()               {}
-func (*GetApplicationRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3} }
+func (*GetApplicationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
 func (m *GetApplicationRequest) GetId() int32 {
 	if m != nil {
@@ -370,9 +370,9 @@ var _Applications_serviceDesc = grpc.ServiceDesc{
 	Metadata: "application.proto",
 }
 
-func init() { proto1.RegisterFile("application.proto", fileDescriptor4) }
+func init() { proto1.RegisterFile("application.proto", fileDescriptor1) }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor1 = []byte{
 	// 587 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x93, 0xcf, 0x4e, 0xdb, 0x40,
 	0x10, 0xc6, 0xe3, 0x00, 0x49, 0x33, 0xf9, 0x43, 0xd8, 0xb6, 0xb0, 0xca, 0x01, 0xdc, 0x1c, 0x4a,

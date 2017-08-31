@@ -95,4 +95,13 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 }
 
 func (s *server) ListApplicationActivities(ctx context.Context, app *pb.GetApplicationRequest) (*pb.ListActivitiesResponse, error) {
+	// XXX TODO
+	var activities []*pb.Activity
+	return &pb.ListActivitiesResponse{Activities: activities}, nil
+}
+
+func (s *server) ListDeploymentActivities(ctx context.Context, app *pb.GetDeploymentRequest) (*pb.ListActivitiesResponse, error) {
+	// XXX TODO
+	var activities []*pb.Activity
+	return &pb.ListActivitiesResponse{Activities: activities}, nil
 }

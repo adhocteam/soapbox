@@ -19,6 +19,7 @@ It has these top-level messages:
 	Activity
 	MaybeInt
 	Application
+	ListApplicationRequest
 	ListApplicationResponse
 	GetApplicationRequest
 	ListConfigurationRequest

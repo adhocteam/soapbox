@@ -22,7 +22,7 @@ type transition struct {
 
 // fsm is a finite state machine.
 type fsm struct {
-	current state
+	state state
 
 	// transitions is a lookup table mapping states to new states
 	// via events.
@@ -31,7 +31,7 @@ type fsm struct {
 
 func newFsm(initial string) *fsm {
 	s := &fsm{
-		current: state(initial),
+		state: state(initial),
 	}
 	return s
 }
@@ -46,19 +46,19 @@ func (m *fsm) lookup(s state, e event) *transition {
 }
 
 func (m *fsm) step(e event) error {
-	t := m.lookup(m.current, e)
+	t := m.lookup(m.state, e)
 	// an invalid transition, meaning user never defined a
-	// transition from current state via this event.
+	// transition from state state via this event.
 	if t == nil {
-		return fmt.Errorf("transition from state %s via event %s not found", m.current, e)
+		return fmt.Errorf("transition from state %s via event %s not found", m.state, e)
 	}
 	if t.handler != nil {
-		if err := t.handler(m.current, e); err != nil {
-			m.current = "error"
+		if err := t.handler(m.state, e); err != nil {
+			m.state = "error"
 			return err
 		}
 	}
-	m.current = t.dest
+	m.state = t.dest
 	return nil
 }
 

@@ -212,20 +212,23 @@ states:
 start
 rollout-wait
 evaluate-wait
+rollforward
 rollforward-wait
+rollback
+rollback-wait
 success
-fail
+failure
 
 events:
 
-rollout-start
-rollout-inprogress
-rollout-finish
-evaluate-start
-evaluate-inprogress
-evaluate-finish
-rollforward-inprogress
-rollforward-finish
+rollout-started
+rollout-in-progress
+rollout-ok
+evaluate-in-progress
+evaluate-ok
+rollforward-started
+rollforward-in-progress
+rollforward-completed
 ...
 
 */
@@ -482,7 +485,7 @@ func (s *server) advanceDeployment(deploy *deployState) {
 	m.addTransition("evaluate-wait", "evaluate-finish", "rollforward-wait", rollforward(s, deploy, events))
 
 	go func() {
-		if m.current == "start" {
+		if m.state == "start" {
 			events <- "rollout-start"
 		}
 	}()

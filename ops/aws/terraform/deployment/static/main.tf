@@ -29,7 +29,7 @@ resource "aws_s3_bucket" "blue_bucket" {
     error_document = "404.html"
   }
 
-  tags = "${merge("${var.tags}",map("Name", "${var.application_name}-${var.environment}-${var.domain}", "env", "${var.environment}", "app", "${var.application_name}"))}"
+  tags = "${merge("${var.tags}",map("Name", "${var.application_name}-${var.environment}.${var.platform_domain}", "env", "${var.environment}", "app", "${var.application_name}"))}"
 
 }
 
@@ -43,7 +43,7 @@ resource "aws_s3_bucket" "green_bucket" {
     error_document = "404.html"
   }
 
-  tags = "${merge("${var.tags}",map("Name", "${var.application_name}-${var.environment}-${var.domain}", "env", "${var.environment}", "app", "${var.application_name}"))}"
+  tags = "${merge("${var.tags}",map("Name", "${var.application_name}-${var.environment}.${var.platform_domain}", "env", "${var.environment}", "app", "${var.application_name}"))}"
 
 }
 
@@ -108,8 +108,21 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     cloudfront_default_certificate = true
   }
 
-  aliases = ["${var.domain}"]
+  aliases = ["${var.application_name}-${var.environment}.${var.platform_domain}"]
 
-  tags = "${merge("${var.tags}",map("Name", "${var.application_name}-${var.environment}-${var.domain}", "env", "${var.environment}", "app", "${var.application_name}"))}"
+  tags = "${merge("${var.tags}",map("Name", "${var.application_name}-${var.environment}.${var.platform_domain}", "env", "${var.environment}", "app", "${var.application_name}"))}"
 
+}
+
+data "aws_route53_zone" "platform_zone" {
+  name = "${var.platform_domain}."
+}
+
+resource "aws_route53_record" "application_subdomain" {
+  zone_id = "${data.aws_route53_zone.platform_zone.zone_id}"
+  name    = "${var.application_name}.${var.environment}"
+  type    = "CNAME"
+  ttl     = "300"
+
+  records = ["${aws_cloudfront_distribution.website_cdn.domain_name}"]
 }

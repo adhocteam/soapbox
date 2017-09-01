@@ -20,7 +20,7 @@ variable "trusted_signers" {
   default = []
 }
 
-variable "domain" {
+variable "platform_domain" {
   type    = "string"
   default = "soapbox.hosting"
 }

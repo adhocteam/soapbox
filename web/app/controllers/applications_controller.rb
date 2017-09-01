@@ -47,7 +47,8 @@ class ApplicationsController < ApplicationController
       app = Soapbox::Application.new(name: @form.name,
                                      description: @form.description,
                                      github_repo_url: @form.github_repo_url,
-                                     type: type)
+                                     type: type,
+                                     user_id: current_user.id)
       app = $api_client.create_application(app)
       redirect_to application_path(app.id)
     else

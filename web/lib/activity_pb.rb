@@ -14,15 +14,12 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.Activity" do
     optional :id, :int32, 1
     optional :type, :enum, 2, "soapbox.ActivityType"
-    optional :user_id, :message, 3, "soapbox.MaybeInt"
-    optional :application_id, :message, 4, "soapbox.MaybeInt"
-    optional :deployment_id, :message, 5, "soapbox.MaybeInt"
-    optional :environment_id, :message, 6, "soapbox.MaybeInt"
-    optional :created_at, :message, 7, "google.protobuf.Timestamp"
-  end
-  add_message "soapbox.MaybeInt" do
-    optional :present, :bool, 1
-    optional :value, :int32, 2
+    optional :user_id, :int32, 3
+    optional :user_name, :string, 4
+    optional :application_id, :int32, 5
+    optional :deployment_id, :int32, 6
+    optional :environment_id, :int32, 7
+    optional :created_at, :message, 8, "google.protobuf.Timestamp"
   end
   add_enum "soapbox.ActivityType" do
     value :APPLICATION_CREATED, 0
@@ -30,12 +27,12 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     value :DEPLOYMENT_SUCCESS, 2
     value :DEPLOYMENT_FAILURE, 3
     value :ENVIRONMENT_CREATED, 4
+    value :ENVIRONMENT_DESTROYED, 5
   end
 end
 
 module Soapbox
   ListActivitiesResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListActivitiesResponse").msgclass
   Activity = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Activity").msgclass
-  MaybeInt = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.MaybeInt").msgclass
   ActivityType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ActivityType").enummodule
 end

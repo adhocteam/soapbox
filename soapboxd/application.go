@@ -2,6 +2,7 @@ package soapboxd
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -194,6 +195,17 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		do(func() error {
 			setState(pb.CreationState_SUCCEEDED)
 			log.Printf("done")
+			// add an activity
+			activity := pb.Activity{
+				Type:          pb.ActivityType_APPLICATION_CREATED,
+				ApplicationId: app.GetId(),
+				UserId:        app.GetUserId(),
+			}
+
+			if _, err := s.AddActivity(context.Background(), &activity); err != nil {
+				fmt.Printf("err = %+v\n", err)
+				return errors.Wrap(err, "error adding activity")
+			}
 			return nil
 		})
 	case pb.CreationState_SUCCEEDED:

@@ -20,6 +20,7 @@ enum ActivityType {
     DEPLOYMENT_SUCCESS = 2;
     DEPLOYMENT_FAILURE = 3;
     ENVIRONMENT_CREATED = 4;
+    ENVIRONMENT_DESTROYED= 5;
 }
 
 message ListActivitiesResponse {
@@ -29,14 +30,10 @@ message ListActivitiesResponse {
 message Activity {
     int32 id = 1;
     ActivityType type = 2;
-    MaybeInt user_id = 3;
-    MaybeInt application_id = 4;
-    MaybeInt deployment_id = 5;
-    MaybeInt environment_id = 6;
-    google.protobuf.Timestamp created_at = 7;
-}
-
-message MaybeInt {
-    bool present = 1;
-    int32 value = 2;
+    int32 user_id = 3;
+    string user_name = 4;
+    int32 application_id = 5;
+    int32  deployment_id = 6;
+    int32  environment_id = 7;
+    google.protobuf.Timestamp created_at = 8;
 }

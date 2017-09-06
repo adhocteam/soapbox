@@ -27,8 +27,8 @@ const (
 	// ActivityTypeEnvironmentCreated is the 'environment_created' ActivityType.
 	ActivityTypeEnvironmentCreated = ActivityType(5)
 
-	// ActivityTypeConfigurationCreated is the 'configuration_created' ActivityType.
-	ActivityTypeConfigurationCreated = ActivityType(6)
+	// ActivityTypeEnvironmentDestroyed is the 'environment_destroyed' ActivityType.
+	ActivityTypeEnvironmentDestroyed = ActivityType(6)
 )
 
 // String returns the string value of the ActivityType.
@@ -51,8 +51,8 @@ func (at ActivityType) String() string {
 	case ActivityTypeEnvironmentCreated:
 		enumVal = "environment_created"
 
-	case ActivityTypeConfigurationCreated:
-		enumVal = "configuration_created"
+	case ActivityTypeEnvironmentDestroyed:
+		enumVal = "environment_destroyed"
 	}
 
 	return enumVal
@@ -81,8 +81,8 @@ func (at *ActivityType) UnmarshalText(text []byte) error {
 	case "environment_created":
 		*at = ActivityTypeEnvironmentCreated
 
-	case "configuration_created":
-		*at = ActivityTypeConfigurationCreated
+	case "environment_destroyed":
+		*at = ActivityTypeEnvironmentDestroyed
 
 	default:
 		return errors.New("invalid ActivityType")

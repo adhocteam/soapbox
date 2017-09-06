@@ -11,13 +11,14 @@ import (
 
 // Activity represents a row from 'public.activities'.
 type Activity struct {
-	ID            int           `json:"id"`             // id
-	UserID        sql.NullInt64 `json:"user_id"`        // user_id
-	Activity      ActivityType  `json:"activity"`       // activity
-	ApplicationID sql.NullInt64 `json:"application_id"` // application_id
-	DeploymentID  sql.NullInt64 `json:"deployment_id"`  // deployment_id
-	EnvironmentID sql.NullInt64 `json:"environment_id"` // environment_id
-	CreatedAt     time.Time     `json:"created_at"`     // created_at
+	ID            int            `json:"id"`             // id
+	UserID        sql.NullInt64  `json:"user_id"`        // user_id
+	Activity      ActivityType   `json:"activity"`       // activity
+	ApplicationID int            `json:"application_id"` // application_id
+	DeploymentID  int            `json:"deployment_id"`  // deployment_id
+	EnvironmentID int            `json:"environment_id"` // environment_id
+	CreatedAt     time.Time      `json:"created_at"`     // created_at
+	UserName      sql.NullString `json:"user_name"`      // user_name
 
 	// xo fields
 	_exists, _deleted bool
@@ -44,14 +45,14 @@ func (a *Activity) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by sequence
 	const sqlstr = `INSERT INTO public.activities (` +
-		`user_id, activity, application_id, deployment_id, environment_id, created_at` +
+		`user_id, activity, application_id, deployment_id, environment_id, created_at, user_name` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6` +
+		`$1, $2, $3, $4, $5, $6, $7` +
 		`) RETURNING id`
 
 	// run query
-	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt)
-	err = db.QueryRow(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt).Scan(&a.ID)
+	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UserName)
+	err = db.QueryRow(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UserName).Scan(&a.ID)
 	if err != nil {
 		return err
 	}
@@ -78,14 +79,14 @@ func (a *Activity) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE public.activities SET (` +
-		`user_id, activity, application_id, deployment_id, environment_id, created_at` +
+		`user_id, activity, application_id, deployment_id, environment_id, created_at, user_name` +
 		`) = ( ` +
-		`$1, $2, $3, $4, $5, $6` +
-		`) WHERE id = $7`
+		`$1, $2, $3, $4, $5, $6, $7` +
+		`) WHERE id = $8`
 
 	// run query
-	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.ID)
-	_, err = db.Exec(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.ID)
+	XOLog(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UserName, a.ID)
+	_, err = db.Exec(sqlstr, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UserName, a.ID)
 	return err
 }
 
@@ -111,18 +112,18 @@ func (a *Activity) Upsert(db XODB) error {
 
 	// sql query
 	const sqlstr = `INSERT INTO public.activities (` +
-		`id, user_id, activity, application_id, deployment_id, environment_id, created_at` +
+		`id, user_id, activity, application_id, deployment_id, environment_id, created_at, user_name` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7` +
+		`$1, $2, $3, $4, $5, $6, $7, $8` +
 		`) ON CONFLICT (id) DO UPDATE SET (` +
-		`id, user_id, activity, application_id, deployment_id, environment_id, created_at` +
+		`id, user_id, activity, application_id, deployment_id, environment_id, created_at, user_name` +
 		`) = (` +
-		`EXCLUDED.id, EXCLUDED.user_id, EXCLUDED.activity, EXCLUDED.application_id, EXCLUDED.deployment_id, EXCLUDED.environment_id, EXCLUDED.created_at` +
+		`EXCLUDED.id, EXCLUDED.user_id, EXCLUDED.activity, EXCLUDED.application_id, EXCLUDED.deployment_id, EXCLUDED.environment_id, EXCLUDED.created_at, EXCLUDED.user_name` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt)
-	_, err = db.Exec(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt)
+	XOLog(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UserName)
+	_, err = db.Exec(sqlstr, a.ID, a.UserID, a.Activity, a.ApplicationID, a.DeploymentID, a.EnvironmentID, a.CreatedAt, a.UserName)
 	if err != nil {
 		return err
 	}
@@ -163,27 +164,6 @@ func (a *Activity) Delete(db XODB) error {
 	return nil
 }
 
-// Application returns the Application associated with the Activity's ApplicationID (application_id).
-//
-// Generated from foreign key 'activities_application_id_fkey'.
-func (a *Activity) Application(db XODB) (*Application, error) {
-	return ApplicationByID(db, int(a.ApplicationID.Int64))
-}
-
-// Deployment returns the Deployment associated with the Activity's DeploymentID (deployment_id).
-//
-// Generated from foreign key 'activities_deployment_id_fkey'.
-func (a *Activity) Deployment(db XODB) (*Deployment, error) {
-	return DeploymentByID(db, int(a.DeploymentID.Int64))
-}
-
-// Environment returns the Environment associated with the Activity's EnvironmentID (environment_id).
-//
-// Generated from foreign key 'activities_environment_id_fkey'.
-func (a *Activity) Environment(db XODB) (*Environment, error) {
-	return EnvironmentByID(db, int(a.EnvironmentID.Int64))
-}
-
 // User returns the User associated with the Activity's UserID (user_id).
 //
 // Generated from foreign key 'activities_user_id_fkey'.
@@ -199,7 +179,7 @@ func ActivityByID(db XODB, id int) (*Activity, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, user_id, activity, application_id, deployment_id, environment_id, created_at ` +
+		`id, user_id, activity, application_id, deployment_id, environment_id, created_at, user_name ` +
 		`FROM public.activities ` +
 		`WHERE id = $1`
 
@@ -209,7 +189,7 @@ func ActivityByID(db XODB, id int) (*Activity, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.UserID, &a.Activity, &a.ApplicationID, &a.DeploymentID, &a.EnvironmentID, &a.CreatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.UserID, &a.Activity, &a.ApplicationID, &a.DeploymentID, &a.EnvironmentID, &a.CreatedAt, &a.UserName)
 	if err != nil {
 		return nil, err
 	}

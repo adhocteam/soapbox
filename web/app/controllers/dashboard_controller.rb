@@ -1,6 +1,9 @@
 require 'application_pb'
 
 class DashboardController < ApplicationController
+
+  before_action :get_activities
+
   def index
     req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)
     res = $api_client.list_applications(req)
@@ -22,7 +25,27 @@ class DashboardController < ApplicationController
     end
   end
 
+  def get_application_name(app_id)
+    req = Soapbox::GetApplicationRequest.new(id: app_id)
+    @app = $api_client.get_application(req)
+    @app.name
+  end
+
+  helper_method :get_application_name
+  helper_method :get_environment_name
+
   private
+  def get_activities
+    @activities = $api_activity_client
+    .list_activities(Soapbox::Empty.new)
+    .activities.sort_by {|a| a.created_at.seconds}.reverse
+  end
+
+  def get_environment_name(env_id)
+    req = Soapbox::GetEnvironmentRequest.new(id: env_id)
+    @env = $api_environment_client.get_environment(req)
+    @env.name
+  end
 
   def get_environments(app_id)
     req = Soapbox::ListEnvironmentRequest.new(application_id: app_id)

@@ -4,7 +4,14 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
 
 ## Getting started
 
-### Requirements
+### Quick and dirty using docker-compose
+
+ - Install [docker](https://docs.docker.com/engine/installation/) and [docker-compose](https://docs.docker.com/compose/install/)
+ - Run `docker-compose build` to build the app images
+ - Run `docker-compose run` to run the application
+ - Visit localhost:3000
+
+### Local requirements
 
  - Go 1.8 or greater - see directions [here](https://golang.org/doc/install)
  - Ruby 2.2 or greater - see directions [here](https://www.ruby-lang.org/en/documentation/installation/)

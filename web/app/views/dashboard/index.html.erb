@@ -66,18 +66,18 @@
           </tr>
           <% when :ENVIRONMENT_CREATED %>
           <tr>
-            <td><%= activity.user_name %>
-              created environment:
+            <td>
+              Environment:
               <%= get_environment_name activity.environment_id %>
-              </td>
+              created</td>
             <td><%= created_at %></td>
           </tr>
           <% when :ENVIRONMENT_DESTROYED %>
           <tr>
-            <td><%= activity.user_name %>
-              deleted environment:
+            <td>
+              Environment:
               <%= get_environment_name activity.environment_id %>
-              </td>
+              deleted</td>
             <td><%= created_at %></td>
           </tr>
           <% end %>

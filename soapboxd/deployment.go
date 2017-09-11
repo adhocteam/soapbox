@@ -152,6 +152,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	req.Application.Description = nullString(app.Description)
 	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
 	req.Application.Slug = app.Slug
+	req.Application.Id = req.GetApplication().GetId()
 
 	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
 	env, err := s.GetEnvironment(ctx, &envReq)
@@ -164,6 +165,11 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	res := &pb.StartDeploymentResponse{
 		Id: req.GetId(),
 	}
+
+	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_STARTED, req); err != nil {
+		return nil, err
+	}
+
 	return res, nil
 }
 
@@ -199,13 +205,17 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		}
 	}
 
-	do := func(f func() error) {
+	do := func(f func() error) error {
 		if dep.State != "failed" {
 			if err := f(); err != nil {
 				log.Printf("error: %v", err)
 				setState("failed")
+				if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_FAILURE, dep); err != nil {
+					return err
+				}
 			}
 		}
+		return nil
 	}
 
 	doCmd := func(cmd *exec.Cmd) {
@@ -512,6 +522,9 @@ service nginx reload
 	// TODO(paulsmith): health check?
 
 	setState("success")
+	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_SUCCESS, dep); err != nil {
+		log.Printf("error adding deployment activity", err)
+	}
 }
 
 type targetGroup struct {

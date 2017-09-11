@@ -2,7 +2,6 @@ package soapboxd
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -203,7 +202,6 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			}
 
 			if _, err := s.AddActivity(context.Background(), &activity); err != nil {
-				fmt.Printf("err = %+v\n", err)
 				return errors.Wrap(err, "error adding activity")
 			}
 			return nil

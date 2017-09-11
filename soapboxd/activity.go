@@ -1,7 +1,6 @@
 package soapboxd
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/adhocteam/soapbox/models"
@@ -92,8 +91,6 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 		}
 
 		activity.Type = translations[aType]
-		fmt.Printf("aType = %+v\n", aType)
-		fmt.Printf("activity.Type = %+v\n", activity.Type)
 		setPbTimestamp(activity.CreatedAt, createdAt)
 		activities = append(activities, activity)
 	}
@@ -101,11 +98,35 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "iterating over db rows")
 	}
-	for _, a := range activities {
-		fmt.Printf("activity = %+v\n", a)
-	}
 
 	return &pb.ListActivitiesResponse{Activities: activities}, nil
+}
+
+func (s *server) AddDeploymentActivity(ctx context.Context, activityType pb.ActivityType, dep *pb.Deployment) error {
+	activity := pb.Activity{
+		Type:          activityType,
+		ApplicationId: dep.Application.GetId(),
+		UserId:        dep.Application.GetUserId(),
+		DeploymentId:  dep.GetId(),
+	}
+
+	if _, err := s.AddActivity(ctx, &activity); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *server) AddEnvironmentActivity(ctx context.Context, activityType pb.ActivityType, envId int32) error {
+	activity := pb.Activity{
+		Type:          activityType,
+		EnvironmentId: envId,
+	}
+
+	if _, err := s.AddActivity(ctx, &activity); err != nil {
+		return errors.Wrap(err, "error adding environment activity")
+	}
+
+	return nil
 }
 
 func (s *server) ListApplicationActivities(ctx context.Context, app *pb.GetApplicationRequest) (*pb.ListActivitiesResponse, error) {

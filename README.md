@@ -6,12 +6,16 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
 
 ### Quick and dirty using docker-compose
 
+ - Install Go 1.8 or greater - see directions [here](https://golang.org/doc/install)
  - Install [docker](https://docs.docker.com/engine/installation/) and [docker-compose](https://docs.docker.com/compose/install/)
- - Run `docker-compose build` to build the app images
- - Run `docker-compose run` to run the application
- - Visit localhost:3000
+ - Install [modd](https://github.com/cortesi/modd) using `go get github.com/cortesi/modd/cmd/modd`
+ - Run `docker-compose up` to build, create and start the containers with streaming logs
+ - Run `modd` in another terminal to start the file-watcher. Any changes to local files will rebuild binaries and restart services as needed.
+ - Visit localhost:3000 and go!
+ - When done, `CTRL-C` to stop the containers. Don't use `docker-compose down` as that will remove your containers and erase the DB.
+ - To start back up again, use `docker-compose up --no-recreate`
 
-### Local requirements
+### Local requirements without docker-compose
 
  - Go 1.8 or greater - see directions [here](https://golang.org/doc/install)
  - Ruby 2.2 or greater - see directions [here](https://www.ruby-lang.org/en/documentation/installation/)

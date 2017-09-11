@@ -25,6 +25,8 @@ services:
     build: ./web
     environment:
       - SOAPBOX_API_SERVER=soapboxd:9090
+    volumes:
+      - ./web:/web
     ports:
       - '3000:3000'
     depends_on:

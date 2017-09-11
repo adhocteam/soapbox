@@ -31,9 +31,8 @@ message Activity {
     int32 id = 1;
     ActivityType type = 2;
     int32 user_id = 3;
-    string user_name = 4;
-    int32 application_id = 5;
-    int32  deployment_id = 6;
-    int32  environment_id = 7;
-    google.protobuf.Timestamp created_at = 8;
+    int32 application_id = 4;
+    int32  deployment_id = 5;
+    int32  environment_id = 6;
+    google.protobuf.Timestamp created_at = 7;
 }

@@ -152,7 +152,8 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	req.Application.Description = nullString(app.Description)
 	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
 	req.Application.Slug = app.Slug
-	req.Application.Id = req.GetApplication().GetId()
+	req.Application.Id = int32(app.ID)
+	req.Application.UserId = int32(app.UserID)
 
 	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
 	env, err := s.GetEnvironment(ctx, &envReq)
@@ -205,17 +206,15 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		}
 	}
 
-	do := func(f func() error) error {
+	do := func(f func() error) {
 		if dep.State != "failed" {
 			if err := f(); err != nil {
-				log.Printf("error: %v", err)
 				setState("failed")
 				if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_FAILURE, dep); err != nil {
-					return err
+					log.Printf("adding deployment activity: %v", err)
 				}
 			}
 		}
-		return nil
 	}
 
 	doCmd := func(cmd *exec.Cmd) {

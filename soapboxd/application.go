@@ -319,6 +319,7 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 
 	app := &pb.Application{
 		Id:        int32(model.ID),
+		UserId:    int32(model.UserID),
 		Name:      model.Name,
 		Slug:      model.Slug,
 		Type:      appTypeModelToPb(model.Type),

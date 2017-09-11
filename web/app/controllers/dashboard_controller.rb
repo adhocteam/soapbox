@@ -33,12 +33,19 @@ class DashboardController < ApplicationController
 
   helper_method :get_application_name
   helper_method :get_environment_name
+  helper_method :get_user_name
 
   private
   def get_activities
     @activities = $api_activity_client
     .list_activities(Soapbox::Empty.new)
     .activities.sort_by {|a| a.created_at.seconds}.reverse
+  end
+
+  def get_user_name(user_id)
+    req = Soapbox::GetUserRequest.new(id: user_id)
+    @user_name = $api_user_client.get_user(req)
+    @user_name.name
   end
 
   def get_environment_name(env_id)

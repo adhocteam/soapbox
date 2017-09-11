@@ -34,20 +34,21 @@
           <%
           if activity.type != :ENVIRONMENT_CREATED && activity.type != :ENVIRONMENT_DESTROYED
             app_name = get_application_name activity.application_id
+            user_name = get_user_name activity.user_id
           end
           created_at = Time.at(activity.created_at.seconds).to_datetime
           %>
           <% case activity.type
         when :APPLICATION_CREATED %>
           <tr>
-            <td><%= activity.user_name %>
+            <td><%= user_name %>
               created application:
               <%= app_name %></td>
             <td><%= created_at %></td>
           </tr>
           <% when :DEPLOYMENT_STARTED %>
           <tr>
-            <td><%= activity.user_name %>
+            <td><%= user_name %>
               started deployment:
               <%= app_name %></td>
             <td><%= created_at %></td>

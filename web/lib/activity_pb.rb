@@ -15,11 +15,10 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :id, :int32, 1
     optional :type, :enum, 2, "soapbox.ActivityType"
     optional :user_id, :int32, 3
-    optional :user_name, :string, 4
-    optional :application_id, :int32, 5
-    optional :deployment_id, :int32, 6
-    optional :environment_id, :int32, 7
-    optional :created_at, :message, 8, "google.protobuf.Timestamp"
+    optional :application_id, :int32, 4
+    optional :deployment_id, :int32, 5
+    optional :environment_id, :int32, 6
+    optional :created_at, :message, 7, "google.protobuf.Timestamp"
   end
   add_enum "soapbox.ActivityType" do
     value :APPLICATION_CREATED, 0

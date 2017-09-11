@@ -78,8 +78,7 @@ create type activity_type as enum (
 
 create table activities (
         id serial not null primary key,
-        user_id integer references users, --  null user_id means that soapbox performed the action
-	user_name text not null
+        user_id integer references users,
         activity activity_type,
         application_id integer applications not null,
         deployment_id integer deployments not null,

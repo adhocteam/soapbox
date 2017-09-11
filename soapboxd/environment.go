@@ -82,7 +82,7 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 	req.CreatedAt = new(gpb.Timestamp)
 	setPbTimestamp(req.CreatedAt, createdAt)
 
-	if err := s.AddEnvironmentActivity(ctx, pb.ActivityType_ENVIRONMENT_CREATED, req.GetId()); err != nil {
+	if err := s.AddCreateEnvironmentActivity(ctx, req); err != nil {
 		return nil, err
 	}
 	return req, nil
@@ -93,7 +93,12 @@ func (s *server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironm
 	if _, err := s.db.Exec(deleteSQL, req.GetId()); err != nil {
 		return nil, errors.Wrap(err, "deleting row from db")
 	}
-	if err := s.AddEnvironmentActivity(ctx, pb.ActivityType_ENVIRONMENT_DESTROYED, req.GetId()); err != nil {
+	activity := pb.Activity{
+		Type:          pb.ActivityType_ENVIRONMENT_DESTROYED,
+		EnvironmentId: req.GetId(),
+	}
+
+	if _, err := s.AddActivity(ctx, &activity); err != nil {
 		return &pb.Empty{}, err
 	}
 	return &pb.Empty{}, nil

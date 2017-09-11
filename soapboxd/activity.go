@@ -22,19 +22,17 @@ func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Em
 	}
 
 	userID := activity.UserId
-	username := activity.GetUserName
 	applicationID := activity.ApplicationId
 	deploymentID := activity.DeploymentId
 	environmentID := activity.EnvironmentId
 
 	insertQuery := `
-	INSERT INTO activities (user_id, user_name, activity, application_id, deployment_id, environment_id)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO activities (user_id, activity, application_id, deployment_id, environment_id)
+	VALUES ($1, $2, $3, $4, $5)
 	`
 	var activityType = translations[activity.Type]
 	_, err := s.db.Exec(insertQuery,
 		userID,
-		username,
 		activityType,
 		applicationID,
 		deploymentID,
@@ -57,7 +55,7 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 	}
 
 	const query = `
-		SELECT id, user_id, user_name, activity, application_id, deployment_id,
+		SELECT id, user_id, activity, application_id, deployment_id,
 		environment_id, created_at
 		FROM activities
 		ORDER BY created_at ASC
@@ -79,7 +77,6 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 		dest := []interface{}{
 			&activity.Id,
 			&activity.UserId,
-			&activity.UserName,
 			&aType,
 			&activity.ApplicationId,
 			&activity.DeploymentId,
@@ -116,10 +113,18 @@ func (s *server) AddDeploymentActivity(ctx context.Context, activityType pb.Acti
 	return nil
 }
 
-func (s *server) AddEnvironmentActivity(ctx context.Context, activityType pb.ActivityType, envId int32) error {
+func (s *server) AddCreateEnvironmentActivity(ctx context.Context, env *pb.Environment) error {
+
+	application, err := s.GetApplication(ctx, &pb.GetApplicationRequest{Id: env.GetApplicationId()})
+
+	if err != nil {
+		return errors.Wrap(err, "error adding environment activity")
+	}
+
 	activity := pb.Activity{
-		Type:          activityType,
-		EnvironmentId: envId,
+		Type:          pb.ActivityType_ENVIRONMENT_CREATED,
+		EnvironmentId: env.GetId(),
+		UserId:        application.GetUserId(),
 	}
 
 	if _, err := s.AddActivity(ctx, &activity); err != nil {

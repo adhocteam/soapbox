@@ -72,12 +72,15 @@ func usage() {
 
 func createApplication(ctx context.Context, client pb.ApplicationsClient, args []string) error {
 	args = args[1:]
-	if len(args) < 4 {
-		return fmt.Errorf("4 arguments are required: name, description, github repo URL, and type (server, cronjob)")
+	if len(args) < 5 {
+		return fmt.Errorf("5 arguments are required: name, description, github repo URL, user_id, and type (server, cronjob)")
 	}
 
+	user_id, err := strconv.Atoi(args[3])
+
 	var appType pb.ApplicationType
-	switch args[3] {
+
+	switch args[4] {
 	case "server":
 		appType = pb.ApplicationType_SERVER
 	case "cronjob":
@@ -90,6 +93,7 @@ func createApplication(ctx context.Context, client pb.ApplicationsClient, args [
 		Name:          args[0],
 		Description:   args[1],
 		GithubRepoUrl: args[2],
+		UserId:        int32(user_id),
 		Type:          appType,
 	}
 	app, err := client.CreateApplication(ctx, req)

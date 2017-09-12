@@ -4,6 +4,10 @@ class DashboardController < ApplicationController
 
   before_action :get_activities
 
+  helper_method :get_application_name
+  helper_method :get_environment_name
+  helper_method :get_user_name
+
   def index
     req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)
     res = $api_client.list_applications(req)
@@ -25,17 +29,14 @@ class DashboardController < ApplicationController
     end
   end
 
+  private
+
   def get_application_name(app_id)
     req = Soapbox::GetApplicationRequest.new(id: app_id)
     @app = $api_client.get_application(req)
     @app.name
   end
 
-  helper_method :get_application_name
-  helper_method :get_environment_name
-  helper_method :get_user_name
-
-  private
   def get_activities
     @activities = $api_activity_client
     .list_activities(Soapbox::Empty.new)

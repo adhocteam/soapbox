@@ -73,15 +73,15 @@ create type activity_type as enum (
         'deployment_started',
         'deployment_success',
         'deployment_failure',
-        'environment_created'),
+        'environment_created',
         'environment_destroyed');
 
 create table activities (
         id serial not null primary key,
         user_id integer references users,
         activity activity_type,
-        application_id integer applications not null,
-        deployment_id integer deployments not null,
-        environment_id integer environments not null,
+        application_id integer references applications,
+        deployment_id integer references deployments,
+        environment_id integer references environments,
         created_at timestamp with time zone not null default now()
 );

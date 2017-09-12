@@ -14,9 +14,9 @@ type Activity struct {
 	ID            int           `json:"id"`             // id
 	UserID        sql.NullInt64 `json:"user_id"`        // user_id
 	Activity      ActivityType  `json:"activity"`       // activity
-	ApplicationID int           `json:"application_id"` // application_id
-	DeploymentID  int           `json:"deployment_id"`  // deployment_id
-	EnvironmentID int           `json:"environment_id"` // environment_id
+	ApplicationID sql.NullInt64 `json:"application_id"` // application_id
+	DeploymentID  sql.NullInt64 `json:"deployment_id"`  // deployment_id
+	EnvironmentID sql.NullInt64 `json:"environment_id"` // environment_id
 	CreatedAt     time.Time     `json:"created_at"`     // created_at
 
 	// xo fields
@@ -161,6 +161,27 @@ func (a *Activity) Delete(db XODB) error {
 	a._deleted = true
 
 	return nil
+}
+
+// Application returns the Application associated with the Activity's ApplicationID (application_id).
+//
+// Generated from foreign key 'activities_application_id_fkey'.
+func (a *Activity) Application(db XODB) (*Application, error) {
+	return ApplicationByID(db, int(a.ApplicationID.Int64))
+}
+
+// Deployment returns the Deployment associated with the Activity's DeploymentID (deployment_id).
+//
+// Generated from foreign key 'activities_deployment_id_fkey'.
+func (a *Activity) Deployment(db XODB) (*Deployment, error) {
+	return DeploymentByID(db, int(a.DeploymentID.Int64))
+}
+
+// Environment returns the Environment associated with the Activity's EnvironmentID (environment_id).
+//
+// Generated from foreign key 'activities_environment_id_fkey'.
+func (a *Activity) Environment(db XODB) (*Environment, error) {
+	return EnvironmentByID(db, int(a.EnvironmentID.Int64))
 }
 
 // User returns the User associated with the Activity's UserID (user_id).

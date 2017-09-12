@@ -8,6 +8,17 @@
         src: files/runit-2.1.2-1.amzn1.x86_64.rpm
         dest: /tmp/runit.rpm
 
+    - name: copy rsyslog repo file to target
+      copy:
+        src: files/rsyslog.repo
+        dest: /etc/yum.repos.d/rsyslog.repo
+
+    - name: install latest rsyslog
+      yum:
+        name: rsyslog
+        state: latest
+        disablerepo: amzn-main
+
     - name: install packages
       yum:
         name: "{{ item }}"
@@ -15,6 +26,7 @@
       with_items:
         - docker
         - nginx
+        - rsyslog-elasticsearch
         - /tmp/runit.rpm
 
     - name: start services
@@ -25,6 +37,7 @@
       with_items:
         - docker
         - nginx
+        - rsyslog
 
     - name: add ec2-user to docker group
       user:
@@ -43,7 +56,26 @@
         - src: files/init.conf
           dest: /etc/nginx/nginx.conf
 
-    - name: restart nginx
+    - name: Uncomment UDP server lines from /etc/rsyslog.conf
+      lineinfile:
+        dest: /etc/rsyslog.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - regexp: "^#$ModLoad"
+          line: "$ModLoad imudp"
+        - regexp: "^#$UDPServerRun"
+          line: "$UDPServerRun 514"
+
+    - name: install /etc/rsyslog.d/elasticsearch.conf
+      copy:
+        src: "files/elasticsearch.conf"
+        dest: "/etc/rsyslog.d/elasticsearch.conf"
+
+    - name: restart services
       service:
-        name: nginx
+        name: "{{ item }}"
         state: restarted
+      with_items:
+        - nginx
+        - rsyslog

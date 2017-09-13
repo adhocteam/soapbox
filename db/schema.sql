@@ -67,3 +67,21 @@ create table deployments (
        current_state text not null default '',
        created_at timestamp with time zone not null default now()
 );
+
+create type activity_type as enum (
+        'application_created',
+        'deployment_started',
+        'deployment_success',
+        'deployment_failure',
+        'environment_created',
+        'environment_destroyed');
+
+create table activities (
+        id serial not null primary key,
+        user_id integer references users,
+        activity activity_type,
+        application_id integer references applications,
+        deployment_id integer references deployments,
+        environment_id integer references environments,
+        created_at timestamp with time zone not null default now()
+);

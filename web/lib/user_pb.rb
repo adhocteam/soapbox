@@ -21,6 +21,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_message "soapbox.GetUserRequest" do
     optional :email, :string, 1
+    optional :id, :int32, 2
   end
   add_message "soapbox.LoginUserRequest" do
     optional :email, :string, 1

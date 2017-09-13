@@ -108,6 +108,22 @@ $ make models
 $ make all
 ```
 
+### Making changes to the database schema
+
+Soapbox uses [xo](https://github.com/knq/xo) to generate database models.
+
+To install, run the command:
+
+``` shell
+$ go get -u github.com/knq/xo
+```
+
+Then, after you modify `db/schema.sql`, run `make schema` to generate the
+database models.
+
+(Go 1.8.0 has a [known bug](https://github.com/knq/xo/issues/95) which prevents
+xo from running, upgrade to 1.8.1 or higher)
+
 ### Go dependencies
 
 Soapbox uses [dep](https://github.com/golang/dep) for dependency management. Follow the below flow to add imports:

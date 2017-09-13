@@ -194,6 +194,9 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		do(func() error {
 			setState(pb.CreationState_SUCCEEDED)
 			log.Printf("done")
+			if err := s.AddApplicationActivity(context.Background(), app.GetId(), app.GetUserId()); err != nil {
+				return errors.Wrap(err, "error adding activity")
+			}
 			return nil
 		})
 	case pb.CreationState_SUCCEEDED:
@@ -309,6 +312,7 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 
 	app := &pb.Application{
 		Id:        int32(model.ID),
+		UserId:    int32(model.UserID),
 		Name:      model.Name,
 		Slug:      model.Slug,
 		Type:      appTypeModelToPb(model.Type),

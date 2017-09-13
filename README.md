@@ -101,9 +101,10 @@ $ make all
 
 Soapbox uses [xo](https://github.com/knq/xo) to generate database models.
 
-To Install run the command
-```
-go get -u github.com/knq/xo
+To install, run the command:
+
+``` shell
+$ go get -u github.com/knq/xo
 ```
 
 Then, after you modify `db/schema.sql`, run `make schema` to generate the

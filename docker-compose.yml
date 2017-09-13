@@ -25,6 +25,8 @@ services:
     build: ./web
     environment:
       - SOAPBOX_API_SERVER=soapboxd:9090
+      - GITHUB_OAUTH_CLIENT_ID
+      - GITHUB_OAUTH_CLIENT_SECRET
     volumes:
       - ./web:/web
     ports:

@@ -112,15 +112,15 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 	return &pb.ListActivitiesResponse{Activities: activities}, nil
 }
 
-func (s *server) AddApplicationActivity(ctx context.Context, app *pb.Application) error {
+func (s *server) AddApplicationActivity(ctx context.Context, applicationId int32, userId int32) error {
 	insertQuery := `
 	INSERT INTO activities (user_id, activity, application_id)
 	VALUES ($1, $2, $3)
 	`
 	_, err := s.db.Exec(insertQuery,
-		app.GetUserId(),
+		userId,
 		models.ActivityTypeApplicationCreated,
-		app.GetId(),
+		applicationId,
 	)
 	if err != nil {
 		return errors.Wrap(err, "error adding application activity")

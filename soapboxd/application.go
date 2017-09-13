@@ -194,14 +194,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		do(func() error {
 			setState(pb.CreationState_SUCCEEDED)
 			log.Printf("done")
-			// add an activity
-			activity := pb.Activity{
-				Type:          pb.ActivityType_APPLICATION_CREATED,
-				ApplicationId: app.GetId(),
-				UserId:        app.GetUserId(),
-			}
-
-			if _, err := s.AddActivity(context.Background(), &activity); err != nil {
+			if err := s.AddApplicationActivity(context.Background(), app.GetId(), app.GetUserId()); err != nil {
 				return errors.Wrap(err, "error adding activity")
 			}
 			return nil

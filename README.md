@@ -99,11 +99,10 @@ $ make all
 
 ### Making changes to the database schema
 
-Soapbox uses [xo](https://github.com/knq/xo) to generate database models. To
-install xo you must have `goimports` installed as well:
+Soapbox uses [xo](https://github.com/knq/xo) to generate database models.
 
+To Install run the command
 ```
-go get -u golang.org/x/tools/cmd/goimports
 go get -u github.com/knq/xo
 ```
 

@@ -39,8 +39,8 @@ class DashboardController < ApplicationController
 
   def get_activities
     @activities = $api_activity_client
-    .list_activities(Soapbox::Empty.new)
-    .activities.sort_by {|a| a.created_at.seconds}.reverse
+      .list_activities(Soapbox::Empty.new)
+      .activities.sort_by {|a| a.created_at.seconds}.reverse
   end
 
   def get_user_name(user_id)

@@ -20,7 +20,7 @@ enum ActivityType {
     DEPLOYMENT_SUCCESS = 2;
     DEPLOYMENT_FAILURE = 3;
     ENVIRONMENT_CREATED = 4;
-    ENVIRONMENT_DESTROYED= 5;
+    ENVIRONMENT_DESTROYED = 5;
 }
 
 message ListActivitiesResponse {
@@ -32,7 +32,7 @@ message Activity {
     ActivityType type = 2;
     int32 user_id = 3;
     int32 application_id = 4;
-    int32  deployment_id = 5;
-    int32  environment_id = 6;
+    int32 deployment_id = 5;
+    int32 environment_id = 6;
     google.protobuf.Timestamp created_at = 7;
 }

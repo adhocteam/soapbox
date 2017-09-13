@@ -22,22 +22,18 @@ var activityTypeToModel = map[pb.ActivityType]models.ActivityType{
 }
 
 func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Empty, error) {
-	userID := activity.UserId
-	applicationID := activity.ApplicationId
-	deploymentID := activity.DeploymentId
-	environmentID := activity.EnvironmentId
-
-	insertQuery := `
+	query := `
 	INSERT INTO activities (user_id, activity, application_id, deployment_id, environment_id)
 	VALUES ($1, $2, $3, $4, $5)
 	`
-	var activityType = activityTypeToModel[activity.Type]
-	_, err := s.db.Exec(insertQuery,
-		userID,
-		activityType,
-		applicationID,
-		deploymentID,
-		environmentID)
+	params := []interface{}{
+		activity.UserId,
+		activityTypeToModel[activity.Type],
+		activity.ApplicationId,
+		activity.DeploymentId,
+		activity.EnvironmentId,
+	}
+	_, err := s.db.Exec(query, params...)
 	if err != nil {
 		return nil, errors.Wrap(err, "inserting into activities")
 	}
@@ -113,11 +109,11 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 }
 
 func (s *server) AddApplicationActivity(ctx context.Context, applicationId int32, userId int32) error {
-	insertQuery := `
+	query := `
 	INSERT INTO activities (user_id, activity, application_id)
 	VALUES ($1, $2, $3)
 	`
-	_, err := s.db.Exec(insertQuery,
+	_, err := s.db.Exec(query,
 		userId,
 		models.ActivityTypeApplicationCreated,
 		applicationId,
@@ -130,12 +126,12 @@ func (s *server) AddApplicationActivity(ctx context.Context, applicationId int32
 }
 
 func (s *server) AddDeploymentActivity(ctx context.Context, activityType pb.ActivityType, dep *pb.Deployment) error {
-	insertQuery := `
+	query := `
 	INSERT INTO activities (user_id, activity, application_id, deployment_id)
 	VALUES ($1, $2, $3, $4)
 	`
 	aType := activityTypeToModel[activityType]
-	_, err := s.db.Exec(insertQuery,
+	_, err := s.db.Exec(query,
 		dep.Application.GetUserId(),
 		aType,
 		dep.Application.GetId(),
@@ -154,11 +150,11 @@ func (s *server) AddCreateEnvironmentActivity(ctx context.Context, env *pb.Envir
 		return errors.Wrap(err, "error adding environment activity")
 	}
 
-	insertQuery := `
+	query := `
 	INSERT INTO activities (user_id, activity, environment_id)
 	VALUES ($1, $2, $3)
 	`
-	_, err = s.db.Exec(insertQuery,
+	_, err = s.db.Exec(query,
 		application.GetUserId(),
 		models.ActivityTypeEnvironmentCreated,
 		env.GetId(),

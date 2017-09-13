@@ -1,4 +1,5 @@
-FROM golang:1.8
+FROM golang:1.8-alpine as builder
+RUN apk add --update --no-cache build-base git
 RUN mkdir -p /go/src/github.com/adhocteam/soapbox
 COPY . /go/src/github.com/adhocteam/soapbox
 WORKDIR /go/src/github.com/adhocteam/soapbox
@@ -7,7 +8,7 @@ RUN make all
 
 FROM alpine:latest
 MAINTAINER ops@adhocteam.us
-RUN apk update && apk add ca-certificates docker terraform
+RUN apk add --update --no-cache ca-certificates docker git terraform
 WORKDIR /root/
-COPY --from=0 /go/bin/soapboxd .
+COPY --from=builder /go/bin/soapboxd .
 CMD ["./soapboxd"]

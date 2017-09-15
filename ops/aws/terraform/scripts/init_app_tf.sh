@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Generate Terraform configuration for the combination of a Soapbox
 # application, environment, and type of infrastructure to manage
@@ -45,19 +45,24 @@ fi
 APP_TMP=$(mktemp -d)
 cp -R $PWD/../$TYPE/ $APP_TMP/
 
+# Use $APP_TMP for whatever operations you need to perform,
+# cleaning up the temp dir when you're done
+echo "$APP_TMP"
+
 # Change to the temp dir
-cd $APP_TMP/$TYPE
-pwd
 if [ "$TYPE" = "deployment" ]; then
-  cd asg
+  cd $APP_TMP/asg
+else
+  cd $APP_TMP
 fi
 
 # Populate backend.tfvar.sample with appropriate values
-sed -i "s/#APP#/$APP/" backend.tfvars.sample
-sed -i "s/#ENV#/$ENV/" backend.tfvars.sample
-sed -i "s/#STATE_BUCKET#/$STATE_BUCKET/" backend.tfvars.sample
-sed -i "s/#REGION#/$REGION/" backend.tfvars.sample
-sed -i "s/#DYNAMO_TABLE#/$DYNAMO_TABLE/" backend.tfvars.sample
+sed -i.bak "s/#APP#/$APP/" backend.tfvars.sample
+sed -i.bak "s/#ENV#/$ENV/" backend.tfvars.sample
+sed -i.bak "s/#STATE_BUCKET#/$STATE_BUCKET/" backend.tfvars.sample
+sed -i.bak "s/#REGION#/$REGION/" backend.tfvars.sample
+sed -i.bak "s/#DYNAMO_TABLE#/$DYNAMO_TABLE/" backend.tfvars.sample
+rm -f *.bak
 
 # Ceremonial promotion of .sample to bonafide .tfvars file
 mv backend.tfvars.sample backend.tfvars

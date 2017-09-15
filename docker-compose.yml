@@ -2,31 +2,21 @@ version: '3'
 services:
   postgres:
     image: postgres:alpine
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       - POSTGRES_DB=soapbox_dev
       - POSTGRES_USER=soapbox
-    volumes:
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/init.sql
     expose:
       - '5432'
   soapboxd:
     build: .
-    env_file:
-      - ./.env
     environment:
       - AWS_REGION=us-east-1
       - PGHOST=postgres
       - PGUSER=soapbox
       - PGDATABASE=soapbox_dev
       - PGSSLMODE=disable
-    volumes:
-      - /lib/x86_64-linux-gnu/libc.so.6:/lib/x86_64-linux-gnu/libc.so.6
-      - /lib/x86_64-linux-gnu/libdl.so.2:/lib/x86_64-linux-gnu/libdl.so.2
-      - /lib/x86_64-linux-gnu/libpthread.so.0:/lib/x86_64-linux-gnu/libpthread.so.0
-      - /lib64/ld-linux-x86-64.so.2:/lib64/ld-linux-x86-64.so.2
-      - /usr/bin/docker:/usr/bin/docker
-      - /usr/lib/x86_64-linux-gnu/libltdl.so.7:/usr/lib/x86_64-linux-gnu/libltdl.so.7
-      - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - '9090'
     depends_on:

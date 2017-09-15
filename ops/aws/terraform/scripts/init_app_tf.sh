@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Generate Terraform configuration for the combination of a Soapbox
 # application, environment, and type of infrastructure to manage

@@ -82,9 +82,17 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 	req.CreatedAt = new(gpb.Timestamp)
 	setPbTimestamp(req.CreatedAt, createdAt)
 
+	// create environment configuration
+	configReq := pb.CreateConfigurationRequest{EnvironmentId: req.Id}
+	_, err := s.CreateConfiguration(ctx, &configReq)
+	if err != nil {
+		return nil, err
+	}
+
 	if err := s.AddCreateEnvironmentActivity(ctx, req); err != nil {
 		return nil, err
 	}
+
 	return req, nil
 }
 

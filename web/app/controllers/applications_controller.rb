@@ -2,7 +2,7 @@ require 'application_pb'
 require 'deployment_pb'
 
 class ApplicationsController < ApplicationController
-  before_action :find_repositories, only: [:new], if: :current_user
+  before_action :find_repositories, only: [:new, :create], if: :current_user
 
   def index
     req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)

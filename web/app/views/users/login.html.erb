@@ -1,7 +1,6 @@
 <div class="card" >
     <div class="card-block" >
 	<h4 class="card-title">Login to your Soapbox account</h4>
-
 	<%= form_for :user, url: login_user_path do |f| %>
 	    <% if @form.errors.any? %>
     		<div class="alert alert-danger" role="alert" >
@@ -9,14 +8,14 @@
     		    this user from being logged in.
     		</div>
 	    <% end %>
-      <div class="form-group required<%= ' has-danger' if @form.errors.include?(:email) %>">
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:email) %>">
 		<%= f.label :email, class: "col-form-label" %>
 		<%= f.text_field :email, value: @form.email, class: "form-control form-control-lg" %>
 		<% @form.errors.full_messages_for(:email).each do |msg| %>
 		    <div class="form-control-feedback"><%= msg %></div>
 		<% end %>
 	    </div>
-      <div class="form-group required<%= ' has-danger' if @form.errors.include?(:password) %>">
+	    <div class="form-group required<%= ' has-danger' if @form.errors.include?(:password) %>">
 		<%= f.label :password, class: "col-form-label" %>
 		<%= f.password_field :password, value: @form.password, class: "form-control form-control-lg" %>
 		<% @form.errors.full_messages_for(:password).each do |msg| %>
@@ -28,8 +27,8 @@
 		<%= link_to 'Cancel', root_path, class: "btn" %>
 	    </div>
 	<% end %>
-    <p>
-       Don't have an account? <%= link_to 'Create one here!', new_user_path %>
-    </p>
+	<p>
+	    Don't have an account? <%= link_to 'Create one here!', new_user_path %>
+	</p>
     </div>
 </div>

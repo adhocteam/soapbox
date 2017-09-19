@@ -45,6 +45,10 @@ fi
 APP_TMP=$(mktemp -d)
 cp -R $PWD/../$TYPE/* $APP_TMP/
 
+# Echoing temp dir path to stdout, so controlling application can set
+# it as the working directory for running Terraform.
+echo $APP_TMP
+
 # Change to the temp dir
 if [ "$TYPE" = "deployment" ]; then
   cd $APP_TMP/asg

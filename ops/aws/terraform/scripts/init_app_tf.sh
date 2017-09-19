@@ -56,13 +56,23 @@ else
   cd $APP_TMP
 fi
 
-# Populate backend.tfvar.sample with appropriate values
-sed -i.bak "s/#APP#/$APP/" backend.tfvars.sample
-sed -i.bak "s/#ENV#/$ENV/" backend.tfvars.sample
-sed -i.bak "s/#STATE_BUCKET#/$STATE_BUCKET/" backend.tfvars.sample
-sed -i.bak "s/#REGION#/$REGION/" backend.tfvars.sample
-sed -i.bak "s/#DYNAMO_TABLE#/$DYNAMO_TABLE/" backend.tfvars.sample
-rm *.bak
+# Replaces a variable name with a value in a given file, editing it
+# in-place. The variable name should be surrounded by '#'s in the
+# file, for example: #APP_NAME#
+replace_in_place () {
+    local name="$1"
+    local value="$2"
+    local filename="$3"
+    sed -e "s/#${name}#/$value/" "$filename" > "$filename.new"
+    mv -- "$filename.new" "$filename"
+}
+
+# Populate backend.tfvar.sample with appropriate valuess
+replace_in_place APP $APP backend.tfvars.sample
+replace_in_place ENV $ENV backend.tfvars.sample
+replace_in_place STATE_BUCKET $STATE_BUCKET backend.tfvars.sample
+replace_in_place REGION $REGION backend.tfvars.sample
+replace_in_place DYNAMO_TABLE $DYNAMO_TABLE backend.tfvars.sample
 
 # Ceremonial promotion of .sample to bonafide .tfvars file
 mv backend.tfvars.sample backend.tfvars

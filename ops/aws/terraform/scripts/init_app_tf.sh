@@ -43,13 +43,13 @@ fi
 
 # Get a temp dir, copy the required tf files
 APP_TMP=$(mktemp -d)
-cp -R $PWD/../$TYPE/ $APP_TMP/
+cp -R $PWD/../$TYPE/* $APP_TMP/
 
 # Change to the temp dir
-cd $APP_TMP/$TYPE
-pwd
 if [ "$TYPE" = "deployment" ]; then
-  cd asg
+  cd $APP_TMP/asg
+else
+  cd $APP_TMP
 fi
 
 # Populate backend.tfvar.sample with appropriate values

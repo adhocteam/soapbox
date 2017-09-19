@@ -53,11 +53,12 @@ else
 fi
 
 # Populate backend.tfvar.sample with appropriate values
-sed -i "s/#APP#/$APP/" backend.tfvars.sample
-sed -i "s/#ENV#/$ENV/" backend.tfvars.sample
-sed -i "s/#STATE_BUCKET#/$STATE_BUCKET/" backend.tfvars.sample
-sed -i "s/#REGION#/$REGION/" backend.tfvars.sample
-sed -i "s/#DYNAMO_TABLE#/$DYNAMO_TABLE/" backend.tfvars.sample
+sed -i.bak "s/#APP#/$APP/" backend.tfvars.sample
+sed -i.bak "s/#ENV#/$ENV/" backend.tfvars.sample
+sed -i.bak "s/#STATE_BUCKET#/$STATE_BUCKET/" backend.tfvars.sample
+sed -i.bak "s/#REGION#/$REGION/" backend.tfvars.sample
+sed -i.bak "s/#DYNAMO_TABLE#/$DYNAMO_TABLE/" backend.tfvars.sample
+rm *.bak
 
 # Ceremonial promotion of .sample to bonafide .tfvars file
 mv backend.tfvars.sample backend.tfvars

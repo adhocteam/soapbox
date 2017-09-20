@@ -4,3 +4,4 @@
 .terraform/
 .go-pkgset
 .go-version
+.env

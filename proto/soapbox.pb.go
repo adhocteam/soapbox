@@ -18,15 +18,15 @@ type Empty struct {
 func (m *Empty) Reset()                    { *m = Empty{} }
 func (m *Empty) String() string            { return proto1.CompactTextString(m) }
 func (*Empty) ProtoMessage()               {}
-func (*Empty) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*Empty) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 func init() {
 	proto1.RegisterType((*Empty)(nil), "soapbox.Empty")
 }
 
-func init() { proto1.RegisterFile("soapbox.proto", fileDescriptor4) }
+func init() { proto1.RegisterFile("soapbox.proto", fileDescriptor5) }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor5 = []byte{
 	// 62 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0xce, 0x4f, 0x2c,
 	0x48, 0xca, 0xaf, 0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x87, 0x72, 0x95, 0xd8, 0xb9,

@@ -4,7 +4,18 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
 
 ## Getting started
 
-### Requirements
+### Quick and dirty using docker-compose
+
+ - Install Go 1.8 or greater - see directions [here](https://golang.org/doc/install).
+ - Install [Docker](https://docs.docker.com/engine/installation/) and [Compose](https://docs.docker.com/compose/install/). (Note that Mac and Windows users already have Compose if they install Docker.)
+ - Install [modd](https://github.com/cortesi/modd) using `go get github.com/cortesi/modd/cmd/modd`.
+ - Run `docker-compose up` to build, create and start the containers with streaming logs.
+ - Run `modd` in another terminal to start the file-watcher. Any changes to local files will rebuild binaries and restart services as needed.
+ - Visit [http://localhost:3000/](http://localhost:3000/) and go!
+ - When done, `CTRL-C` to stop the containers. Don't use `docker-compose down`, as that will remove your containers and erase the DB.
+ - To start back up again, use `docker-compose up --no-recreate`.
+
+### Local requirements without docker-compose
 
  - Go 1.8 or greater - see directions [here](https://golang.org/doc/install)
  - Ruby 2.2 or greater - see directions [here](https://www.ruby-lang.org/en/documentation/installation/)
@@ -23,10 +34,12 @@ $ psql -f db/schema.sql -d soapbox_dev
 ``` shell
 $ mkdir -p $(go env GOPATH)/src/github.com/adhocteam
 $ go get github.com/adhocteam/soapbox/...
-$ cd $(go env GOPATH)/src/github.com/adhocteam/soapbox
-$ go get -u github.com/golang/dep/cmd/dep
-$ go get -d -v ./...
-$ go install ./...
+```
+
+You may need to add the `bin` directory under `$GOPATH` (the `go` tool uses `$HOME/go` for GOPATH if you don't set it explicitly in your environment), if you didn't do that when you installed Go initially.
+
+```shell
+$ export PATH=$PATH:$(go env GOPATH)/bin
 ```
 
 3. **Run the API server:**
@@ -94,6 +107,22 @@ $ make protobufs
 $ make models
 $ make all
 ```
+
+### Making changes to the database schema
+
+Soapbox uses [xo](https://github.com/knq/xo) to generate database models.
+
+To install, run the command:
+
+``` shell
+$ go get -u github.com/knq/xo
+```
+
+Then, after you modify `db/schema.sql`, run `make schema` to generate the
+database models.
+
+(Go 1.8.0 has a [known bug](https://github.com/knq/xo/issues/95) which prevents
+xo from running, upgrade to 1.8.1 or higher)
 
 ### Go dependencies
 

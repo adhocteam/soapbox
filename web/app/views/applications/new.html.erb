@@ -12,6 +12,7 @@
             prevented this application from being created.
         </div>
         <% end %>
+        <%= f.hidden_field :user_id, value: @form.user_id %>
         <div class="form-group required<%= ' has-danger' if @form.errors.include?(:name) %>">
             <%= f.label :name, class: "col-form-label" %>
             <%= f.text_field :name, value: @form.name, class: "form-control form-control-lg" %>

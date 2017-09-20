@@ -1,0 +1,38 @@
+syntax = "proto3";
+package soapbox;
+option go_package = "proto";
+
+import "soapbox.proto";
+import "application.proto";
+import "deployment.proto";
+import "google/protobuf/timestamp.proto";
+
+service Activities {
+    rpc AddActivity (Activity) returns (soapbox.Empty) {}
+    rpc ListActivities (soapbox.Empty) returns (ListActivitiesResponse) {}
+    rpc ListApplicationActivities (GetApplicationRequest) returns (ListActivitiesResponse) {}
+    rpc ListDeploymentActivities (GetDeploymentRequest) returns (ListActivitiesResponse) {}
+}
+
+enum ActivityType {
+    APPLICATION_CREATED = 0;
+    DEPLOYMENT_STARTED = 1;
+    DEPLOYMENT_SUCCESS = 2;
+    DEPLOYMENT_FAILURE = 3;
+    ENVIRONMENT_CREATED = 4;
+    ENVIRONMENT_DESTROYED = 5;
+}
+
+message ListActivitiesResponse {
+    repeated Activity activities = 1;
+}
+
+message Activity {
+    int32 id = 1;
+    ActivityType type = 2;
+    int32 user_id = 3;
+    int32 application_id = 4;
+    int32 deployment_id = 5;
+    int32 environment_id = 6;
+    google.protobuf.Timestamp created_at = 7;
+}

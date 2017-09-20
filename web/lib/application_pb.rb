@@ -8,17 +8,21 @@ require 'google/protobuf/timestamp_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.Application" do
     optional :id, :int32, 1
-    optional :name, :string, 2
-    optional :description, :string, 3
-    optional :external_dns, :string, 4
-    optional :github_repo_url, :string, 5
-    optional :dockerfile_path, :string, 6
-    optional :entrypoint_override, :string, 7
-    optional :type, :enum, 8, "soapbox.ApplicationType"
-    optional :created_at, :message, 9, "google.protobuf.Timestamp"
-    optional :slug, :string, 10
-    optional :internal_dns, :string, 11
-    optional :creation_state, :enum, 12, "soapbox.CreationState"
+    optional :user_id, :int32, 2
+    optional :name, :string, 3
+    optional :description, :string, 4
+    optional :external_dns, :string, 5
+    optional :github_repo_url, :string, 6
+    optional :dockerfile_path, :string, 7
+    optional :entrypoint_override, :string, 8
+    optional :type, :enum, 9, "soapbox.ApplicationType"
+    optional :created_at, :message, 10, "google.protobuf.Timestamp"
+    optional :slug, :string, 11
+    optional :internal_dns, :string, 12
+    optional :creation_state, :enum, 13, "soapbox.CreationState"
+  end
+  add_message "soapbox.ListApplicationRequest" do
+    optional :user_id, :int32, 1
   end
   add_message "soapbox.ListApplicationResponse" do
     repeated :applications, :message, 1, "soapbox.Application"
@@ -39,6 +43,7 @@ end
 
 module Soapbox
   Application = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.Application").msgclass
+  ListApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationRequest").msgclass
   ListApplicationResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ListApplicationResponse").msgclass
   GetApplicationRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.GetApplicationRequest").msgclass
   ApplicationType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ApplicationType").enummodule

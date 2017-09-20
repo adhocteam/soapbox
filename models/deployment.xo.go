@@ -169,6 +169,13 @@ func (d *Deployment) Application(db XODB) (*Application, error) {
 	return ApplicationByID(db, int(d.ApplicationID.Int64))
 }
 
+// Environment returns the Environment associated with the Deployment's EnvironmentID (environment_id).
+//
+// Generated from foreign key 'deployments_environment_id_fkey'.
+func (d *Deployment) Environment(db XODB) (*Environment, error) {
+	return EnvironmentByID(db, int(d.EnvironmentID.Int64))
+}
+
 // DeploymentByID retrieves a row from 'public.deployments' as a Deployment.
 //
 // Generated from index 'deployments_pkey'.

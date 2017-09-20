@@ -155,6 +155,8 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	req.Application.Description = nullString(app.Description)
 	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
 	req.Application.Slug = app.Slug
+	req.Application.Id = int32(app.ID)
+	req.Application.UserId = int32(app.UserID)
 
 	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
 	env, err := s.GetEnvironment(ctx, &envReq)
@@ -163,7 +165,10 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	}
 	req.Env = env
 
-	deploy := &deployState{}
+	deploy := &deployState{
+		id:     int(req.GetId()),
+		userID: app.UserID,
+	}
 	deploy.app = newAppFromProtoBuf(req.GetApplication())
 	deploy.sess, err = session.NewSession()
 	if err != nil {
@@ -182,6 +187,11 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	res := &pb.StartDeploymentResponse{
 		Id: req.GetId(),
 	}
+
+	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_STARTED, deploy); err != nil {
+		return nil, err
+	}
+
 	return res, nil
 }
 
@@ -234,6 +244,8 @@ rollforward-completed
 */
 
 type deployState struct {
+	id         int
+	userID     int
 	app        *application
 	sess       *session.Session
 	env        *environment
@@ -494,9 +506,16 @@ func (s *server) advanceDeployment(deploy *deployState) {
 		select {
 		case ev := <-events:
 			if err := m.step(event(ev)); err != nil {
+				if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_FAILURE, deploy); err != nil {
+					log.Printf("adding deployment activity: %v", err)
+				}
 				// failed. ....
 			}
 		}
+	}
+
+	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_SUCCESS, deploy); err != nil {
+		log.Printf("error adding deployment activity", err)
 	}
 }
 
@@ -722,6 +741,7 @@ func (s *s3storage) uploadFile(bucket string, key string, filename string) error
 }
 
 type application struct {
+	id            int
 	name          string
 	slug          string
 	githubRepoUrl string
@@ -731,6 +751,7 @@ type application struct {
 
 func newAppFromProtoBuf(appPb *pb.Application) *application {
 	return &application{
+		id:            int(appPb.GetId()),
 		name:          appPb.GetName(),
 		slug:          appPb.GetSlug(),
 		githubRepoUrl: appPb.GetGithubRepoUrl(),

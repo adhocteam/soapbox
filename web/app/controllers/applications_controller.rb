@@ -2,10 +2,11 @@ require 'application_pb'
 require 'deployment_pb'
 
 class ApplicationsController < ApplicationController
-  before_action :find_repositories, only: [:new], if: :current_user
+  before_action :find_repositories, only: [:new, :create], if: :current_user
 
   def index
-    res = $api_client.list_applications(Soapbox::Empty.new)
+    req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)
+    res = $api_client.list_applications(req)
     if res.applications.count == 0
       redirect_to new_application_path
     else
@@ -32,7 +33,7 @@ class ApplicationsController < ApplicationController
   end
 
   def new
-    @form = CreateApplicationForm.new
+    @form = CreateApplicationForm.new(user_id: current_user.id)
   end
 
   def create
@@ -46,7 +47,8 @@ class ApplicationsController < ApplicationController
       app = Soapbox::Application.new(name: @form.name,
                                      description: @form.description,
                                      github_repo_url: @form.github_repo_url,
-                                     type: type)
+                                     type: type,
+                                     user_id: current_user.id)
       app = $api_client.create_application(app)
       redirect_to application_path(app.id)
     else

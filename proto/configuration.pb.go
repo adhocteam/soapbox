@@ -25,7 +25,7 @@ type ListConfigurationRequest struct {
 func (m *ListConfigurationRequest) Reset()                    { *m = ListConfigurationRequest{} }
 func (m *ListConfigurationRequest) String() string            { return proto1.CompactTextString(m) }
 func (*ListConfigurationRequest) ProtoMessage()               {}
-func (*ListConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*ListConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *ListConfigurationRequest) GetEnvironmentId() int32 {
 	if m != nil {
@@ -41,7 +41,7 @@ type ListConfigurationResponse struct {
 func (m *ListConfigurationResponse) Reset()                    { *m = ListConfigurationResponse{} }
 func (m *ListConfigurationResponse) String() string            { return proto1.CompactTextString(m) }
 func (*ListConfigurationResponse) ProtoMessage()               {}
-func (*ListConfigurationResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*ListConfigurationResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *ListConfigurationResponse) GetConfigs() []*Configuration {
 	if m != nil {
@@ -57,7 +57,7 @@ type GetLatestConfigurationRequest struct {
 func (m *GetLatestConfigurationRequest) Reset()                    { *m = GetLatestConfigurationRequest{} }
 func (m *GetLatestConfigurationRequest) String() string            { return proto1.CompactTextString(m) }
 func (*GetLatestConfigurationRequest) ProtoMessage()               {}
-func (*GetLatestConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*GetLatestConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *GetLatestConfigurationRequest) GetEnvironmentId() int32 {
 	if m != nil {
@@ -76,7 +76,7 @@ type Configuration struct {
 func (m *Configuration) Reset()                    { *m = Configuration{} }
 func (m *Configuration) String() string            { return proto1.CompactTextString(m) }
 func (*Configuration) ProtoMessage()               {}
-func (*Configuration) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*Configuration) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 func (m *Configuration) GetEnvironmentId() int32 {
 	if m != nil {
@@ -114,7 +114,7 @@ type ConfigVar struct {
 func (m *ConfigVar) Reset()                    { *m = ConfigVar{} }
 func (m *ConfigVar) String() string            { return proto1.CompactTextString(m) }
 func (*ConfigVar) ProtoMessage()               {}
-func (*ConfigVar) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (*ConfigVar) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func (m *ConfigVar) GetName() string {
 	if m != nil {
@@ -138,7 +138,7 @@ type CreateConfigurationRequest struct {
 func (m *CreateConfigurationRequest) Reset()                    { *m = CreateConfigurationRequest{} }
 func (m *CreateConfigurationRequest) String() string            { return proto1.CompactTextString(m) }
 func (*CreateConfigurationRequest) ProtoMessage()               {}
-func (*CreateConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (*CreateConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
 
 func (m *CreateConfigurationRequest) GetEnvironmentId() int32 {
 	if m != nil {
@@ -162,7 +162,7 @@ type DeleteConfigurationRequest struct {
 func (m *DeleteConfigurationRequest) Reset()                    { *m = DeleteConfigurationRequest{} }
 func (m *DeleteConfigurationRequest) String() string            { return proto1.CompactTextString(m) }
 func (*DeleteConfigurationRequest) ProtoMessage()               {}
-func (*DeleteConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+func (*DeleteConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
 
 func (m *DeleteConfigurationRequest) GetEnvironmentId() int32 {
 	if m != nil {
@@ -359,9 +359,9 @@ var _Configurations_serviceDesc = grpc.ServiceDesc{
 	Metadata: "configuration.proto",
 }
 
-func init() { proto1.RegisterFile("configuration.proto", fileDescriptor1) }
+func init() { proto1.RegisterFile("configuration.proto", fileDescriptor2) }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 416 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x52, 0x4d, 0x6b, 0xdb, 0x40,
 	0x10, 0xb5, 0x9c, 0xb8, 0x42, 0x63, 0xec, 0xc3, 0xb8, 0x04, 0x75, 0xa1, 0xd4, 0xdd, 0xd2, 0xe2,

@@ -75,21 +75,22 @@
 </div>
 <div class="card">
   <div class="card-header">Stats</div>
-
   <div class="card-block">
-
-<div id="curve_chart" style="width: 900px; height: 500px"></div>
+    <div id="curve_chart" style="width: 900px; height: 500px"></div>
+  </div>
+  <div class="card-block">
+    <div id="latency_chart" style="width: 900px; height: 500px"></div>
   </div>
 </div>
-
 
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <%= javascript_tag do -%>
   google.charts.load('current', {'packages':['corechart']});
   google.charts.setOnLoadCallback(drawChart);
+  google.charts.setOnLoadCallback(drawLatencyChart);
 
   function drawChart() {
-    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Requests"]] + get_metrics(@app.id) %>);
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Requests"]] + get_metrics(@app.id, Soapbox::MetricType::REQUEST_COUNT) %>);
         var options = {
           title: 'Request Count',
           curveType: 'function',
@@ -104,6 +105,24 @@
         var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
         chart.draw(data, options);
   }
+
+  function drawLatencyChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Average Latency (Milliseconds)"]] + get_metrics(@app.id, Soapbox::MetricType::LATENCY) %>);
+        var options = {
+          title: 'Request Latency',
+          curveType: 'function',
+          legend: { position: 'bottom' },
+          vAxis: {
+          viewWindow: {
+            min: 0
+          }
+        }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('latency_chart'));
+        chart.draw(data, options);
+  }
+
 <% end -%>
 
 <script>

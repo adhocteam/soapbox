@@ -28,8 +28,8 @@ class ApplicationController < ActionController::Base
     $api_user_client.get_user(req)
   end
 
-  def get_metrics(app_id)
-    req = Soapbox::GetApplicationMetricsRequest.new(id: app_id)
+  def get_metrics(app_id, metric_type)
+    req = Soapbox::GetApplicationMetricsRequest.new(id: app_id, metric_type: metric_type)
     @metrics = []
     app_metrics = $api_client.get_application_metrics(req)
     sorted_metrics = app_metrics.metrics.sort_by{ |metric|

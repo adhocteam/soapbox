@@ -2,7 +2,6 @@ package soapboxd
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -379,7 +378,7 @@ func (m metricParams) getCountFromDataPoint(d cloudwatch.Datapoint) int32 {
 	case pb.MetricType_REQUEST_COUNT:
 		count = int32(*d.Sum)
 	case pb.MetricType_LATENCY:
-		count = int32(*d.Average)
+		count = int32(*d.Average * 1000) // get milliseconds
 	}
 	return count
 }
@@ -420,24 +419,21 @@ func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicati
 	svc := cloudwatch.New(sess)
 	// Begin the storage for Metric params
 	dimension := cloudwatch.Dimension{}
-	fmt.Printf("lbname = %+v\n", lbname)
 	dimension.SetName("LoadBalancer").SetValue(lbname)
 	dimensions := []*cloudwatch.Dimension{&dimension}
 	// GET COUNT
 	metricParams := newMetricParams(req.GetMetricType())
-	fmt.Printf("metricParams = %+v\n", metricParams)
 	statistics := []*string{&metricParams.count}
 	metricInput := cloudwatch.GetMetricStatisticsInput{}
 	metricInput.SetDimensions(dimensions).
 		SetNamespace("AWS/ApplicationELB").
 		SetMetricName(metricParams.metricName).
-		SetPeriod(3600).
+		SetPeriod(360).
 		SetStatistics(statistics).
 		SetStartTime(time.Now().AddDate(0, 0, -3)).
 		SetEndTime(time.Now())
 
 	output, err := svc.GetMetricStatistics(&metricInput)
-	fmt.Printf("output = %+v\n", output)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving metric statistics from cloudwatch")
 	}

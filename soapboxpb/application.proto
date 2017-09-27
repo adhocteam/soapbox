@@ -75,5 +75,5 @@ message ApplicationMetricsResponse {
 
 message GetApplicationMetricsRequest {
     int32 id = 1;
-    MetricType metricType = 2;
+    MetricType metric_type = 2;
 }

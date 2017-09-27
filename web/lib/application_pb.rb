@@ -39,7 +39,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_message "soapbox.GetApplicationMetricsRequest" do
     optional :id, :int32, 1
-    optional :metricType, :enum, 2, "soapbox.MetricType"
+    optional :metric_type, :enum, 2, "soapbox.MetricType"
   end
   add_enum "soapbox.ApplicationType" do
     value :SERVER, 0

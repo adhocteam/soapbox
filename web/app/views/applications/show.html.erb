@@ -71,16 +71,50 @@
     <%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
     <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
   </div>
+
+</div>
+<div class="card">
+  <div class="card-header">Stats</div>
+
+  <div class="card-block">
+
+<div id="curve_chart" style="width: 900px; height: 500px"></div>
+  </div>
 </div>
 
-<script>
- document.addEventListener("DOMContentLoaded", () => {
-   let el = document.getElementById("current-deployment");
-   let app = new DeploymentsApp(el, <%= @app.id %>);
-   app.start();
 
-   el = document.getElementById("current-application");
-   app = new ApplicationsApp(el);
-   app.start();
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<%= javascript_tag do -%>
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(drawChart);
+
+  function drawChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Requests"]] + get_metrics(@app.id) %>);
+        var options = {
+          title: 'Request Count',
+          curveType: 'function',
+          legend: { position: 'bottom' },
+          vAxis: {
+          viewWindow: {
+            min: 0
+          }
+        }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+        chart.draw(data, options);
+  }
+<% end -%>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    let el = document.getElementById("current-deployment");
+    let app = new DeploymentsApp(el, <%= @app.id %>);
+    app.start();
+
+    el = document.getElementById("current-application");
+    app = new ApplicationsApp(el);
+    app.start();
  });
+
 </script>

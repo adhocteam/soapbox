@@ -424,12 +424,16 @@ func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicati
 		}
 	}
 	var metrics []*pb.ApplicationMetric
+	if lbname == "" {
+		return &pb.ApplicationMetricsResponse{}, nil
+	}
 
 	svc := cloudwatch.New(sess)
+	// Begin the storage for Metric params
 	dimension := cloudwatch.Dimension{}
 	dimension.SetName("LoadBalancer").SetValue(lbname)
 	dimensions := []*cloudwatch.Dimension{&dimension}
-
+	// GET COUNT
 	metricParams := newMetricParams(req.GetMetricType())
 	statistics := []*string{&metricParams.count}
 	metricInput := cloudwatch.GetMetricStatisticsInput{}

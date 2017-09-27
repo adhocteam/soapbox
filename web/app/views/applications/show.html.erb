@@ -100,73 +100,85 @@
   google.charts.setOnLoadCallback(draw4xxChart);
   google.charts.setOnLoadCallback(draw2xxChart);
 
-
   function drawRequestsChart() {
     var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Requests"]] + get_metrics(@app.id, Soapbox::MetricType::REQUEST_COUNT) %>);
-        var options = {
-          title: 'Request Count',
-          curveType: 'function',
-          legend: { position: 'bottom' },
-          vAxis: {
-          viewWindow: {
-            min: 0
-          }
-        }
-        };
 
-        var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
-        chart.draw(data, options);
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'Request Count',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
+        }
+      }
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+    chart.draw(data, options);
   }
 
   function drawLatencyChart() {
     var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Average Latency (Milliseconds)"]] + get_metrics(@app.id, Soapbox::MetricType::LATENCY) %>);
-        var options = {
-          title: 'Request Latency',
-          curveType: 'function',
-          legend: { position: 'bottom' },
-          vAxis: {
-          viewWindow: {
-            min: 0
-          }
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'Request Latency',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
         }
-        };
+      }
+    };
 
-        var chart = new google.visualization.LineChart(document.getElementById('latency_chart'));
-        chart.draw(data, options);
+    var chart = new google.visualization.LineChart(document.getElementById('latency_chart'));
+    chart.draw(data, options);
   }
 
   function draw4xxChart() {
     var data = google.visualization.arrayToDataTable(<%= raw [["Time", "HTTP 4XXs (Count)"]] + get_metrics(@app.id, Soapbox::MetricType::HTTP_4XX_COUNT) %>);
-        var options = {
-          title: 'HTTP 4XXs (Count)',
-          curveType: 'function',
-          legend: { position: 'bottom' },
-          vAxis: {
-          viewWindow: {
-            min: 0
-          }
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'HTTP 4XXs (Count)',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
         }
-        };
+      }
+    };
 
-        var chart = new google.visualization.LineChart(document.getElementById('4xx_chart'));
-        chart.draw(data, options);
+    var chart = new google.visualization.LineChart(document.getElementById('4xx_chart'));
+    chart.draw(data, options);
   }
 
   function draw2xxChart() {
     var data = google.visualization.arrayToDataTable(<%= raw [["Time", "HTTP 2XXs (Count)"]] + get_metrics(@app.id, Soapbox::MetricType::HTTP_2XX_COUNT) %>);
-        var options = {
-          title: 'HTTP 2XXs (Count)',
-          curveType: 'function',
-          legend: { position: 'bottom' },
-          vAxis: {
-          viewWindow: {
-            min: 0
-          }
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'HTTP 2XXs (Count)',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
         }
-        };
+      }
+    };
 
-        var chart = new google.visualization.LineChart(document.getElementById('2xx_chart'));
-        chart.draw(data, options);
+    var chart = new google.visualization.LineChart(document.getElementById('2xx_chart'));
+    chart.draw(data, options);
   }
 
 <% end -%>
@@ -180,6 +192,5 @@
     el = document.getElementById("current-application");
     app = new ApplicationsApp(el);
     app.start();
- });
-
+  });
 </script>

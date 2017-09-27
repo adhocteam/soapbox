@@ -76,20 +76,32 @@
 <div class="card">
   <div class="card-header">Stats</div>
   <div class="card-block">
-    <div id="curve_chart" style="width: 900px; height: 500px"></div>
+    <div id="curve_chart"></div>
   </div>
   <div class="card-block">
-    <div id="latency_chart" style="width: 900px; height: 500px"></div>
+    <div id="latency_chart"></div>
+  </div>
+  <div class="card-block">
+    <div id="4xx_chart"></div>
+  </div>
+  <div class="card-block">
+    <div id="5xx_chart"></div>
+  </div>
+  <div class="card-block">
+    <div id="2xx_chart"></div>
   </div>
 </div>
 
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <%= javascript_tag do -%>
   google.charts.load('current', {'packages':['corechart']});
-  google.charts.setOnLoadCallback(drawChart);
+  google.charts.setOnLoadCallback(drawRequestsChart);
   google.charts.setOnLoadCallback(drawLatencyChart);
+  google.charts.setOnLoadCallback(draw4xxChart);
+  google.charts.setOnLoadCallback(draw2xxChart);
 
-  function drawChart() {
+
+  function drawRequestsChart() {
     var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Requests"]] + get_metrics(@app.id, Soapbox::MetricType::REQUEST_COUNT) %>);
         var options = {
           title: 'Request Count',
@@ -120,6 +132,40 @@
         };
 
         var chart = new google.visualization.LineChart(document.getElementById('latency_chart'));
+        chart.draw(data, options);
+  }
+
+  function draw4xxChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "HTTP 4XXs (Count)"]] + get_metrics(@app.id, Soapbox::MetricType::HTTP_4XX_COUNT) %>);
+        var options = {
+          title: 'HTTP 4XXs (Count)',
+          curveType: 'function',
+          legend: { position: 'bottom' },
+          vAxis: {
+          viewWindow: {
+            min: 0
+          }
+        }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('4xx_chart'));
+        chart.draw(data, options);
+  }
+
+  function draw2xxChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "HTTP 2XXs (Count)"]] + get_metrics(@app.id, Soapbox::MetricType::HTTP_2XX_COUNT) %>);
+        var options = {
+          title: 'HTTP 2XXs (Count)',
+          curveType: 'function',
+          legend: { position: 'bottom' },
+          vAxis: {
+          viewWindow: {
+            min: 0
+          }
+        }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('2xx_chart'));
         chart.draw(data, options);
   }
 

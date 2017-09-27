@@ -367,6 +367,12 @@ func newMetricParams(metricType pb.MetricType) metricParams {
 		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "RequestCount"}
 	case pb.MetricType_LATENCY:
 		params = metricParams{count: "Average", dimName: "LoadBalancer", metricType: metricType, metricName: "TargetResponseTime"}
+	case pb.MetricType_HTTP_4XX_COUNT:
+		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "HTTPCode_Target_4XX_Count"}
+	case pb.MetricType_HTTP_5XX_COUNT:
+		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "HTTPCode_Target_5XX_Count"}
+	case pb.MetricType_HTTP_2XX_COUNT:
+		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "HTTPCode_Target_2XX_Count"}
 	}
 
 	return params
@@ -379,6 +385,12 @@ func (m metricParams) getCountFromDataPoint(d cloudwatch.Datapoint) int32 {
 		count = int32(*d.Sum)
 	case pb.MetricType_LATENCY:
 		count = int32(*d.Average * 1000) // get milliseconds
+	case pb.MetricType_HTTP_4XX_COUNT:
+		count = int32(*d.Sum)
+	case pb.MetricType_HTTP_5XX_COUNT:
+		count = int32(*d.Sum)
+	case pb.MetricType_HTTP_2XX_COUNT:
+		count = int32(*d.Sum)
 	}
 	return count
 }
@@ -391,9 +403,6 @@ func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicati
 		return nil, errors.Wrap(err, "unable to get application from id")
 	}
 	application_name := strings.ToLower(strings.Replace(app.GetName(), " ", "-", -1))
-
-	// TODO for testing only - delete before merging
-	application_name = "paul-example-web-app-test"
 
 	sess, err := session.NewSession()
 	// call describe-loadbalancers to get arn
@@ -417,11 +426,10 @@ func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicati
 	var metrics []*pb.ApplicationMetric
 
 	svc := cloudwatch.New(sess)
-	// Begin the storage for Metric params
 	dimension := cloudwatch.Dimension{}
 	dimension.SetName("LoadBalancer").SetValue(lbname)
 	dimensions := []*cloudwatch.Dimension{&dimension}
-	// GET COUNT
+
 	metricParams := newMetricParams(req.GetMetricType())
 	statistics := []*string{&metricParams.count}
 	metricInput := cloudwatch.GetMetricStatisticsInput{}

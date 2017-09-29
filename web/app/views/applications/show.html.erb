@@ -71,16 +71,126 @@
     <%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
     <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
   </div>
+
+</div>
+<div class="card">
+  <div class="card-header">Stats</div>
+  <div class="card-block">
+    <div id="curve_chart"></div>
+  </div>
+  <div class="card-block">
+    <div id="latency_chart"></div>
+  </div>
+  <div class="card-block">
+    <div id="4xx_chart"></div>
+  </div>
+  <div class="card-block">
+    <div id="5xx_chart"></div>
+  </div>
+  <div class="card-block">
+    <div id="2xx_chart"></div>
+  </div>
 </div>
 
-<script>
- document.addEventListener("DOMContentLoaded", () => {
-   let el = document.getElementById("current-deployment");
-   let app = new DeploymentsApp(el, <%= @app.id %>);
-   app.start();
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<%= javascript_tag do -%>
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(drawRequestsChart);
+  google.charts.setOnLoadCallback(drawLatencyChart);
+  google.charts.setOnLoadCallback(draw4xxChart);
+  google.charts.setOnLoadCallback(draw2xxChart);
 
-   el = document.getElementById("current-application");
-   app = new ApplicationsApp(el);
-   app.start();
- });
+  function drawRequestsChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Requests"]] + get_metrics(@app.id, Soapbox::MetricType::REQUEST_COUNT) %>);
+
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'Request Count',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
+        }
+      }
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+    chart.draw(data, options);
+  }
+
+  function drawLatencyChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "Average Latency (Milliseconds)"]] + get_metrics(@app.id, Soapbox::MetricType::LATENCY) %>);
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'Request Latency',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
+        }
+      }
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('latency_chart'));
+    chart.draw(data, options);
+  }
+
+  function draw4xxChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "HTTP 4XXs (Count)"]] + get_metrics(@app.id, Soapbox::MetricType::HTTP_4XX_COUNT) %>);
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'HTTP 4XXs (Count)',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
+        }
+      }
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('4xx_chart'));
+    chart.draw(data, options);
+  }
+
+  function draw2xxChart() {
+    var data = google.visualization.arrayToDataTable(<%= raw [["Time", "HTTP 2XXs (Count)"]] + get_metrics(@app.id, Soapbox::MetricType::HTTP_2XX_COUNT) %>);
+    if (data.getNumberOfRows() === 0) {
+      return;
+    }
+    var options = {
+      title: 'HTTP 2XXs (Count)',
+      curveType: 'function',
+      legend: { position: 'bottom' },
+      vAxis: {
+        viewWindow: {
+          min: 0
+        }
+      }
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('2xx_chart'));
+    chart.draw(data, options);
+  }
+
+<% end -%>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    let el = document.getElementById("current-deployment");
+    let app = new DeploymentsApp(el, <%= @app.id %>);
+    app.start();
+
+    el = document.getElementById("current-application");
+    app = new ApplicationsApp(el);
+    app.start();
+  });
 </script>

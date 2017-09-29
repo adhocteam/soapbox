@@ -21,6 +21,9 @@ It has these top-level messages:
 	ListApplicationRequest
 	ListApplicationResponse
 	GetApplicationRequest
+	ApplicationMetric
+	ApplicationMetricsResponse
+	GetApplicationMetricsRequest
 	ListConfigurationRequest
 	ListConfigurationResponse
 	GetLatestConfigurationRequest

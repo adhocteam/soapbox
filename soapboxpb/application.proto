@@ -9,11 +9,20 @@ service Applications {
     rpc ListApplications (ListApplicationRequest) returns (ListApplicationResponse) {}
     rpc CreateApplication (Application) returns (Application) {}
     rpc GetApplication (GetApplicationRequest) returns (Application) {}
+    rpc GetApplicationMetrics (GetApplicationMetricsRequest) returns (ApplicationMetricsResponse) {}
 }
 
 enum ApplicationType {
     SERVER = 0;
     CRONJOB = 1;
+}
+
+enum MetricType {
+    REQUEST_COUNT= 0;
+    LATENCY = 1;
+    HTTP_5XX_COUNT = 2;
+    HTTP_4XX_COUNT = 3;
+    HTTP_2XX_COUNT = 4;
 }
 
 // "infrastructure" refers to the set of resources on the hosting
@@ -53,4 +62,18 @@ message ListApplicationResponse {
 
 message GetApplicationRequest {
     int32 id = 1;
+}
+
+message ApplicationMetric {
+    string time = 1;
+    int32 count = 2;
+}
+
+message ApplicationMetricsResponse {
+    repeated ApplicationMetric metrics = 1;
+}
+
+message GetApplicationMetricsRequest {
+    int32 id = 1;
+    MetricType metric_type = 2;
 }

@@ -396,44 +396,52 @@ func (m metricParams) getCountFromDataPoint(d cloudwatch.Datapoint) int32 {
 }
 
 func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicationMetricsRequest) (*pb.ApplicationMetricsResponse, error) {
-	// using ID get Application, which will get us the name
-	id := req.GetId()
-	app, err := s.GetApplication(ctx, &pb.GetApplicationRequest{Id: id})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get application from id")
-	}
-	application_name := strings.ToLower(strings.Replace(app.GetName(), " ", "-", -1))
-
 	sess, err := session.NewSession()
-	// call describe-loadbalancers to get arn
-	elb := elbv2.New(sess)
-	lbs, err := elb.DescribeLoadBalancers(nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "describing load balancers")
+		return nil, errors.Wrap(err, "new AWS session")
 	}
 
-	var lbname string
+	var slug string
+	{
+		// Get the application
+		id := req.GetId()
+		app, err := s.GetApplication(ctx, &pb.GetApplicationRequest{Id: id})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get application from id")
+		}
+		slug = app.GetSlug()
+	}
 
-	// parse response from aws to get load balancer name
-	for _, lb := range lbs.LoadBalancers {
-		if *lb.LoadBalancerName == application_name {
-			arn := strings.Split(*lb.LoadBalancerArn, "/")
-			tempname := []string{"app", application_name, arn[len(arn)-1]}
-			lbname = strings.Join(tempname, "/")
-			break
+	var lbName string
+	{
+		// Get the load balancer
+		svc := elbv2.New(sess)
+		lbs, err := svc.DescribeLoadBalancers(nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "describing load balancers")
+		}
+		name := slug + "-test" // FIXME(paulsmith)
+		for _, lb := range lbs.LoadBalancers {
+			if *lb.LoadBalancerName == name {
+				arn := strings.Split(*lb.LoadBalancerArn, "/")
+				tmp := []string{"app", name, arn[len(arn)-1]}
+				lbName = strings.Join(tmp, "/")
+				break
+			}
 		}
 	}
-	var metrics []*pb.ApplicationMetric
-	if lbname == "" {
+
+	if lbName == "" {
 		return &pb.ApplicationMetricsResponse{}, nil
 	}
 
+	var metrics []*pb.ApplicationMetric
+
+	// Get metrics from CloudWatch
 	svc := cloudwatch.New(sess)
-	// Begin the storage for Metric params
 	dimension := cloudwatch.Dimension{}
-	dimension.SetName("LoadBalancer").SetValue(lbname)
+	dimension.SetName("LoadBalancer").SetValue(lbName)
 	dimensions := []*cloudwatch.Dimension{&dimension}
-	// GET COUNT
 	metricParams := newMetricParams(req.GetMetricType())
 	statistics := []*string{&metricParams.count}
 	metricInput := cloudwatch.GetMetricStatisticsInput{}
@@ -444,14 +452,16 @@ func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicati
 		SetStatistics(statistics).
 		SetStartTime(time.Now().AddDate(0, 0, -3)).
 		SetEndTime(time.Now())
-
 	output, err := svc.GetMetricStatistics(&metricInput)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving metric statistics from cloudwatch")
 	}
 
 	for _, d := range output.Datapoints {
-		metric := pb.ApplicationMetric{Time: d.Timestamp.Format("2006-01-02 15:04:05"), Count: metricParams.getCountFromDataPoint(*d)}
+		metric := pb.ApplicationMetric{
+			Time:  d.Timestamp.Format("2006-01-02 15:04:05"),
+			Count: metricParams.getCountFromDataPoint(*d),
+		}
 		metrics = append(metrics, &metric)
 	}
 

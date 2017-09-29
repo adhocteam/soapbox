@@ -32,7 +32,7 @@ class ApplicationController < ActionController::Base
     req = Soapbox::GetApplicationMetricsRequest.new(id: app_id, metric_type: metric_type)
     @metrics = []
     app_metrics = $api_client.get_application_metrics(req)
-    sorted_metrics = app_metrics.metrics.sort_by{ |metric|
+    sorted_metrics = app_metrics.metrics.sort_by {|metric|
       Time.parse(metric.time)
     }
     sorted_metrics.each do |metric|

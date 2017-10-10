@@ -75,7 +75,7 @@ class DeploymentsController < ApplicationController
   def find_commits
     github_repo = @app.github_repo_url.gsub(%r{https://.*@github.com/}, '').gsub(/\.git$/, '')
     @commits = octokit.commits(github_repo, 'master', per_page: 1000).map do |c|
-      "#{c.commit.message} (#{c.sha})"
+      ["#{c.commit.message} (#{c.sha})", c.sha]
     end
   end
 end

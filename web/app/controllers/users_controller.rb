@@ -42,6 +42,7 @@ class UsersController < ApplicationController
   end
 
   def logout
+    @_current_user = nil
     session[:current_user_email] = nil
     redirect_to profile_user_path
   end

@@ -3,7 +3,7 @@ require 'deployment_pb'
 class DeploymentsController < ApplicationController
   before_action :set_application, only: %i[index create new show]
   before_action :set_environments, only: %i[new create]
-  before_action :find_commits, only: %i[new create]
+  before_action :find_commits, only: :new
 
   def index
     req = Soapbox::ListDeploymentRequest.new(application_id: params[:application_id].to_i)

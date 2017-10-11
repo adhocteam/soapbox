@@ -13,6 +13,7 @@ Rails.application.routes.draw do
     get :profile, on: :member, action: :show
     get :login
     post :login, to: 'users#attempt_login'
+    get :logout
   end
 
   get '/auth/:provider/callback', to: 'users#omniauth'

@@ -41,6 +41,11 @@ class UsersController < ApplicationController
     end
   end
 
+  def logout
+    session[:current_user_email] = nil
+    redirect_to profile_user_path
+  end
+
   def omniauth
     auth = request.env['omniauth.auth']
     @user.github_oauth_access_token = auth['credentials']['token']

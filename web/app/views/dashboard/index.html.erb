@@ -36,7 +36,7 @@
             app_name = get_application_name activity.application_id
             user_name = get_user_name activity.user_id
           end
-          created_at = Time.at(activity.created_at.seconds).to_datetime
+          created_at = Time.at(activity.created_at.seconds).strftime('%b %d, %Y · %l:%M %P')
           %>
           <% case activity.type
         when :APPLICATION_CREATED %>

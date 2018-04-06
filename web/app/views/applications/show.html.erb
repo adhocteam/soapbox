@@ -56,7 +56,7 @@
                 <%= @deployment.env.name %>
               </td>
               <td>
-                <%= Time.at(@deployment.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %>
+                <%= Time.at(@deployment.created_at.seconds).strftime('%b %d, %Y · %l:%M %P') %>
               </td>
           </tr>
         <% else %>

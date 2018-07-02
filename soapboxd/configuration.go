@@ -103,73 +103,39 @@ WHERE environment_id = $1 AND version = $2
 
 func (s *server) CreateConfiguration(ctx context.Context, req *proto.CreateConfigurationRequest) (*proto.Configuration, error) {
 	envID := req.GetEnvironmentId()
-	var newVersion int32
-	latest, err := s.GetLatestConfiguration(ctx, &proto.GetLatestConfigurationRequest{
-		EnvironmentId: envID,
-	})
-	if err != nil {
-		if s, ok := status.FromError(err); ok {
-			if s.Code() == codes.NotFound {
-				newVersion = 1
-			}
-		} else {
-			return nil, errors.Wrap(err, "getting latest configuration")
-		}
-	} else {
-		newVersion = latest.GetVersion() + 1
-	}
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "beginning transaction")
 	}
-	configVarsQuery := `
-INSERT INTO config_vars (environment_id, version, name, value) 
-VALUES ($1, $2, $3, $4)
-`
-	stmt, err := tx.Prepare(configVarsQuery)
-	if err != nil {
-		return nil, errors.Wrap(err, "preparing insert query")
+
+	config := &proto.Configuration{
+		EnvironmentId: envID,
+		ConfigVars:    req.ConfigVars,
+		CreatedAt:     new(gpb.Timestamp),
 	}
 
 	configQuery := `
-INSERT INTO configurations (environment_id, version) 
-VALUES ($1, $2) 
-RETURNING created_at`
-	var createdAt time.Time
-	if err := tx.QueryRow(configQuery, envID, newVersion).Scan(&createdAt); err != nil {
-		return nil, errors.Wrap(err, "inserting into configurations table")
-	}
+INSERT INTO configurations (environment_id)
+VALUES ($1)
+RETURNING created_at, version`
 
-	for _, cv := range req.ConfigVars {
-		args := []interface{}{
-			envID,
-			newVersion,
-			cv.GetName(),
-			cv.GetValue(),
-		}
-		if _, err := stmt.Exec(args...); err != nil {
-			return nil, errors.Wrap(err, "inserting into config_vars table")
-		}
+	var createdAt time.Time
+	if err := tx.QueryRow(configQuery, envID).Scan(&createdAt, &config.Version); err != nil {
+		return nil, errors.Wrap(err, "inserting into configurations table")
 	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, errors.Wrap(err, "committing transaction")
 	}
 
-	resp := &proto.Configuration{
-		EnvironmentId: envID,
-		Version:       newVersion,
-		ConfigVars:    req.ConfigVars,
-		CreatedAt:     new(gpb.Timestamp),
-	}
-	setPbTimestamp(resp.CreatedAt, createdAt)
+	setPbTimestamp(config.CreatedAt, createdAt)
 
-	err = s.UploadConfigurationsToS3(ctx, req, resp)
+	err = s.UploadConfigurationsToS3(ctx, req, config)
 	if err != nil {
 		return nil, errors.Wrap(err, "uploading configurations to S3")
 	}
 
-	return resp, nil
+	return config, nil
 }
 
 func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfigurationRequest) (*proto.Empty, error) {

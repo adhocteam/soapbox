@@ -180,11 +180,7 @@ func (s *server) UploadConfigurationsToS3(ctx context.Context, req *proto.Create
 	}
 
 	// Encode configurations to JSON.
-	configVarMap := make(map[string]string)
-	for _, configVar := range config.ConfigVars {
-		configVarMap[configVar.GetName()] = configVar.GetValue()
-	}
-	serializedConfigs, err := json.Marshal(configVarMap)
+	serializedConfigs, err := json.Marshal(config.ConfigVars)
 	if err != nil {
 		return errors.Wrap(err, "serializing configurations to JSON")
 	}

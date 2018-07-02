@@ -764,17 +764,17 @@ func (s *s3storage) downloadFile(bucket string, key string) ([]byte, error) {
 
 	object, err := s.svc.GetObject(input)
 	if err != nil {
-		return fmt.Errorf("downloading file %s: %v", key, err)
+		return nil, errors.Wrap(err, "downloading file")
 	}
 
 	defer object.Body.Close()
 
-	buf := bytes.New.Buffer(nil)
-	if _, err := io.Copy(buf, object.Body); err != nil {
-		return fmt.Errorf("copying file %s: %v", key, err)
+	body, err := ioutil.ReadAll(object.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading file")
 	}
 
-	return buf.Bytes(), nil
+	return body, nil
 }
 
 type kmsClient struct {
@@ -803,7 +803,7 @@ func (k *kmsClient) decrypt(secretBytes []byte) (string, error) {
 		return "", err
 	}
 
-	return string(resp.Plantext), nil
+	return string(resp.Plaintext), nil
 }
 
 type application struct {

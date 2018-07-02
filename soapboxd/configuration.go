@@ -73,31 +73,41 @@ LIMIT 1
 		}
 	}
 	setPbTimestamp(config.CreatedAt, createdAt)
-	var configVars []*proto.ConfigVar
-	query = `
-SELECT name, value
-FROM config_vars
-WHERE environment_id = $1 AND version = $2
-`
-	rows, err := s.db.Query(query, envID, config.Version)
+
+	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
 	if err != nil {
-		return nil, errors.Wrap(err, "querying config_vars table")
+		return nil, errors.Wrap(err, "getting environment")
 	}
-	for rows.Next() {
-		configVar := &proto.ConfigVar{}
-		dest := []interface{}{
-			&configVar.Name,
-			&configVar.Value,
-		}
-		if err := rows.Scan(dest...); err != nil {
-			return nil, errors.Wrap(err, "scanning db row")
-		}
-		configVars = append(configVars, configVar)
+
+	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting application")
 	}
-	if err := rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "db iteration")
+
+	appSlug := app.GetSlug()
+	envSlug := env.GetSlug()
+	configObjectKey := fmt.Sprintf("%s/%s/%s-configuration-v%d.json", appSlug, envSlug, appSlug, config.Version)
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating new session")
 	}
-	config.ConfigVars = configVars
+
+	soapboxConfigsBucket := "soapbox-app-configs"
+	encryptedConfig, err := newS3Storage(sess).downloadFile(soapboxConfigsBucket, configObjectKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "downloading config from s3")
+	}
+
+	serializedConfig, err := newKMSClient(sess).decrypt(encryptedConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "decrypting config")
+	}
+
+	if json.Unmarshal([]byte(serializedConfig), &config.ConfigVars) != nil {
+		return nil, errors.Wrap(err, "parsing json")
+	}
+
 	return config, nil
 }
 

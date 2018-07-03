@@ -149,14 +149,24 @@ func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfi
 		return nil, errors.Wrap(err, "beginning transaction")
 	}
 
-	query := `DELETE FROM config_vars WHERE environment_id = $1 AND version = $2`
+	query := `DELETE FROM configurations WHERE environment_id = $1 AND version = $2`
 	if _, err := tx.Exec(query, envID, version); err != nil {
 		return nil, errors.Wrap(err, "deleting config_vars")
 	}
 
-	query = `DELETE FROM configurations WHERE environment_id = $1 AND version = $2`
-	if _, err := tx.Exec(query, envID, version); err != nil {
-		return nil, errors.Wrap(err, "deleting config_vars")
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating new aws session")
+	}
+
+	key, err := s.GetS3ObjectKey(ctx, envID, version)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting s3 object key")
+	}
+
+	err = newS3Storage(sess).deleteFile(soapboxConfigsBucket, key)
+	if err != nil {
+		return nil, errors.Wrap(err, "deleting file")
 	}
 
 	if err := tx.Commit(); err != nil {

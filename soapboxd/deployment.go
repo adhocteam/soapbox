@@ -28,8 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elbv2"
-	"github.com/aws/aws-sdk-go/service/kms"
-	"github.com/aws/aws-sdk-go/service/s3"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -729,81 +727,6 @@ func createLaunchConfig(config *soapbox.Config, app *application, env *environme
 	}
 
 	return name, nil
-}
-
-// TODO(louisfettet): It would probably be more intuitive to have these AWS S3
-//   and KMS functions in a separate utility.
-type s3storage struct {
-	svc *s3.S3
-}
-
-func newS3Storage(sess *session.Session) *s3storage {
-	return &s3storage{svc: s3.New(sess)}
-}
-
-func (s *s3storage) uploadFile(bucket string, key string, filename string) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("opening file %s: %v", filename, err)
-	}
-	defer f.Close()
-	input := &s3.PutObjectInput{
-		Body:   f,
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}
-	_, err = s.svc.PutObject(input)
-	return err
-}
-
-func (s *s3storage) downloadFile(bucket string, key string) ([]byte, error) {
-	input := &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}
-
-	object, err := s.svc.GetObject(input)
-	if err != nil {
-		return nil, errors.Wrap(err, "downloading file")
-	}
-
-	defer object.Body.Close()
-
-	body, err := ioutil.ReadAll(object.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "reading file")
-	}
-
-	return body, nil
-}
-
-type kmsClient struct {
-	svc *kms.KMS
-}
-
-func newKMSClient(sess *session.Session) *kmsClient {
-	return &kmsClient{svc: kms.New(sess)}
-}
-
-func (k *kmsClient) encrypt(kmsKeyARN string, content []byte) (*kms.EncryptOutput, error) {
-	input := &kms.EncryptInput{
-		KeyId:     aws.String(kmsKeyARN),
-		Plaintext: []byte(content),
-	}
-	return k.svc.Encrypt(input)
-}
-
-func (k *kmsClient) decrypt(secretBytes []byte) (string, error) {
-	params := &kms.DecryptInput{
-		CiphertextBlob: secretBytes,
-	}
-
-	resp, err := k.svc.Decrypt(params)
-	if err != nil {
-		return "", err
-	}
-
-	return string(resp.Plaintext), nil
 }
 
 type application struct {

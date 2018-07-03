@@ -51,14 +51,6 @@ create table configurations (
        unique (environment_id, version)
 );
 
-create table config_vars (
-       environment_id integer references environments on delete cascade,
-       version integer not null,
-       name text not null,
-       value text not null,
-       unique (environment_id, version, name)
-);
-
 create table deployments (
        id serial not null primary key,
        application_id integer references applications on delete cascade,

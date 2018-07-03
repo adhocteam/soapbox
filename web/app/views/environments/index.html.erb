@@ -11,7 +11,7 @@
       <thead>
           <tr>
               <th>Name</th>
-              <th>Creation date</th>
+              <th>Created on</th>
               <th>Deploy status</th>
           </tr>
       </thead>
@@ -22,7 +22,7 @@
 		    <%= link_to env.name, application_environment_path(@app.id, env.id) %>
 		</td>
 		<td>
-		    <%= Time.at(env.created_at.seconds).strftime('%m-%d-%Y') %>
+		    <%= Time.at(env.created_at.seconds).strftime('%b %d, %Y · %l:%M %P') %>
 		</td>
 		<td class="text-center">
 		    <span class="deploy-status <%=

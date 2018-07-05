@@ -50,6 +50,7 @@ message Application {
     string slug = 11;
     string internal_dns = 12;
     CreationState creation_state = 13;
+    string aws_encryption_key_arn = 14;
 }
 
 message ListApplicationRequest {

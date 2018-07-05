@@ -20,6 +20,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :slug, :string, 11
     optional :internal_dns, :string, 12
     optional :creation_state, :enum, 13, "soapbox.CreationState"
+    optional :aws_encryption_key_arn, :string, 14
   end
   add_message "soapbox.ListApplicationRequest" do
     optional :user_id, :int32, 1

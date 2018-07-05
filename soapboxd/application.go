@@ -42,20 +42,21 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	app.Slug = slugify(app.GetName())
 
 	model := &models.Application{
-		ID:                 int(app.Id),
-		UserID:             int(app.UserId),
-		Name:               app.GetName(),
-		Slug:               app.GetSlug(),
-		Description:        newNullString(app.Description),
-		ExternalDNS:        newNullString(app.ExternalDns),
-		GithubRepoURL:      newNullString(app.GithubRepoUrl),
-		DockerfilePath:     newNullString(app.DockerfilePath),
-		EntrypointOverride: newNullString(app.EntrypointOverride),
-		Type:               appTypePbToModel(app.Type),
-		InternalDNS:        newNullString(app.InternalDns),
-		CreatedAt:          time.Now(),
-		UpdatedAt:          time.Now(),
-		CreationState:      models.CreationStateTypeCreateInfrastructureWait,
+		ID:                  int(app.Id),
+		UserID:              int(app.UserId),
+		Name:                app.GetName(),
+		Slug:                app.GetSlug(),
+		Description:         newNullString(app.Description),
+		ExternalDNS:         newNullString(app.ExternalDns),
+		GithubRepoURL:       newNullString(app.GithubRepoUrl),
+		DockerfilePath:      newNullString(app.DockerfilePath),
+		EntrypointOverride:  newNullString(app.EntrypointOverride),
+		Type:                appTypePbToModel(app.Type),
+		InternalDNS:         newNullString(app.InternalDns),
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
+		CreationState:       models.CreationStateTypeCreateInfrastructureWait,
+		AwsEncryptionKeyArn: app.GetAwsEncryptionKeyArn(),
 	}
 
 	if err := model.Insert(s.db); err != nil {
@@ -105,6 +106,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 				"-a", slug,
 				"-e", "test", // TODO(paulsmith): FIXME
 				"-t", "network")
+
 			cmd.Dir = scriptsPath
 			var buf bytes.Buffer
 			cmd.Stdout = &buf
@@ -142,6 +144,35 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
+		})
+
+		// Assuming that the network plan and apply worked, get the ARN from the
+		//   newly created KMS key and update the application DB record with it.
+		do(func() error {
+			log.Printf("running terraform output - aws_kms_arn")
+			cmd := exec.Command("terraform", "output", "aws_kms_arn",
+				"-no-color")
+			cmd.Dir = networkDir
+			// The command will return the value of the specified output variable, so
+			//   we redirect STDOUT to our buffer so we can capture it.
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running `terraform output aws_kms_arn`")
+			}
+			app.AwsEncryptionKeyArn = strings.TrimSpace(buf.String())
+			// We now have the ARN, so we just have to fetch our record from the DB,
+			//   add the ARN to it, and update the record in the DB.
+			model, err := models.ApplicationByID(s.db, int(app.Id))
+			if err != nil {
+				return errors.Wrap(err, "getting application by ID from db")
+			}
+			model.AwsEncryptionKeyArn = app.GetAwsEncryptionKeyArn()
+			if err := model.Update(s.db); err != nil {
+				return errors.Wrap(err, "updating application in db")
+			}
+			return nil
 		})
 
 		do(func() error {
@@ -315,12 +346,13 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	}
 
 	app := &pb.Application{
-		Id:        int32(model.ID),
-		UserId:    int32(model.UserID),
-		Name:      model.Name,
-		Slug:      model.Slug,
-		Type:      appTypeModelToPb(model.Type),
-		CreatedAt: new(gpb.Timestamp),
+		Id:                  int32(model.ID),
+		UserId:              int32(model.UserID),
+		Name:                model.Name,
+		Slug:                model.Slug,
+		Type:                appTypeModelToPb(model.Type),
+		AwsEncryptionKeyArn: model.AwsEncryptionKeyArn,
+		CreatedAt:           new(gpb.Timestamp),
 	}
 
 	if model.Description.Valid {

@@ -3,4 +3,3 @@ key            = "terraform.tfstate"
 region         = "us-east-1"
 dynamodb_table = "soapbox-platform-state-locking"
 encrypt        = 1
-# TODO: kms_key_id

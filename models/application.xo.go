@@ -11,20 +11,21 @@ import (
 
 // Application represents a row from 'public.applications'.
 type Application struct {
-	ID                 int               `json:"id"`                  // id
-	UserID             int               `json:"user_id"`             // user_id
-	Name               string            `json:"name"`                // name
-	Type               AppType           `json:"type"`                // type
-	Slug               string            `json:"slug"`                // slug
-	Description        sql.NullString    `json:"description"`         // description
-	InternalDNS        sql.NullString    `json:"internal_dns"`        // internal_dns
-	ExternalDNS        sql.NullString    `json:"external_dns"`        // external_dns
-	GithubRepoURL      sql.NullString    `json:"github_repo_url"`     // github_repo_url
-	DockerfilePath     sql.NullString    `json:"dockerfile_path"`     // dockerfile_path
-	EntrypointOverride sql.NullString    `json:"entrypoint_override"` // entrypoint_override
-	CreationState      CreationStateType `json:"creation_state"`      // creation_state
-	CreatedAt          time.Time         `json:"created_at"`          // created_at
-	UpdatedAt          time.Time         `json:"updated_at"`          // updated_at
+	ID                  int               `json:"id"`                     // id
+	UserID              int               `json:"user_id"`                // user_id
+	Name                string            `json:"name"`                   // name
+	Type                AppType           `json:"type"`                   // type
+	Slug                string            `json:"slug"`                   // slug
+	Description         sql.NullString    `json:"description"`            // description
+	InternalDNS         sql.NullString    `json:"internal_dns"`           // internal_dns
+	ExternalDNS         sql.NullString    `json:"external_dns"`           // external_dns
+	GithubRepoURL       sql.NullString    `json:"github_repo_url"`        // github_repo_url
+	DockerfilePath      sql.NullString    `json:"dockerfile_path"`        // dockerfile_path
+	EntrypointOverride  sql.NullString    `json:"entrypoint_override"`    // entrypoint_override
+	AwsEncryptionKeyArn string            `json:"aws_encryption_key_arn"` // aws_encryption_key_arn
+	CreationState       CreationStateType `json:"creation_state"`         // creation_state
+	CreatedAt           time.Time         `json:"created_at"`             // created_at
+	UpdatedAt           time.Time         `json:"updated_at"`             // updated_at
 
 	// xo fields
 	_exists, _deleted bool
@@ -51,14 +52,14 @@ func (a *Application) Insert(db XODB) error {
 
 	// sql insert query, primary key provided by sequence
 	const sqlstr = `INSERT INTO public.applications (` +
-		`user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, creation_state, created_at, updated_at` +
+		`user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, aws_encryption_key_arn, creation_state, created_at, updated_at` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14` +
 		`) RETURNING id`
 
 	// run query
-	XOLog(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreationState, a.CreatedAt, a.UpdatedAt)
-	err = db.QueryRow(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreationState, a.CreatedAt, a.UpdatedAt).Scan(&a.ID)
+	XOLog(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.AwsEncryptionKeyArn, a.CreationState, a.CreatedAt, a.UpdatedAt)
+	err = db.QueryRow(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.AwsEncryptionKeyArn, a.CreationState, a.CreatedAt, a.UpdatedAt).Scan(&a.ID)
 	if err != nil {
 		return err
 	}
@@ -85,14 +86,14 @@ func (a *Application) Update(db XODB) error {
 
 	// sql query
 	const sqlstr = `UPDATE public.applications SET (` +
-		`user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, creation_state, created_at, updated_at` +
+		`user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, aws_encryption_key_arn, creation_state, created_at, updated_at` +
 		`) = ( ` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13` +
-		`) WHERE id = $14`
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14` +
+		`) WHERE id = $15`
 
 	// run query
-	XOLog(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreationState, a.CreatedAt, a.UpdatedAt, a.ID)
-	_, err = db.Exec(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreationState, a.CreatedAt, a.UpdatedAt, a.ID)
+	XOLog(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.AwsEncryptionKeyArn, a.CreationState, a.CreatedAt, a.UpdatedAt, a.ID)
+	_, err = db.Exec(sqlstr, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.AwsEncryptionKeyArn, a.CreationState, a.CreatedAt, a.UpdatedAt, a.ID)
 	return err
 }
 
@@ -118,18 +119,18 @@ func (a *Application) Upsert(db XODB) error {
 
 	// sql query
 	const sqlstr = `INSERT INTO public.applications (` +
-		`id, user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, creation_state, created_at, updated_at` +
+		`id, user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, aws_encryption_key_arn, creation_state, created_at, updated_at` +
 		`) VALUES (` +
-		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14` +
+		`$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15` +
 		`) ON CONFLICT (id) DO UPDATE SET (` +
-		`id, user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, creation_state, created_at, updated_at` +
+		`id, user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, aws_encryption_key_arn, creation_state, created_at, updated_at` +
 		`) = (` +
-		`EXCLUDED.id, EXCLUDED.user_id, EXCLUDED.name, EXCLUDED.type, EXCLUDED.slug, EXCLUDED.description, EXCLUDED.internal_dns, EXCLUDED.external_dns, EXCLUDED.github_repo_url, EXCLUDED.dockerfile_path, EXCLUDED.entrypoint_override, EXCLUDED.creation_state, EXCLUDED.created_at, EXCLUDED.updated_at` +
+		`EXCLUDED.id, EXCLUDED.user_id, EXCLUDED.name, EXCLUDED.type, EXCLUDED.slug, EXCLUDED.description, EXCLUDED.internal_dns, EXCLUDED.external_dns, EXCLUDED.github_repo_url, EXCLUDED.dockerfile_path, EXCLUDED.entrypoint_override, EXCLUDED.aws_encryption_key_arn, EXCLUDED.creation_state, EXCLUDED.created_at, EXCLUDED.updated_at` +
 		`)`
 
 	// run query
-	XOLog(sqlstr, a.ID, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreationState, a.CreatedAt, a.UpdatedAt)
-	_, err = db.Exec(sqlstr, a.ID, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.CreationState, a.CreatedAt, a.UpdatedAt)
+	XOLog(sqlstr, a.ID, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.AwsEncryptionKeyArn, a.CreationState, a.CreatedAt, a.UpdatedAt)
+	_, err = db.Exec(sqlstr, a.ID, a.UserID, a.Name, a.Type, a.Slug, a.Description, a.InternalDNS, a.ExternalDNS, a.GithubRepoURL, a.DockerfilePath, a.EntrypointOverride, a.AwsEncryptionKeyArn, a.CreationState, a.CreatedAt, a.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -185,7 +186,7 @@ func ApplicationByID(db XODB, id int) (*Application, error) {
 
 	// sql query
 	const sqlstr = `SELECT ` +
-		`id, user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, creation_state, created_at, updated_at ` +
+		`id, user_id, name, type, slug, description, internal_dns, external_dns, github_repo_url, dockerfile_path, entrypoint_override, aws_encryption_key_arn, creation_state, created_at, updated_at ` +
 		`FROM public.applications ` +
 		`WHERE id = $1`
 
@@ -195,7 +196,7 @@ func ApplicationByID(db XODB, id int) (*Application, error) {
 		_exists: true,
 	}
 
-	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.UserID, &a.Name, &a.Type, &a.Slug, &a.Description, &a.InternalDNS, &a.ExternalDNS, &a.GithubRepoURL, &a.DockerfilePath, &a.EntrypointOverride, &a.CreationState, &a.CreatedAt, &a.UpdatedAt)
+	err = db.QueryRow(sqlstr, id).Scan(&a.ID, &a.UserID, &a.Name, &a.Type, &a.Slug, &a.Description, &a.InternalDNS, &a.ExternalDNS, &a.GithubRepoURL, &a.DockerfilePath, &a.EntrypointOverride, &a.AwsEncryptionKeyArn, &a.CreationState, &a.CreatedAt, &a.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

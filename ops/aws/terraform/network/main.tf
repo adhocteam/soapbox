@@ -9,6 +9,26 @@ provider "aws" {
   region = "${var.region}"
 }
 
+# KMS Application Key (for encrypting and decrypting configurations / secrets)
+resource "aws_kms_key" "config_encryption_key" {
+  description = "Encryption key used to access application configurations."
+  tags {
+    Name = "${var.application_name}: ${var.environment} kms encryption key"
+    app  = "${var.application_name}"
+    env  = "${var.environment}"
+  }
+}
+
+resource "aws_kms_alias" "config_encryption_key" {
+  name          = "alias/${var.application_name}-${var.environment}"
+  target_key_id = "${aws_kms_key.config_encryption_key.key_id}"
+}
+
+output "aws_kms_arn" {
+  sensitive = true
+  value     = "${aws_kms_key.config_encryption_key.arn}"
+}
+
 # VPC
 resource "aws_vpc" "application_vpc" {
   cidr_block           = "${var.vpc_cidr_block}"

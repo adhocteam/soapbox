@@ -28,7 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elbv2"
-	"github.com/aws/aws-sdk-go/service/s3"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -362,7 +361,7 @@ cat << EOF > /etc/sv/$APP_NAME/run
 #!/bin/bash
 exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
 {{range .Variables -}}
-	--env {{.Name}} \
+  --env {{.Name}} \
 {{end -}}
 --env PORT \
 --rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
@@ -728,29 +727,6 @@ func createLaunchConfig(config *soapbox.Config, app *application, env *environme
 	}
 
 	return name, nil
-}
-
-type s3storage struct {
-	svc *s3.S3
-}
-
-func newS3Storage(sess *session.Session) *s3storage {
-	return &s3storage{svc: s3.New(sess)}
-}
-
-func (s *s3storage) uploadFile(bucket string, key string, filename string) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("opening file %s: %v", filename, err)
-	}
-	defer f.Close()
-	input := &s3.PutObjectInput{
-		Body:   f,
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}
-	_, err = s.svc.PutObject(input)
-	return err
 }
 
 type application struct {

@@ -446,7 +446,27 @@ service nginx reload
 	log.Printf("blue ASG is currently: %s", blueASG.name)
 	log.Printf("green ASG is currently: %s", greenASG.name)
 
-	const nAZs = 2 // number of availability zones
+	// set number of instances
+	minInstances := 2
+	maxInstances := 4
+	desiredInstances := 2
+	for _, v := range config.ConfigVars {
+		switch v.Name {
+		case "MIN_ASG_INSTANCES":
+			if i, err := strconv.Atoi(v.Value); err == nil {
+				minInstances = i
+			}
+		case "MAX_ASG_INSTANCES":
+			if i, err := strconv.Atoi(v.Value); err == nil {
+				maxInstances = i
+			}
+		case "DESIRED_ASG_INSTANCES":
+			if i, err := strconv.Atoi(v.Value); err == nil {
+				desiredInstances = i
+			}
+		}
+
+	}
 
 	log.Printf("ensuring blue ASG has no instances")
 	do(func() error {
@@ -477,11 +497,11 @@ service nginx reload
 
 	log.Printf("starting up blue ASG instances")
 	do(func() error {
-		return blueASG.resize(nAZs, nAZs*2, nAZs)
+		return blueASG.resize(minInstances, maxInstances, desiredInstances)
 	})
 
 	log.Printf("waiting for blue ASG instances to be ready")
-	do(func() error { return blueASG.waitUntilInstancesReady(nAZs) })
+	do(func() error { return blueASG.waitUntilInstancesReady(minInstances) })
 	log.Printf("blue ASG instances ready")
 
 	var target *targetGroup

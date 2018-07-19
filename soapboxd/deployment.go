@@ -154,7 +154,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	req.Application.Id = int32(app.ID)
 	req.Application.UserId = int32(app.UserID)
 
-	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
+	envReq := pb.GetEnvironmentRequest{Id: req.GetEnv().GetId()}
 	env, err := s.GetEnvironment(ctx, &envReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting environment")

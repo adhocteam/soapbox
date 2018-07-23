@@ -78,6 +78,7 @@ message ApplicationMetricsResponse {
 message GetApplicationMetricsRequest {
     int32 id = 1;
     MetricType metric_type = 2;
+}
 
 message DeployCleanupRequest {
     string application_name = 1;

@@ -3,10 +3,10 @@
 
 package proto
 
-import proto1 "github.com/golang/protobuf/proto"
+import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -14,18 +14,46 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto1.Marshal
+var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type ListEnvironmentRequest struct {
-	ApplicationId int32 `protobuf:"varint,1,opt,name=application_id,json=applicationId" json:"application_id,omitempty"`
+	ApplicationId        int32    `protobuf:"varint,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListEnvironmentRequest) Reset()                    { *m = ListEnvironmentRequest{} }
-func (m *ListEnvironmentRequest) String() string            { return proto1.CompactTextString(m) }
-func (*ListEnvironmentRequest) ProtoMessage()               {}
-func (*ListEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *ListEnvironmentRequest) Reset()         { *m = ListEnvironmentRequest{} }
+func (m *ListEnvironmentRequest) String() string { return proto.CompactTextString(m) }
+func (*ListEnvironmentRequest) ProtoMessage()    {}
+func (*ListEnvironmentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_environment_7fe1448588db698e, []int{0}
+}
+func (m *ListEnvironmentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListEnvironmentRequest.Unmarshal(m, b)
+}
+func (m *ListEnvironmentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListEnvironmentRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListEnvironmentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListEnvironmentRequest.Merge(dst, src)
+}
+func (m *ListEnvironmentRequest) XXX_Size() int {
+	return xxx_messageInfo_ListEnvironmentRequest.Size(m)
+}
+func (m *ListEnvironmentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListEnvironmentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListEnvironmentRequest proto.InternalMessageInfo
 
 func (m *ListEnvironmentRequest) GetApplicationId() int32 {
 	if m != nil {
@@ -35,13 +63,35 @@ func (m *ListEnvironmentRequest) GetApplicationId() int32 {
 }
 
 type ListEnvironmentResponse struct {
-	Environments []*Environment `protobuf:"bytes,1,rep,name=environments" json:"environments,omitempty"`
+	Environments         []*Environment `protobuf:"bytes,1,rep,name=environments,proto3" json:"environments,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *ListEnvironmentResponse) Reset()                    { *m = ListEnvironmentResponse{} }
-func (m *ListEnvironmentResponse) String() string            { return proto1.CompactTextString(m) }
-func (*ListEnvironmentResponse) ProtoMessage()               {}
-func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *ListEnvironmentResponse) Reset()         { *m = ListEnvironmentResponse{} }
+func (m *ListEnvironmentResponse) String() string { return proto.CompactTextString(m) }
+func (*ListEnvironmentResponse) ProtoMessage()    {}
+func (*ListEnvironmentResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_environment_7fe1448588db698e, []int{1}
+}
+func (m *ListEnvironmentResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListEnvironmentResponse.Unmarshal(m, b)
+}
+func (m *ListEnvironmentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListEnvironmentResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListEnvironmentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListEnvironmentResponse.Merge(dst, src)
+}
+func (m *ListEnvironmentResponse) XXX_Size() int {
+	return xxx_messageInfo_ListEnvironmentResponse.Size(m)
+}
+func (m *ListEnvironmentResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListEnvironmentResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListEnvironmentResponse proto.InternalMessageInfo
 
 func (m *ListEnvironmentResponse) GetEnvironments() []*Environment {
 	if m != nil {
@@ -51,13 +101,35 @@ func (m *ListEnvironmentResponse) GetEnvironments() []*Environment {
 }
 
 type GetEnvironmentRequest struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetEnvironmentRequest) Reset()                    { *m = GetEnvironmentRequest{} }
-func (m *GetEnvironmentRequest) String() string            { return proto1.CompactTextString(m) }
-func (*GetEnvironmentRequest) ProtoMessage()               {}
-func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *GetEnvironmentRequest) Reset()         { *m = GetEnvironmentRequest{} }
+func (m *GetEnvironmentRequest) String() string { return proto.CompactTextString(m) }
+func (*GetEnvironmentRequest) ProtoMessage()    {}
+func (*GetEnvironmentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_environment_7fe1448588db698e, []int{2}
+}
+func (m *GetEnvironmentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetEnvironmentRequest.Unmarshal(m, b)
+}
+func (m *GetEnvironmentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetEnvironmentRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetEnvironmentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetEnvironmentRequest.Merge(dst, src)
+}
+func (m *GetEnvironmentRequest) XXX_Size() int {
+	return xxx_messageInfo_GetEnvironmentRequest.Size(m)
+}
+func (m *GetEnvironmentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetEnvironmentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetEnvironmentRequest proto.InternalMessageInfo
 
 func (m *GetEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -67,17 +139,39 @@ func (m *GetEnvironmentRequest) GetId() int32 {
 }
 
 type Environment struct {
-	Id            int32                      `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	ApplicationId int32                      `protobuf:"varint,2,opt,name=application_id,json=applicationId" json:"application_id,omitempty"`
-	Name          string                     `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Slug          string                     `protobuf:"bytes,4,opt,name=slug" json:"slug,omitempty"`
-	CreatedAt     *google_protobuf.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	Id                   int32                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ApplicationId        int32                `protobuf:"varint,2,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	Name                 string               `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Slug                 string               `protobuf:"bytes,4,opt,name=slug,proto3" json:"slug,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *Environment) Reset()                    { *m = Environment{} }
-func (m *Environment) String() string            { return proto1.CompactTextString(m) }
-func (*Environment) ProtoMessage()               {}
-func (*Environment) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *Environment) Reset()         { *m = Environment{} }
+func (m *Environment) String() string { return proto.CompactTextString(m) }
+func (*Environment) ProtoMessage()    {}
+func (*Environment) Descriptor() ([]byte, []int) {
+	return fileDescriptor_environment_7fe1448588db698e, []int{3}
+}
+func (m *Environment) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Environment.Unmarshal(m, b)
+}
+func (m *Environment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Environment.Marshal(b, m, deterministic)
+}
+func (dst *Environment) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Environment.Merge(dst, src)
+}
+func (m *Environment) XXX_Size() int {
+	return xxx_messageInfo_Environment.Size(m)
+}
+func (m *Environment) XXX_DiscardUnknown() {
+	xxx_messageInfo_Environment.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Environment proto.InternalMessageInfo
 
 func (m *Environment) GetId() int32 {
 	if m != nil {
@@ -107,7 +201,7 @@ func (m *Environment) GetSlug() string {
 	return ""
 }
 
-func (m *Environment) GetCreatedAt() *google_protobuf.Timestamp {
+func (m *Environment) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -115,13 +209,35 @@ func (m *Environment) GetCreatedAt() *google_protobuf.Timestamp {
 }
 
 type DestroyEnvironmentRequest struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DestroyEnvironmentRequest) Reset()                    { *m = DestroyEnvironmentRequest{} }
-func (m *DestroyEnvironmentRequest) String() string            { return proto1.CompactTextString(m) }
-func (*DestroyEnvironmentRequest) ProtoMessage()               {}
-func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (m *DestroyEnvironmentRequest) Reset()         { *m = DestroyEnvironmentRequest{} }
+func (m *DestroyEnvironmentRequest) String() string { return proto.CompactTextString(m) }
+func (*DestroyEnvironmentRequest) ProtoMessage()    {}
+func (*DestroyEnvironmentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_environment_7fe1448588db698e, []int{4}
+}
+func (m *DestroyEnvironmentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DestroyEnvironmentRequest.Unmarshal(m, b)
+}
+func (m *DestroyEnvironmentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DestroyEnvironmentRequest.Marshal(b, m, deterministic)
+}
+func (dst *DestroyEnvironmentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DestroyEnvironmentRequest.Merge(dst, src)
+}
+func (m *DestroyEnvironmentRequest) XXX_Size() int {
+	return xxx_messageInfo_DestroyEnvironmentRequest.Size(m)
+}
+func (m *DestroyEnvironmentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DestroyEnvironmentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DestroyEnvironmentRequest proto.InternalMessageInfo
 
 func (m *DestroyEnvironmentRequest) GetId() int32 {
 	if m != nil {
@@ -131,11 +247,11 @@ func (m *DestroyEnvironmentRequest) GetId() int32 {
 }
 
 func init() {
-	proto1.RegisterType((*ListEnvironmentRequest)(nil), "soapbox.ListEnvironmentRequest")
-	proto1.RegisterType((*ListEnvironmentResponse)(nil), "soapbox.ListEnvironmentResponse")
-	proto1.RegisterType((*GetEnvironmentRequest)(nil), "soapbox.GetEnvironmentRequest")
-	proto1.RegisterType((*Environment)(nil), "soapbox.Environment")
-	proto1.RegisterType((*DestroyEnvironmentRequest)(nil), "soapbox.DestroyEnvironmentRequest")
+	proto.RegisterType((*ListEnvironmentRequest)(nil), "soapbox.ListEnvironmentRequest")
+	proto.RegisterType((*ListEnvironmentResponse)(nil), "soapbox.ListEnvironmentResponse")
+	proto.RegisterType((*GetEnvironmentRequest)(nil), "soapbox.GetEnvironmentRequest")
+	proto.RegisterType((*Environment)(nil), "soapbox.Environment")
+	proto.RegisterType((*DestroyEnvironmentRequest)(nil), "soapbox.DestroyEnvironmentRequest")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -146,8 +262,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Environments service
-
+// EnvironmentsClient is the client API for Environments service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type EnvironmentsClient interface {
 	ListEnvironments(ctx context.Context, in *ListEnvironmentRequest, opts ...grpc.CallOption) (*ListEnvironmentResponse, error)
 	GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error)
@@ -165,7 +282,7 @@ func NewEnvironmentsClient(cc *grpc.ClientConn) EnvironmentsClient {
 
 func (c *environmentsClient) ListEnvironments(ctx context.Context, in *ListEnvironmentRequest, opts ...grpc.CallOption) (*ListEnvironmentResponse, error) {
 	out := new(ListEnvironmentResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Environments/ListEnvironments", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Environments/ListEnvironments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +291,7 @@ func (c *environmentsClient) ListEnvironments(ctx context.Context, in *ListEnvir
 
 func (c *environmentsClient) GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*Environment, error) {
 	out := new(Environment)
-	err := grpc.Invoke(ctx, "/soapbox.Environments/GetEnvironment", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Environments/GetEnvironment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +300,7 @@ func (c *environmentsClient) GetEnvironment(ctx context.Context, in *GetEnvironm
 
 func (c *environmentsClient) CreateEnvironment(ctx context.Context, in *Environment, opts ...grpc.CallOption) (*Environment, error) {
 	out := new(Environment)
-	err := grpc.Invoke(ctx, "/soapbox.Environments/CreateEnvironment", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Environments/CreateEnvironment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -192,15 +309,14 @@ func (c *environmentsClient) CreateEnvironment(ctx context.Context, in *Environm
 
 func (c *environmentsClient) DestroyEnvironment(ctx context.Context, in *DestroyEnvironmentRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := grpc.Invoke(ctx, "/soapbox.Environments/DestroyEnvironment", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Environments/DestroyEnvironment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Environments service
-
+// EnvironmentsServer is the server API for Environments service.
 type EnvironmentsServer interface {
 	ListEnvironments(context.Context, *ListEnvironmentRequest) (*ListEnvironmentResponse, error)
 	GetEnvironment(context.Context, *GetEnvironmentRequest) (*Environment, error)
@@ -309,9 +425,9 @@ var _Environments_serviceDesc = grpc.ServiceDesc{
 	Metadata: "environment.proto",
 }
 
-func init() { proto1.RegisterFile("environment.proto", fileDescriptor1) }
+func init() { proto.RegisterFile("environment.proto", fileDescriptor_environment_7fe1448588db698e) }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_environment_7fe1448588db698e = []byte{
 	// 376 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x91, 0xcb, 0x6a, 0xfa, 0x40,
 	0x14, 0xc6, 0x4d, 0xbc, 0xe1, 0x51, 0xc3, 0xdf, 0xf9, 0xf7, 0x92, 0x66, 0x51, 0xc3, 0x40, 0x69,

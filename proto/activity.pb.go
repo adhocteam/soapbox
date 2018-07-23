@@ -3,10 +3,10 @@
 
 package proto
 
-import proto1 "github.com/golang/protobuf/proto"
+import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -14,9 +14,15 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto1.Marshal
+var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type ActivityType int32
 
@@ -47,18 +53,42 @@ var ActivityType_value = map[string]int32{
 }
 
 func (x ActivityType) String() string {
-	return proto1.EnumName(ActivityType_name, int32(x))
+	return proto.EnumName(ActivityType_name, int32(x))
 }
-func (ActivityType) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (ActivityType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_activity_8020a10fc6ec0fb4, []int{0}
+}
 
 type ListActivitiesResponse struct {
-	Activities []*Activity `protobuf:"bytes,1,rep,name=activities" json:"activities,omitempty"`
+	Activities           []*Activity `protobuf:"bytes,1,rep,name=activities,proto3" json:"activities,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *ListActivitiesResponse) Reset()                    { *m = ListActivitiesResponse{} }
-func (m *ListActivitiesResponse) String() string            { return proto1.CompactTextString(m) }
-func (*ListActivitiesResponse) ProtoMessage()               {}
-func (*ListActivitiesResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (m *ListActivitiesResponse) Reset()         { *m = ListActivitiesResponse{} }
+func (m *ListActivitiesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListActivitiesResponse) ProtoMessage()    {}
+func (*ListActivitiesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_activity_8020a10fc6ec0fb4, []int{0}
+}
+func (m *ListActivitiesResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListActivitiesResponse.Unmarshal(m, b)
+}
+func (m *ListActivitiesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListActivitiesResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListActivitiesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListActivitiesResponse.Merge(dst, src)
+}
+func (m *ListActivitiesResponse) XXX_Size() int {
+	return xxx_messageInfo_ListActivitiesResponse.Size(m)
+}
+func (m *ListActivitiesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListActivitiesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListActivitiesResponse proto.InternalMessageInfo
 
 func (m *ListActivitiesResponse) GetActivities() []*Activity {
 	if m != nil {
@@ -68,19 +98,41 @@ func (m *ListActivitiesResponse) GetActivities() []*Activity {
 }
 
 type Activity struct {
-	Id            int32                      `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	Type          ActivityType               `protobuf:"varint,2,opt,name=type,enum=soapbox.ActivityType" json:"type,omitempty"`
-	UserId        int32                      `protobuf:"varint,3,opt,name=user_id,json=userId" json:"user_id,omitempty"`
-	ApplicationId int32                      `protobuf:"varint,4,opt,name=application_id,json=applicationId" json:"application_id,omitempty"`
-	DeploymentId  int32                      `protobuf:"varint,5,opt,name=deployment_id,json=deploymentId" json:"deployment_id,omitempty"`
-	EnvironmentId int32                      `protobuf:"varint,6,opt,name=environment_id,json=environmentId" json:"environment_id,omitempty"`
-	CreatedAt     *google_protobuf.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	Id                   int32                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Type                 ActivityType         `protobuf:"varint,2,opt,name=type,proto3,enum=soapbox.ActivityType" json:"type,omitempty"`
+	UserId               int32                `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ApplicationId        int32                `protobuf:"varint,4,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	DeploymentId         int32                `protobuf:"varint,5,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	EnvironmentId        int32                `protobuf:"varint,6,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *Activity) Reset()                    { *m = Activity{} }
-func (m *Activity) String() string            { return proto1.CompactTextString(m) }
-func (*Activity) ProtoMessage()               {}
-func (*Activity) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (m *Activity) Reset()         { *m = Activity{} }
+func (m *Activity) String() string { return proto.CompactTextString(m) }
+func (*Activity) ProtoMessage()    {}
+func (*Activity) Descriptor() ([]byte, []int) {
+	return fileDescriptor_activity_8020a10fc6ec0fb4, []int{1}
+}
+func (m *Activity) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Activity.Unmarshal(m, b)
+}
+func (m *Activity) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Activity.Marshal(b, m, deterministic)
+}
+func (dst *Activity) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Activity.Merge(dst, src)
+}
+func (m *Activity) XXX_Size() int {
+	return xxx_messageInfo_Activity.Size(m)
+}
+func (m *Activity) XXX_DiscardUnknown() {
+	xxx_messageInfo_Activity.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Activity proto.InternalMessageInfo
 
 func (m *Activity) GetId() int32 {
 	if m != nil {
@@ -124,7 +176,7 @@ func (m *Activity) GetEnvironmentId() int32 {
 	return 0
 }
 
-func (m *Activity) GetCreatedAt() *google_protobuf.Timestamp {
+func (m *Activity) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -132,9 +184,9 @@ func (m *Activity) GetCreatedAt() *google_protobuf.Timestamp {
 }
 
 func init() {
-	proto1.RegisterType((*ListActivitiesResponse)(nil), "soapbox.ListActivitiesResponse")
-	proto1.RegisterType((*Activity)(nil), "soapbox.Activity")
-	proto1.RegisterEnum("soapbox.ActivityType", ActivityType_name, ActivityType_value)
+	proto.RegisterType((*ListActivitiesResponse)(nil), "soapbox.ListActivitiesResponse")
+	proto.RegisterType((*Activity)(nil), "soapbox.Activity")
+	proto.RegisterEnum("soapbox.ActivityType", ActivityType_name, ActivityType_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -145,8 +197,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Activities service
-
+// ActivitiesClient is the client API for Activities service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ActivitiesClient interface {
 	AddActivity(ctx context.Context, in *Activity, opts ...grpc.CallOption) (*Empty, error)
 	ListActivities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListActivitiesResponse, error)
@@ -164,7 +217,7 @@ func NewActivitiesClient(cc *grpc.ClientConn) ActivitiesClient {
 
 func (c *activitiesClient) AddActivity(ctx context.Context, in *Activity, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := grpc.Invoke(ctx, "/soapbox.Activities/AddActivity", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Activities/AddActivity", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +226,7 @@ func (c *activitiesClient) AddActivity(ctx context.Context, in *Activity, opts .
 
 func (c *activitiesClient) ListActivities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListActivitiesResponse, error) {
 	out := new(ListActivitiesResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Activities/ListActivities", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Activities/ListActivities", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +235,7 @@ func (c *activitiesClient) ListActivities(ctx context.Context, in *Empty, opts .
 
 func (c *activitiesClient) ListApplicationActivities(ctx context.Context, in *GetApplicationRequest, opts ...grpc.CallOption) (*ListActivitiesResponse, error) {
 	out := new(ListActivitiesResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Activities/ListApplicationActivities", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Activities/ListApplicationActivities", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -191,15 +244,14 @@ func (c *activitiesClient) ListApplicationActivities(ctx context.Context, in *Ge
 
 func (c *activitiesClient) ListDeploymentActivities(ctx context.Context, in *GetDeploymentRequest, opts ...grpc.CallOption) (*ListActivitiesResponse, error) {
 	out := new(ListActivitiesResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Activities/ListDeploymentActivities", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Activities/ListDeploymentActivities", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Activities service
-
+// ActivitiesServer is the server API for Activities service.
 type ActivitiesServer interface {
 	AddActivity(context.Context, *Activity) (*Empty, error)
 	ListActivities(context.Context, *Empty) (*ListActivitiesResponse, error)
@@ -308,9 +360,9 @@ var _Activities_serviceDesc = grpc.ServiceDesc{
 	Metadata: "activity.proto",
 }
 
-func init() { proto1.RegisterFile("activity.proto", fileDescriptor3) }
+func init() { proto.RegisterFile("activity.proto", fileDescriptor_activity_8020a10fc6ec0fb4) }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor_activity_8020a10fc6ec0fb4 = []byte{
 	// 490 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xdf, 0x6e, 0x12, 0x41,
 	0x14, 0xc6, 0xd9, 0xe5, 0x9f, 0x1e, 0xca, 0x86, 0x8e, 0x69, 0xbb, 0x25, 0xd1, 0x12, 0x8c, 0x09,

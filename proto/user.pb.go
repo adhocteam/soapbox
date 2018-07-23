@@ -3,10 +3,10 @@
 
 package proto
 
-import proto1 "github.com/golang/protobuf/proto"
+import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -14,23 +14,51 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto1.Marshal
+var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type User struct {
-	Id                     int32                      `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	Name                   string                     `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Email                  string                     `protobuf:"bytes,3,opt,name=email" json:"email,omitempty"`
-	EncryptedPassword      string                     `protobuf:"bytes,4,opt,name=encrypted_password,json=encryptedPassword" json:"encrypted_password,omitempty"`
-	GithubOauthAccessToken string                     `protobuf:"bytes,5,opt,name=github_oauth_access_token,json=githubOauthAccessToken" json:"github_oauth_access_token,omitempty"`
-	CreatedAt              *google_protobuf.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	Id                     int32                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                   string               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Email                  string               `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	EncryptedPassword      string               `protobuf:"bytes,4,opt,name=encrypted_password,json=encryptedPassword,proto3" json:"encrypted_password,omitempty"`
+	GithubOauthAccessToken string               `protobuf:"bytes,5,opt,name=github_oauth_access_token,json=githubOauthAccessToken,proto3" json:"github_oauth_access_token,omitempty"`
+	CreatedAt              *timestamp.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral   struct{}             `json:"-"`
+	XXX_unrecognized       []byte               `json:"-"`
+	XXX_sizecache          int32                `json:"-"`
 }
 
-func (m *User) Reset()                    { *m = User{} }
-func (m *User) String() string            { return proto1.CompactTextString(m) }
-func (*User) ProtoMessage()               {}
-func (*User) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *User) Reset()         { *m = User{} }
+func (m *User) String() string { return proto.CompactTextString(m) }
+func (*User) ProtoMessage()    {}
+func (*User) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_3d7b1e09d28f57e7, []int{0}
+}
+func (m *User) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_User.Unmarshal(m, b)
+}
+func (m *User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_User.Marshal(b, m, deterministic)
+}
+func (dst *User) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_User.Merge(dst, src)
+}
+func (m *User) XXX_Size() int {
+	return xxx_messageInfo_User.Size(m)
+}
+func (m *User) XXX_DiscardUnknown() {
+	xxx_messageInfo_User.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_User proto.InternalMessageInfo
 
 func (m *User) GetId() int32 {
 	if m != nil {
@@ -67,7 +95,7 @@ func (m *User) GetGithubOauthAccessToken() string {
 	return ""
 }
 
-func (m *User) GetCreatedAt() *google_protobuf.Timestamp {
+func (m *User) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -75,16 +103,38 @@ func (m *User) GetCreatedAt() *google_protobuf.Timestamp {
 }
 
 type CreateUserRequest struct {
-	Id       int32  `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	Name     string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
-	Email    string `protobuf:"bytes,3,opt,name=email" json:"email,omitempty"`
-	Password string `protobuf:"bytes,4,opt,name=password" json:"password,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Email                string   `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Password             string   `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateUserRequest) Reset()                    { *m = CreateUserRequest{} }
-func (m *CreateUserRequest) String() string            { return proto1.CompactTextString(m) }
-func (*CreateUserRequest) ProtoMessage()               {}
-func (*CreateUserRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *CreateUserRequest) Reset()         { *m = CreateUserRequest{} }
+func (m *CreateUserRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateUserRequest) ProtoMessage()    {}
+func (*CreateUserRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_3d7b1e09d28f57e7, []int{1}
+}
+func (m *CreateUserRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateUserRequest.Unmarshal(m, b)
+}
+func (m *CreateUserRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateUserRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateUserRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateUserRequest.Merge(dst, src)
+}
+func (m *CreateUserRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateUserRequest.Size(m)
+}
+func (m *CreateUserRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateUserRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateUserRequest proto.InternalMessageInfo
 
 func (m *CreateUserRequest) GetId() int32 {
 	if m != nil {
@@ -115,14 +165,36 @@ func (m *CreateUserRequest) GetPassword() string {
 }
 
 type GetUserRequest struct {
-	Email string `protobuf:"bytes,1,opt,name=email" json:"email,omitempty"`
-	Id    int32  `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`
+	Email                string   `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Id                   int32    `protobuf:"varint,2,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetUserRequest) Reset()                    { *m = GetUserRequest{} }
-func (m *GetUserRequest) String() string            { return proto1.CompactTextString(m) }
-func (*GetUserRequest) ProtoMessage()               {}
-func (*GetUserRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (m *GetUserRequest) Reset()         { *m = GetUserRequest{} }
+func (m *GetUserRequest) String() string { return proto.CompactTextString(m) }
+func (*GetUserRequest) ProtoMessage()    {}
+func (*GetUserRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_3d7b1e09d28f57e7, []int{2}
+}
+func (m *GetUserRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetUserRequest.Unmarshal(m, b)
+}
+func (m *GetUserRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetUserRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetUserRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetUserRequest.Merge(dst, src)
+}
+func (m *GetUserRequest) XXX_Size() int {
+	return xxx_messageInfo_GetUserRequest.Size(m)
+}
+func (m *GetUserRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetUserRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetUserRequest proto.InternalMessageInfo
 
 func (m *GetUserRequest) GetEmail() string {
 	if m != nil {
@@ -139,14 +211,36 @@ func (m *GetUserRequest) GetId() int32 {
 }
 
 type LoginUserRequest struct {
-	Email    string `protobuf:"bytes,1,opt,name=email" json:"email,omitempty"`
-	Password string `protobuf:"bytes,2,opt,name=password" json:"password,omitempty"`
+	Email                string   `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password             string   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LoginUserRequest) Reset()                    { *m = LoginUserRequest{} }
-func (m *LoginUserRequest) String() string            { return proto1.CompactTextString(m) }
-func (*LoginUserRequest) ProtoMessage()               {}
-func (*LoginUserRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (m *LoginUserRequest) Reset()         { *m = LoginUserRequest{} }
+func (m *LoginUserRequest) String() string { return proto.CompactTextString(m) }
+func (*LoginUserRequest) ProtoMessage()    {}
+func (*LoginUserRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_3d7b1e09d28f57e7, []int{3}
+}
+func (m *LoginUserRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LoginUserRequest.Unmarshal(m, b)
+}
+func (m *LoginUserRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LoginUserRequest.Marshal(b, m, deterministic)
+}
+func (dst *LoginUserRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoginUserRequest.Merge(dst, src)
+}
+func (m *LoginUserRequest) XXX_Size() int {
+	return xxx_messageInfo_LoginUserRequest.Size(m)
+}
+func (m *LoginUserRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoginUserRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoginUserRequest proto.InternalMessageInfo
 
 func (m *LoginUserRequest) GetEmail() string {
 	if m != nil {
@@ -163,14 +257,36 @@ func (m *LoginUserRequest) GetPassword() string {
 }
 
 type LoginUserResponse struct {
-	Error string `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
-	User  *User  `protobuf:"bytes,2,opt,name=user" json:"user,omitempty"`
+	Error                string   `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	User                 *User    `protobuf:"bytes,2,opt,name=user,proto3" json:"user,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LoginUserResponse) Reset()                    { *m = LoginUserResponse{} }
-func (m *LoginUserResponse) String() string            { return proto1.CompactTextString(m) }
-func (*LoginUserResponse) ProtoMessage()               {}
-func (*LoginUserResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (m *LoginUserResponse) Reset()         { *m = LoginUserResponse{} }
+func (m *LoginUserResponse) String() string { return proto.CompactTextString(m) }
+func (*LoginUserResponse) ProtoMessage()    {}
+func (*LoginUserResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_user_3d7b1e09d28f57e7, []int{4}
+}
+func (m *LoginUserResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LoginUserResponse.Unmarshal(m, b)
+}
+func (m *LoginUserResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LoginUserResponse.Marshal(b, m, deterministic)
+}
+func (dst *LoginUserResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoginUserResponse.Merge(dst, src)
+}
+func (m *LoginUserResponse) XXX_Size() int {
+	return xxx_messageInfo_LoginUserResponse.Size(m)
+}
+func (m *LoginUserResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoginUserResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoginUserResponse proto.InternalMessageInfo
 
 func (m *LoginUserResponse) GetError() string {
 	if m != nil {
@@ -187,11 +303,11 @@ func (m *LoginUserResponse) GetUser() *User {
 }
 
 func init() {
-	proto1.RegisterType((*User)(nil), "soapbox.User")
-	proto1.RegisterType((*CreateUserRequest)(nil), "soapbox.CreateUserRequest")
-	proto1.RegisterType((*GetUserRequest)(nil), "soapbox.GetUserRequest")
-	proto1.RegisterType((*LoginUserRequest)(nil), "soapbox.LoginUserRequest")
-	proto1.RegisterType((*LoginUserResponse)(nil), "soapbox.LoginUserResponse")
+	proto.RegisterType((*User)(nil), "soapbox.User")
+	proto.RegisterType((*CreateUserRequest)(nil), "soapbox.CreateUserRequest")
+	proto.RegisterType((*GetUserRequest)(nil), "soapbox.GetUserRequest")
+	proto.RegisterType((*LoginUserRequest)(nil), "soapbox.LoginUserRequest")
+	proto.RegisterType((*LoginUserResponse)(nil), "soapbox.LoginUserResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -202,8 +318,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Users service
-
+// UsersClient is the client API for Users service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type UsersClient interface {
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*User, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error)
@@ -221,7 +338,7 @@ func NewUsersClient(cc *grpc.ClientConn) UsersClient {
 
 func (c *usersClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
-	err := grpc.Invoke(ctx, "/soapbox.Users/CreateUser", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Users/CreateUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +347,7 @@ func (c *usersClient) CreateUser(ctx context.Context, in *CreateUserRequest, opt
 
 func (c *usersClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
-	err := grpc.Invoke(ctx, "/soapbox.Users/GetUser", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Users/GetUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +356,7 @@ func (c *usersClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...g
 
 func (c *usersClient) LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error) {
 	out := new(LoginUserResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Users/LoginUser", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Users/LoginUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -248,15 +365,14 @@ func (c *usersClient) LoginUser(ctx context.Context, in *LoginUserRequest, opts 
 
 func (c *usersClient) AssignGithubOmniauthTokenToUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error) {
 	out := new(User)
-	err := grpc.Invoke(ctx, "/soapbox.Users/AssignGithubOmniauthTokenToUser", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Users/AssignGithubOmniauthTokenToUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Users service
-
+// UsersServer is the server API for Users service.
 type UsersServer interface {
 	CreateUser(context.Context, *CreateUserRequest) (*User, error)
 	GetUser(context.Context, *GetUserRequest) (*User, error)
@@ -365,9 +481,9 @@ var _Users_serviceDesc = grpc.ServiceDesc{
 	Metadata: "user.proto",
 }
 
-func init() { proto1.RegisterFile("user.proto", fileDescriptor2) }
+func init() { proto.RegisterFile("user.proto", fileDescriptor_user_3d7b1e09d28f57e7) }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_user_3d7b1e09d28f57e7 = []byte{
 	// 413 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x52, 0x41, 0xaf, 0xd2, 0x40,
 	0x18, 0x7c, 0xad, 0xed, 0x43, 0xbe, 0x17, 0x89, 0x6c, 0x8c, 0x96, 0x5e, 0xc0, 0x9e, 0xb8, 0x58,

@@ -93,10 +93,21 @@ profile page, and grant the requested permissions.
 ## Developing Soapbox
 
 ### Installing protoc
-1. Download the latest protoc for your platform [here](https://github.com/google/protobuf/releases)
+
+`protoc` is the program that compiles protobuf files into language-specific generated code.
+
+#### Homebrew on macOS
+
+``` shell
+$ brew install protobuf
+```
+
+#### Any platform
+
+1. Download the latest `protoc` for your platform [here](https://github.com/google/protobuf/releases)
 2. Unzip the file
 3. Copy the `bin/` folder to `/usr/local/bin`
-4. Copy the 'include/' folder to `/usr/local/include`
+4. Copy the `include/` folder to `/usr/local/include`
 
 ### Making changes to protobufs
 

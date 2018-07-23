@@ -27,4 +27,8 @@
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.5.0"
+  version = "^1.13.0"
+
+[[constraint]]
+  name = "github.com/golang/protobuf"
+  revision = "14aad3d5ea4c323bcd7a2137e735da24a76e814c"

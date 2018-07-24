@@ -1,5 +1,9 @@
 pipeline {
-  agent { dockerfile true }
+  agent {
+    dockerfile {
+      additionalBuildArgs '--target builder'
+    }
+  }
   stages {
     stage ("Check formatting") {
       steps {

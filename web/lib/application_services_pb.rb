@@ -18,6 +18,7 @@ module Soapbox
       rpc :CreateApplication, Application, Application
       rpc :GetApplication, GetApplicationRequest, Application
       rpc :DeleteApplication, Application, Empty
+      rpc :GetApplicationMetrics, GetApplicationMetricsRequest, ApplicationMetricsResponse
     end
 
     Stub = Service.rpc_stub_class

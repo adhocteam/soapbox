@@ -12,7 +12,7 @@
 	            </h3>
 	            <div class="app-latest-deploy">
 			<% if latest_deploy %>
-	                    <small>Last deployed on <%= Time.at(latest_deploy.created_at.seconds).strftime('%m-%d-%Y %I:%M:%S%p') %></small>
+	                    <small>Last deployed on <%= Time.at(latest_deploy.created_at.seconds).strftime('%b %d, %Y · %l:%M %P') %></small>
 			<% else %>
 			    <small>Not yet deployed!</small>
 			<% end %>

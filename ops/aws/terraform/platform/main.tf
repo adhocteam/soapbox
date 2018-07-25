@@ -7,6 +7,11 @@ resource "aws_s3_bucket" "application_releases" {
   acl    = "private"
 }
 
+resource "aws_s3_bucket" "application_configs" {
+  bucket = "${var.application_configs_bucket}"
+  acl    = "private"
+}
+
 resource "aws_s3_bucket" "application_state_bucket" {
   bucket = "${var.application_state_bucket}"
   acl    = "private"

@@ -12,7 +12,11 @@
       <% end %>
       <div class="form-group required<%= ' has-danger' if @form.errors.include?(:committish) %>">
         <%= f.label :committish, 'Git commit SHA1 or tag', class: "col-form-label" %>
-        <%= f.text_field :committish, value: @form.committish, class: "form-control" %>
+        <% if current_user&.github_oauth_access_token %>
+          <%= f.select :committish, ([['Enter SHA manually...', nil]] + @commits), {include_blank: true}, {class: "form-control", onchange: 'manualGithubRepo(this);'} %>
+        <% else %>
+          <%= f.text_field :committish, value: @form.committish, class: "form-control" %>
+        <% end %>
       </div>
       <div class="form-group required<%= ' has-danger' if @form.errors.include?(:environment_id) %>">
         <%= f.label :environment_id, class: "col-form-label" %>

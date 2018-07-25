@@ -69,6 +69,9 @@ body {
             <li class="nav-item">
               <a class="nav-link" href="/user/profile">Profile</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/user/logout">Log Out</a>
+            </li>
           <% else %>
             <li class="nav-item">
               <a class="nav-link" href="/user/login">Log In</a>
@@ -105,10 +108,10 @@ body {
         </nav>
 
         <main class="col-sm-9 offset-sm-3 col-md-10 offset-md-2 pt-3">
-            <%= yield %>
-	    <footer>
-		<p><small>Copyright 2017 Ad Hoc. <%= link_to 'About', about_path %></small></p>
-	    </footer>
+          <%= yield %>
+          <footer>
+            <p><small>Copyright 2017 Ad Hoc. <%= link_to 'About', about_path %></small></p>
+          </footer>
         </main>
       </div>
     </div>

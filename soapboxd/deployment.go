@@ -28,7 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/elbv2"
-	"github.com/aws/aws-sdk-go/service/s3"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -152,8 +151,10 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	req.Application.Description = nullString(app.Description)
 	req.Application.GithubRepoUrl = nullString(app.GithubRepoURL)
 	req.Application.Slug = app.Slug
+	req.Application.Id = int32(app.ID)
+	req.Application.UserId = int32(app.UserID)
 
-	envReq := pb.GetEnvironmentRequest{req.GetEnv().GetId()}
+	envReq := pb.GetEnvironmentRequest{Id: req.GetEnv().GetId()}
 	env, err := s.GetEnvironment(ctx, &envReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting environment")
@@ -164,6 +165,11 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	res := &pb.StartDeploymentResponse{
 		Id: req.GetId(),
 	}
+
+	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_STARTED, req); err != nil {
+		return nil, err
+	}
+
 	return res, nil
 }
 
@@ -202,8 +208,10 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	do := func(f func() error) {
 		if dep.State != "failed" {
 			if err := f(); err != nil {
-				log.Printf("error: %v", err)
 				setState("failed")
+				if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_FAILURE, dep); err != nil {
+					log.Printf("adding deployment activity: %v", err)
+				}
 			}
 		}
 	}
@@ -340,6 +348,11 @@ cat << EOF > /etc/sv/$APP_NAME/log/run
 exec svlogd -tt /var/log/$APP_NAME
 EOF
 
+# Configure logs to forward to rsyslogd
+cat << EOF > /var/log/$APP_NAME/config
+U127.0.0.1
+EOF
+
 # Mark the log/run file executable
 chmod +x /etc/sv/$APP_NAME/log/run
 
@@ -348,8 +361,9 @@ cat << EOF > /etc/sv/$APP_NAME/run
 #!/bin/bash
 exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
 {{range .Variables -}}
-	--env {{.Name}} \
+  --env {{.Name}} \
 {{end -}}
+--env PORT \
 --rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
 EOF
 
@@ -432,7 +446,27 @@ service nginx reload
 	log.Printf("blue ASG is currently: %s", blueASG.name)
 	log.Printf("green ASG is currently: %s", greenASG.name)
 
-	const nAZs = 2 // number of availability zones
+	// set number of instances
+	minInstances := 2
+	maxInstances := 4
+	desiredInstances := 2
+	for _, v := range config.ConfigVars {
+		switch v.Name {
+		case "MIN_ASG_INSTANCES":
+			if i, err := strconv.Atoi(v.Value); err == nil {
+				minInstances = i
+			}
+		case "MAX_ASG_INSTANCES":
+			if i, err := strconv.Atoi(v.Value); err == nil {
+				maxInstances = i
+			}
+		case "DESIRED_ASG_INSTANCES":
+			if i, err := strconv.Atoi(v.Value); err == nil {
+				desiredInstances = i
+			}
+		}
+
+	}
 
 	log.Printf("ensuring blue ASG has no instances")
 	do(func() error {
@@ -463,11 +497,11 @@ service nginx reload
 
 	log.Printf("starting up blue ASG instances")
 	do(func() error {
-		return blueASG.resize(nAZs, nAZs*2, nAZs)
+		return blueASG.resize(minInstances, maxInstances, desiredInstances)
 	})
 
 	log.Printf("waiting for blue ASG instances to be ready")
-	do(func() error { return blueASG.waitUntilInstancesReady(nAZs) })
+	do(func() error { return blueASG.waitUntilInstancesReady(minInstances) })
 	log.Printf("blue ASG instances ready")
 
 	var target *targetGroup
@@ -512,6 +546,9 @@ service nginx reload
 	// TODO(paulsmith): health check?
 
 	setState("success")
+	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_SUCCESS, dep); err != nil {
+		log.Printf("error adding deployment activity", err)
+	}
 }
 
 type targetGroup struct {
@@ -710,29 +747,6 @@ func createLaunchConfig(config *soapbox.Config, app *application, env *environme
 	}
 
 	return name, nil
-}
-
-type s3storage struct {
-	svc *s3.S3
-}
-
-func newS3Storage(sess *session.Session) *s3storage {
-	return &s3storage{svc: s3.New(sess)}
-}
-
-func (s *s3storage) uploadFile(bucket string, key string, filename string) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("opening file %s: %v", filename, err)
-	}
-	defer f.Close()
-	input := &s3.PutObjectInput{
-		Body:   f,
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}
-	_, err = s.svc.PutObject(input)
-	return err
 }
 
 type application struct {

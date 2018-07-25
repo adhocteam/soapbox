@@ -43,7 +43,28 @@ func (s *server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*p
 }
 
 func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
-	return s.getUserByEmail(ctx, req.GetEmail())
+	if req.GetEmail() != "" {
+		return s.getUserByEmail(ctx, req.GetEmail())
+	} else {
+		return s.getUserById(ctx, int(req.GetId()))
+	}
+}
+
+func (s *server) getUserById(ctx context.Context, id int) (*pb.User, error) {
+	model, err := models.UserByID(s.db, id)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting user by id from db")
+	}
+
+	user := &pb.User{
+		Id:                     int32(model.ID),
+		Name:                   model.Name,
+		Email:                  model.Email,
+		EncryptedPassword:      model.EncryptedPassword,
+		GithubOauthAccessToken: model.GithubOauthAccessToken,
+	}
+
+	return user, nil
 }
 
 func (s *server) getUserByEmail(ctx context.Context, email string) (*pb.User, error) {
@@ -71,11 +92,10 @@ func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 	}
 
 	user, err := s.getUserByEmail(ctx, req.GetEmail())
-	err = errors.Cause(err)
 	if err == sql.ErrNoRows {
 		return res, nil
 	} else if err != nil {
-		return nil, err
+		return nil, errors.Cause(err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password)); err != nil {

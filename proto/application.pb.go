@@ -3,10 +3,10 @@
 
 package proto
 
-import proto1 "github.com/golang/protobuf/proto"
+import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -14,9 +14,15 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto1.Marshal
+var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type ApplicationType int32
 
@@ -35,9 +41,43 @@ var ApplicationType_value = map[string]int32{
 }
 
 func (x ApplicationType) String() string {
-	return proto1.EnumName(ApplicationType_name, int32(x))
+	return proto.EnumName(ApplicationType_name, int32(x))
 }
-func (ApplicationType) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (ApplicationType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{0}
+}
+
+type MetricType int32
+
+const (
+	MetricType_REQUEST_COUNT  MetricType = 0
+	MetricType_LATENCY        MetricType = 1
+	MetricType_HTTP_5XX_COUNT MetricType = 2
+	MetricType_HTTP_4XX_COUNT MetricType = 3
+	MetricType_HTTP_2XX_COUNT MetricType = 4
+)
+
+var MetricType_name = map[int32]string{
+	0: "REQUEST_COUNT",
+	1: "LATENCY",
+	2: "HTTP_5XX_COUNT",
+	3: "HTTP_4XX_COUNT",
+	4: "HTTP_2XX_COUNT",
+}
+var MetricType_value = map[string]int32{
+	"REQUEST_COUNT":  0,
+	"LATENCY":        1,
+	"HTTP_5XX_COUNT": 2,
+	"HTTP_4XX_COUNT": 3,
+	"HTTP_2XX_COUNT": 4,
+}
+
+func (x MetricType) String() string {
+	return proto.EnumName(MetricType_name, int32(x))
+}
+func (MetricType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{1}
+}
 
 type CreationState int32
 
@@ -59,30 +99,55 @@ var CreationState_value = map[string]int32{
 }
 
 func (x CreationState) String() string {
-	return proto1.EnumName(CreationState_name, int32(x))
+	return proto.EnumName(CreationState_name, int32(x))
 }
-func (CreationState) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (CreationState) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{2}
+}
 
 type Application struct {
-	Id                 int32                      `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	UserId             int32                      `protobuf:"varint,2,opt,name=user_id,json=userId" json:"user_id,omitempty"`
-	Name               string                     `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Description        string                     `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`
-	ExternalDns        string                     `protobuf:"bytes,5,opt,name=external_dns,json=externalDns" json:"external_dns,omitempty"`
-	GithubRepoUrl      string                     `protobuf:"bytes,6,opt,name=github_repo_url,json=githubRepoUrl" json:"github_repo_url,omitempty"`
-	DockerfilePath     string                     `protobuf:"bytes,7,opt,name=dockerfile_path,json=dockerfilePath" json:"dockerfile_path,omitempty"`
-	EntrypointOverride string                     `protobuf:"bytes,8,opt,name=entrypoint_override,json=entrypointOverride" json:"entrypoint_override,omitempty"`
-	Type               ApplicationType            `protobuf:"varint,9,opt,name=type,enum=soapbox.ApplicationType" json:"type,omitempty"`
-	CreatedAt          *google_protobuf.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
-	Slug               string                     `protobuf:"bytes,11,opt,name=slug" json:"slug,omitempty"`
-	InternalDns        string                     `protobuf:"bytes,12,opt,name=internal_dns,json=internalDns" json:"internal_dns,omitempty"`
-	CreationState      CreationState              `protobuf:"varint,13,opt,name=creation_state,json=creationState,enum=soapbox.CreationState" json:"creation_state,omitempty"`
+	Id                   int32                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId               int32                `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Name                 string               `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Description          string               `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	ExternalDns          string               `protobuf:"bytes,5,opt,name=external_dns,json=externalDns,proto3" json:"external_dns,omitempty"`
+	GithubRepoUrl        string               `protobuf:"bytes,6,opt,name=github_repo_url,json=githubRepoUrl,proto3" json:"github_repo_url,omitempty"`
+	DockerfilePath       string               `protobuf:"bytes,7,opt,name=dockerfile_path,json=dockerfilePath,proto3" json:"dockerfile_path,omitempty"`
+	EntrypointOverride   string               `protobuf:"bytes,8,opt,name=entrypoint_override,json=entrypointOverride,proto3" json:"entrypoint_override,omitempty"`
+	Type                 ApplicationType      `protobuf:"varint,9,opt,name=type,proto3,enum=soapbox.ApplicationType" json:"type,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Slug                 string               `protobuf:"bytes,11,opt,name=slug,proto3" json:"slug,omitempty"`
+	InternalDns          string               `protobuf:"bytes,12,opt,name=internal_dns,json=internalDns,proto3" json:"internal_dns,omitempty"`
+	CreationState        CreationState        `protobuf:"varint,13,opt,name=creation_state,json=creationState,proto3,enum=soapbox.CreationState" json:"creation_state,omitempty"`
+	AwsEncryptionKeyArn  string               `protobuf:"bytes,14,opt,name=aws_encryption_key_arn,json=awsEncryptionKeyArn,proto3" json:"aws_encryption_key_arn,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *Application) Reset()                    { *m = Application{} }
-func (m *Application) String() string            { return proto1.CompactTextString(m) }
-func (*Application) ProtoMessage()               {}
-func (*Application) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (m *Application) Reset()         { *m = Application{} }
+func (m *Application) String() string { return proto.CompactTextString(m) }
+func (*Application) ProtoMessage()    {}
+func (*Application) Descriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{0}
+}
+func (m *Application) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Application.Unmarshal(m, b)
+}
+func (m *Application) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Application.Marshal(b, m, deterministic)
+}
+func (dst *Application) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Application.Merge(dst, src)
+}
+func (m *Application) XXX_Size() int {
+	return xxx_messageInfo_Application.Size(m)
+}
+func (m *Application) XXX_DiscardUnknown() {
+	xxx_messageInfo_Application.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Application proto.InternalMessageInfo
 
 func (m *Application) GetId() int32 {
 	if m != nil {
@@ -147,7 +212,7 @@ func (m *Application) GetType() ApplicationType {
 	return ApplicationType_SERVER
 }
 
-func (m *Application) GetCreatedAt() *google_protobuf.Timestamp {
+func (m *Application) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -175,14 +240,43 @@ func (m *Application) GetCreationState() CreationState {
 	return CreationState_CREATE_INFRASTRUCTURE_WAIT
 }
 
-type ListApplicationRequest struct {
-	UserId int32 `protobuf:"varint,1,opt,name=user_id,json=userId" json:"user_id,omitempty"`
+func (m *Application) GetAwsEncryptionKeyArn() string {
+	if m != nil {
+		return m.AwsEncryptionKeyArn
+	}
+	return ""
 }
 
-func (m *ListApplicationRequest) Reset()                    { *m = ListApplicationRequest{} }
-func (m *ListApplicationRequest) String() string            { return proto1.CompactTextString(m) }
-func (*ListApplicationRequest) ProtoMessage()               {}
-func (*ListApplicationRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+type ListApplicationRequest struct {
+	UserId               int32    `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ListApplicationRequest) Reset()         { *m = ListApplicationRequest{} }
+func (m *ListApplicationRequest) String() string { return proto.CompactTextString(m) }
+func (*ListApplicationRequest) ProtoMessage()    {}
+func (*ListApplicationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{1}
+}
+func (m *ListApplicationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListApplicationRequest.Unmarshal(m, b)
+}
+func (m *ListApplicationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListApplicationRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListApplicationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListApplicationRequest.Merge(dst, src)
+}
+func (m *ListApplicationRequest) XXX_Size() int {
+	return xxx_messageInfo_ListApplicationRequest.Size(m)
+}
+func (m *ListApplicationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListApplicationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListApplicationRequest proto.InternalMessageInfo
 
 func (m *ListApplicationRequest) GetUserId() int32 {
 	if m != nil {
@@ -192,13 +286,35 @@ func (m *ListApplicationRequest) GetUserId() int32 {
 }
 
 type ListApplicationResponse struct {
-	Applications []*Application `protobuf:"bytes,1,rep,name=applications" json:"applications,omitempty"`
+	Applications         []*Application `protobuf:"bytes,1,rep,name=applications,proto3" json:"applications,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *ListApplicationResponse) Reset()                    { *m = ListApplicationResponse{} }
-func (m *ListApplicationResponse) String() string            { return proto1.CompactTextString(m) }
-func (*ListApplicationResponse) ProtoMessage()               {}
-func (*ListApplicationResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (m *ListApplicationResponse) Reset()         { *m = ListApplicationResponse{} }
+func (m *ListApplicationResponse) String() string { return proto.CompactTextString(m) }
+func (*ListApplicationResponse) ProtoMessage()    {}
+func (*ListApplicationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{2}
+}
+func (m *ListApplicationResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListApplicationResponse.Unmarshal(m, b)
+}
+func (m *ListApplicationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListApplicationResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListApplicationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListApplicationResponse.Merge(dst, src)
+}
+func (m *ListApplicationResponse) XXX_Size() int {
+	return xxx_messageInfo_ListApplicationResponse.Size(m)
+}
+func (m *ListApplicationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListApplicationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListApplicationResponse proto.InternalMessageInfo
 
 func (m *ListApplicationResponse) GetApplications() []*Application {
 	if m != nil {
@@ -208,13 +324,35 @@ func (m *ListApplicationResponse) GetApplications() []*Application {
 }
 
 type GetApplicationRequest struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetApplicationRequest) Reset()                    { *m = GetApplicationRequest{} }
-func (m *GetApplicationRequest) String() string            { return proto1.CompactTextString(m) }
-func (*GetApplicationRequest) ProtoMessage()               {}
-func (*GetApplicationRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3} }
+func (m *GetApplicationRequest) Reset()         { *m = GetApplicationRequest{} }
+func (m *GetApplicationRequest) String() string { return proto.CompactTextString(m) }
+func (*GetApplicationRequest) ProtoMessage()    {}
+func (*GetApplicationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{3}
+}
+func (m *GetApplicationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetApplicationRequest.Unmarshal(m, b)
+}
+func (m *GetApplicationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetApplicationRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetApplicationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetApplicationRequest.Merge(dst, src)
+}
+func (m *GetApplicationRequest) XXX_Size() int {
+	return xxx_messageInfo_GetApplicationRequest.Size(m)
+}
+func (m *GetApplicationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetApplicationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetApplicationRequest proto.InternalMessageInfo
 
 func (m *GetApplicationRequest) GetId() int32 {
 	if m != nil {
@@ -223,13 +361,147 @@ func (m *GetApplicationRequest) GetId() int32 {
 	return 0
 }
 
+type ApplicationMetric struct {
+	Time                 string   `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	Count                int32    `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ApplicationMetric) Reset()         { *m = ApplicationMetric{} }
+func (m *ApplicationMetric) String() string { return proto.CompactTextString(m) }
+func (*ApplicationMetric) ProtoMessage()    {}
+func (*ApplicationMetric) Descriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{4}
+}
+func (m *ApplicationMetric) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ApplicationMetric.Unmarshal(m, b)
+}
+func (m *ApplicationMetric) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ApplicationMetric.Marshal(b, m, deterministic)
+}
+func (dst *ApplicationMetric) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ApplicationMetric.Merge(dst, src)
+}
+func (m *ApplicationMetric) XXX_Size() int {
+	return xxx_messageInfo_ApplicationMetric.Size(m)
+}
+func (m *ApplicationMetric) XXX_DiscardUnknown() {
+	xxx_messageInfo_ApplicationMetric.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ApplicationMetric proto.InternalMessageInfo
+
+func (m *ApplicationMetric) GetTime() string {
+	if m != nil {
+		return m.Time
+	}
+	return ""
+}
+
+func (m *ApplicationMetric) GetCount() int32 {
+	if m != nil {
+		return m.Count
+	}
+	return 0
+}
+
+type ApplicationMetricsResponse struct {
+	Metrics              []*ApplicationMetric `protobuf:"bytes,1,rep,name=metrics,proto3" json:"metrics,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *ApplicationMetricsResponse) Reset()         { *m = ApplicationMetricsResponse{} }
+func (m *ApplicationMetricsResponse) String() string { return proto.CompactTextString(m) }
+func (*ApplicationMetricsResponse) ProtoMessage()    {}
+func (*ApplicationMetricsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{5}
+}
+func (m *ApplicationMetricsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ApplicationMetricsResponse.Unmarshal(m, b)
+}
+func (m *ApplicationMetricsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ApplicationMetricsResponse.Marshal(b, m, deterministic)
+}
+func (dst *ApplicationMetricsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ApplicationMetricsResponse.Merge(dst, src)
+}
+func (m *ApplicationMetricsResponse) XXX_Size() int {
+	return xxx_messageInfo_ApplicationMetricsResponse.Size(m)
+}
+func (m *ApplicationMetricsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ApplicationMetricsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ApplicationMetricsResponse proto.InternalMessageInfo
+
+func (m *ApplicationMetricsResponse) GetMetrics() []*ApplicationMetric {
+	if m != nil {
+		return m.Metrics
+	}
+	return nil
+}
+
+type GetApplicationMetricsRequest struct {
+	Id                   int32      `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	MetricType           MetricType `protobuf:"varint,2,opt,name=metric_type,json=metricType,proto3,enum=soapbox.MetricType" json:"metric_type,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *GetApplicationMetricsRequest) Reset()         { *m = GetApplicationMetricsRequest{} }
+func (m *GetApplicationMetricsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetApplicationMetricsRequest) ProtoMessage()    {}
+func (*GetApplicationMetricsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_application_15f310b1d12ea4f8, []int{6}
+}
+func (m *GetApplicationMetricsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetApplicationMetricsRequest.Unmarshal(m, b)
+}
+func (m *GetApplicationMetricsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetApplicationMetricsRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetApplicationMetricsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetApplicationMetricsRequest.Merge(dst, src)
+}
+func (m *GetApplicationMetricsRequest) XXX_Size() int {
+	return xxx_messageInfo_GetApplicationMetricsRequest.Size(m)
+}
+func (m *GetApplicationMetricsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetApplicationMetricsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetApplicationMetricsRequest proto.InternalMessageInfo
+
+func (m *GetApplicationMetricsRequest) GetId() int32 {
+	if m != nil {
+		return m.Id
+	}
+	return 0
+}
+
+func (m *GetApplicationMetricsRequest) GetMetricType() MetricType {
+	if m != nil {
+		return m.MetricType
+	}
+	return MetricType_REQUEST_COUNT
+}
+
 func init() {
-	proto1.RegisterType((*Application)(nil), "soapbox.Application")
-	proto1.RegisterType((*ListApplicationRequest)(nil), "soapbox.ListApplicationRequest")
-	proto1.RegisterType((*ListApplicationResponse)(nil), "soapbox.ListApplicationResponse")
-	proto1.RegisterType((*GetApplicationRequest)(nil), "soapbox.GetApplicationRequest")
-	proto1.RegisterEnum("soapbox.ApplicationType", ApplicationType_name, ApplicationType_value)
-	proto1.RegisterEnum("soapbox.CreationState", CreationState_name, CreationState_value)
+	proto.RegisterType((*Application)(nil), "soapbox.Application")
+	proto.RegisterType((*ListApplicationRequest)(nil), "soapbox.ListApplicationRequest")
+	proto.RegisterType((*ListApplicationResponse)(nil), "soapbox.ListApplicationResponse")
+	proto.RegisterType((*GetApplicationRequest)(nil), "soapbox.GetApplicationRequest")
+	proto.RegisterType((*ApplicationMetric)(nil), "soapbox.ApplicationMetric")
+	proto.RegisterType((*ApplicationMetricsResponse)(nil), "soapbox.ApplicationMetricsResponse")
+	proto.RegisterType((*GetApplicationMetricsRequest)(nil), "soapbox.GetApplicationMetricsRequest")
+	proto.RegisterEnum("soapbox.ApplicationType", ApplicationType_name, ApplicationType_value)
+	proto.RegisterEnum("soapbox.MetricType", MetricType_name, MetricType_value)
+	proto.RegisterEnum("soapbox.CreationState", CreationState_name, CreationState_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -240,12 +512,14 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Applications service
-
+// ApplicationsClient is the client API for Applications service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ApplicationsClient interface {
 	ListApplications(ctx context.Context, in *ListApplicationRequest, opts ...grpc.CallOption) (*ListApplicationResponse, error)
 	CreateApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*Application, error)
 	GetApplication(ctx context.Context, in *GetApplicationRequest, opts ...grpc.CallOption) (*Application, error)
+	GetApplicationMetrics(ctx context.Context, in *GetApplicationMetricsRequest, opts ...grpc.CallOption) (*ApplicationMetricsResponse, error)
 }
 
 type applicationsClient struct {
@@ -258,7 +532,7 @@ func NewApplicationsClient(cc *grpc.ClientConn) ApplicationsClient {
 
 func (c *applicationsClient) ListApplications(ctx context.Context, in *ListApplicationRequest, opts ...grpc.CallOption) (*ListApplicationResponse, error) {
 	out := new(ListApplicationResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Applications/ListApplications", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Applications/ListApplications", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +541,7 @@ func (c *applicationsClient) ListApplications(ctx context.Context, in *ListAppli
 
 func (c *applicationsClient) CreateApplication(ctx context.Context, in *Application, opts ...grpc.CallOption) (*Application, error) {
 	out := new(Application)
-	err := grpc.Invoke(ctx, "/soapbox.Applications/CreateApplication", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Applications/CreateApplication", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -276,19 +550,28 @@ func (c *applicationsClient) CreateApplication(ctx context.Context, in *Applicat
 
 func (c *applicationsClient) GetApplication(ctx context.Context, in *GetApplicationRequest, opts ...grpc.CallOption) (*Application, error) {
 	out := new(Application)
-	err := grpc.Invoke(ctx, "/soapbox.Applications/GetApplication", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Applications/GetApplication", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Applications service
+func (c *applicationsClient) GetApplicationMetrics(ctx context.Context, in *GetApplicationMetricsRequest, opts ...grpc.CallOption) (*ApplicationMetricsResponse, error) {
+	out := new(ApplicationMetricsResponse)
+	err := c.cc.Invoke(ctx, "/soapbox.Applications/GetApplicationMetrics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
+// ApplicationsServer is the server API for Applications service.
 type ApplicationsServer interface {
 	ListApplications(context.Context, *ListApplicationRequest) (*ListApplicationResponse, error)
 	CreateApplication(context.Context, *Application) (*Application, error)
 	GetApplication(context.Context, *GetApplicationRequest) (*Application, error)
+	GetApplicationMetrics(context.Context, *GetApplicationMetricsRequest) (*ApplicationMetricsResponse, error)
 }
 
 func RegisterApplicationsServer(s *grpc.Server, srv ApplicationsServer) {
@@ -349,6 +632,24 @@ func _Applications_GetApplication_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Applications_GetApplicationMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetApplicationMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationsServer).GetApplicationMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/soapbox.Applications/GetApplicationMetrics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationsServer).GetApplicationMetrics(ctx, req.(*GetApplicationMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Applications_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "soapbox.Applications",
 	HandlerType: (*ApplicationsServer)(nil),
@@ -365,50 +666,66 @@ var _Applications_serviceDesc = grpc.ServiceDesc{
 			MethodName: "GetApplication",
 			Handler:    _Applications_GetApplication_Handler,
 		},
+		{
+			MethodName: "GetApplicationMetrics",
+			Handler:    _Applications_GetApplicationMetrics_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "application.proto",
 }
 
-func init() { proto1.RegisterFile("application.proto", fileDescriptor4) }
+func init() { proto.RegisterFile("application.proto", fileDescriptor_application_15f310b1d12ea4f8) }
 
-var fileDescriptor4 = []byte{
-	// 587 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x93, 0xcf, 0x4e, 0xdb, 0x40,
-	0x10, 0xc6, 0xe3, 0x00, 0x49, 0x33, 0xf9, 0x43, 0xd8, 0xb6, 0xb0, 0xca, 0x01, 0xdc, 0x1c, 0x4a,
-	0x84, 0xaa, 0xa0, 0xa6, 0x97, 0xf6, 0xd0, 0x83, 0x49, 0x4c, 0x1b, 0x84, 0xa0, 0xda, 0x24, 0x45,
-	0xea, 0xc5, 0x32, 0xf1, 0x10, 0x56, 0x35, 0xde, 0xed, 0xee, 0xa6, 0x82, 0xb7, 0xee, 0xa1, 0x0f,
-	0x50, 0x79, 0x9d, 0x80, 0xa1, 0xe1, 0xe4, 0x9d, 0x6f, 0x3e, 0x8f, 0x67, 0x7e, 0x3b, 0x86, 0xad,
-	0x50, 0xca, 0x98, 0x4f, 0x43, 0xc3, 0x45, 0xd2, 0x95, 0x4a, 0x18, 0x41, 0xca, 0x5a, 0x84, 0xf2,
-	0x52, 0xdc, 0xb6, 0xea, 0x8b, 0x43, 0xa6, 0xb7, 0xf6, 0x66, 0x42, 0xcc, 0x62, 0x3c, 0xb4, 0xd1,
-	0xe5, 0xfc, 0xea, 0xd0, 0xf0, 0x1b, 0xd4, 0x26, 0xbc, 0x91, 0x99, 0xa1, 0xfd, 0x67, 0x0d, 0xaa,
-	0xde, 0x43, 0x39, 0xd2, 0x80, 0x22, 0x8f, 0xa8, 0xe3, 0x3a, 0x9d, 0x0d, 0x56, 0xe4, 0x11, 0xd9,
-	0x81, 0xf2, 0x5c, 0xa3, 0x0a, 0x78, 0x44, 0x8b, 0x56, 0x2c, 0xa5, 0xe1, 0x30, 0x22, 0x04, 0xd6,
-	0x93, 0xf0, 0x06, 0xe9, 0x9a, 0xeb, 0x74, 0x2a, 0xcc, 0x9e, 0x89, 0x0b, 0xd5, 0x08, 0xf5, 0x54,
-	0x71, 0x99, 0xd6, 0xa2, 0xeb, 0x36, 0x95, 0x97, 0xc8, 0x1b, 0xa8, 0xe1, 0xad, 0x41, 0x95, 0x84,
-	0x71, 0x10, 0x25, 0x9a, 0x6e, 0x64, 0x96, 0xa5, 0x36, 0x48, 0x34, 0x79, 0x0b, 0x9b, 0x33, 0x6e,
-	0xae, 0xe7, 0x97, 0x81, 0x42, 0x29, 0x82, 0xb9, 0x8a, 0x69, 0xc9, 0xba, 0xea, 0x99, 0xcc, 0x50,
-	0x8a, 0x89, 0x8a, 0xc9, 0x3e, 0x6c, 0x46, 0x62, 0xfa, 0x13, 0xd5, 0x15, 0x8f, 0x31, 0x90, 0xa1,
-	0xb9, 0xa6, 0x65, 0xeb, 0x6b, 0x3c, 0xc8, 0xdf, 0x42, 0x73, 0x4d, 0x0e, 0xe1, 0x25, 0x26, 0x46,
-	0xdd, 0x49, 0xc1, 0x13, 0x13, 0x88, 0xdf, 0xa8, 0x14, 0x8f, 0x90, 0xbe, 0xb0, 0x66, 0xf2, 0x90,
-	0x3a, 0x5f, 0x64, 0xc8, 0x3b, 0x58, 0x37, 0x77, 0x12, 0x69, 0xc5, 0x75, 0x3a, 0x8d, 0x1e, 0xed,
-	0x2e, 0x91, 0xe6, 0x38, 0x8d, 0xef, 0x24, 0x32, 0xeb, 0x22, 0x9f, 0x00, 0xa6, 0x0a, 0x43, 0x83,
-	0x51, 0x10, 0x1a, 0x0a, 0xae, 0xd3, 0xa9, 0xf6, 0x5a, 0xdd, 0x8c, 0x7b, 0x77, 0xc9, 0xbd, 0x3b,
-	0x5e, 0x72, 0x67, 0x95, 0x85, 0xdb, 0x33, 0x29, 0x43, 0x1d, 0xcf, 0x67, 0xb4, 0x9a, 0x31, 0x4c,
-	0xcf, 0x29, 0x21, 0x9e, 0xe4, 0x08, 0xd5, 0x32, 0x42, 0x4b, 0x2d, 0x25, 0xf4, 0x19, 0x1a, 0xb6,
-	0x06, 0x17, 0x49, 0xa0, 0x4d, 0x68, 0x90, 0xd6, 0x6d, 0xa7, 0xdb, 0xf7, 0x9d, 0xf6, 0x17, 0xe9,
-	0x51, 0x9a, 0x65, 0xf5, 0x69, 0x3e, 0x6c, 0xbf, 0x87, 0xed, 0x53, 0xae, 0x4d, 0x6e, 0x1a, 0x86,
-	0xbf, 0xe6, 0xa8, 0x4d, 0xfe, 0xb2, 0x9d, 0xfc, 0x65, 0xb7, 0x47, 0xb0, 0xf3, 0xdf, 0x2b, 0x5a,
-	0x8a, 0x44, 0x23, 0xf9, 0x08, 0xb5, 0xdc, 0x3a, 0x6a, 0xea, 0xb8, 0x6b, 0x9d, 0x6a, 0xef, 0xd5,
-	0x2a, 0x68, 0xec, 0x91, 0xb3, 0xbd, 0x0f, 0xaf, 0xbf, 0xe0, 0xaa, 0x36, 0x9e, 0xec, 0xe0, 0xc1,
-	0x01, 0x6c, 0x3e, 0x41, 0x4f, 0x00, 0x4a, 0x23, 0x9f, 0x7d, 0xf7, 0x59, 0xb3, 0x40, 0xaa, 0x50,
-	0xee, 0xb3, 0xf3, 0xb3, 0x93, 0xf3, 0xa3, 0xa6, 0x73, 0x70, 0x02, 0xf5, 0x47, 0xc3, 0x93, 0x5d,
-	0x68, 0xf5, 0x99, 0xef, 0x8d, 0xfd, 0x60, 0x78, 0x76, 0xcc, 0xbc, 0xd1, 0x98, 0x4d, 0xfa, 0xe3,
-	0x09, 0xf3, 0x83, 0x0b, 0x6f, 0x38, 0x6e, 0x16, 0x48, 0x1d, 0x2a, 0xa3, 0x49, 0xbf, 0xef, 0xfb,
-	0x03, 0x7f, 0xd0, 0x74, 0xd2, 0xc2, 0xc7, 0xde, 0xf0, 0xd4, 0x1f, 0x34, 0x8b, 0xbd, 0xbf, 0x0e,
-	0xd4, 0x72, 0x1f, 0xd6, 0xe4, 0x02, 0x9a, 0x4f, 0x30, 0x68, 0xb2, 0x77, 0x3f, 0xe9, 0x6a, 0xa8,
-	0x2d, 0xf7, 0x79, 0x43, 0x86, 0xb0, 0x5d, 0x20, 0x1e, 0x6c, 0xd9, 0xae, 0x31, 0xff, 0x2b, 0xae,
-	0x64, 0xd8, 0x5a, 0xa9, 0xb6, 0x0b, 0xe4, 0x2b, 0x34, 0x1e, 0xd3, 0x24, 0xbb, 0xf7, 0xce, 0x95,
-	0x98, 0x9f, 0xab, 0x74, 0x54, 0xfe, 0xb1, 0x91, 0xad, 0x6d, 0xc9, 0x3e, 0x3e, 0xfc, 0x0b, 0x00,
-	0x00, 0xff, 0xff, 0x3d, 0x10, 0x1e, 0x9c, 0x70, 0x04, 0x00, 0x00,
+var fileDescriptor_application_15f310b1d12ea4f8 = []byte{
+	// 780 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x54, 0x5d, 0x8f, 0xda, 0x46,
+	0x14, 0x5d, 0xb3, 0x2c, 0x94, 0xcb, 0xc7, 0xc2, 0x6c, 0xba, 0xb1, 0xac, 0x2a, 0xa1, 0xae, 0xda,
+	0x20, 0x54, 0xb1, 0x2a, 0xd9, 0x4a, 0xed, 0x43, 0x1e, 0x1c, 0xe3, 0x34, 0xa4, 0x5b, 0x48, 0x07,
+	0xd3, 0xa4, 0x7d, 0x19, 0x79, 0xed, 0x09, 0x58, 0x01, 0xdb, 0x9d, 0x19, 0x9a, 0xf0, 0x83, 0xfa,
+	0xab, 0xfa, 0x67, 0x2a, 0x8f, 0x8d, 0x31, 0xac, 0x79, 0xe2, 0xce, 0xb9, 0xe7, 0xde, 0xb9, 0x73,
+	0xee, 0xc1, 0xd0, 0x71, 0xa2, 0x68, 0xe5, 0xbb, 0x8e, 0xf0, 0xc3, 0x60, 0x10, 0xb1, 0x50, 0x84,
+	0xa8, 0xca, 0x43, 0x27, 0xba, 0x0f, 0x3f, 0x6b, 0xcd, 0x34, 0x48, 0x70, 0xed, 0xe9, 0x22, 0x0c,
+	0x17, 0x2b, 0x7a, 0x23, 0x4f, 0xf7, 0x9b, 0x0f, 0x37, 0xc2, 0x5f, 0x53, 0x2e, 0x9c, 0x75, 0x94,
+	0x10, 0xf4, 0x7f, 0xcb, 0x50, 0x37, 0xf6, 0xed, 0x50, 0x0b, 0x4a, 0xbe, 0xa7, 0x2a, 0x5d, 0xa5,
+	0x77, 0x81, 0x4b, 0xbe, 0x87, 0x1e, 0x43, 0x75, 0xc3, 0x29, 0x23, 0xbe, 0xa7, 0x96, 0x24, 0x58,
+	0x89, 0x8f, 0x63, 0x0f, 0x21, 0x28, 0x07, 0xce, 0x9a, 0xaa, 0xe7, 0x5d, 0xa5, 0x57, 0xc3, 0x32,
+	0x46, 0x5d, 0xa8, 0x7b, 0x94, 0xbb, 0xcc, 0x8f, 0xe2, 0x5e, 0x6a, 0x59, 0xa6, 0xf2, 0x10, 0xfa,
+	0x1a, 0x1a, 0xf4, 0xb3, 0xa0, 0x2c, 0x70, 0x56, 0xc4, 0x0b, 0xb8, 0x7a, 0x91, 0x50, 0x76, 0xd8,
+	0x28, 0xe0, 0xe8, 0x3b, 0xb8, 0x5c, 0xf8, 0x62, 0xb9, 0xb9, 0x27, 0x8c, 0x46, 0x21, 0xd9, 0xb0,
+	0x95, 0x5a, 0x91, 0xac, 0x66, 0x02, 0x63, 0x1a, 0x85, 0x73, 0xb6, 0x42, 0xcf, 0xe0, 0xd2, 0x0b,
+	0xdd, 0x8f, 0x94, 0x7d, 0xf0, 0x57, 0x94, 0x44, 0x8e, 0x58, 0xaa, 0x55, 0xc9, 0x6b, 0xed, 0xe1,
+	0xb7, 0x8e, 0x58, 0xa2, 0x1b, 0xb8, 0xa2, 0x81, 0x60, 0xdb, 0x28, 0xf4, 0x03, 0x41, 0xc2, 0x7f,
+	0x28, 0x63, 0xbe, 0x47, 0xd5, 0x2f, 0x24, 0x19, 0xed, 0x53, 0xd3, 0x34, 0x83, 0xbe, 0x87, 0xb2,
+	0xd8, 0x46, 0x54, 0xad, 0x75, 0x95, 0x5e, 0x6b, 0xa8, 0x0e, 0x76, 0x92, 0xe6, 0x74, 0xb2, 0xb7,
+	0x11, 0xc5, 0x92, 0x85, 0x7e, 0x06, 0x70, 0x19, 0x75, 0x04, 0xf5, 0x88, 0x23, 0x54, 0xe8, 0x2a,
+	0xbd, 0xfa, 0x50, 0x1b, 0x24, 0xba, 0x0f, 0x76, 0xba, 0x0f, 0xec, 0x9d, 0xee, 0xb8, 0x96, 0xb2,
+	0x0d, 0x11, 0x6b, 0xc8, 0x57, 0x9b, 0x85, 0x5a, 0x4f, 0x34, 0x8c, 0xe3, 0x58, 0x21, 0x3f, 0xc8,
+	0x29, 0xd4, 0x48, 0x14, 0xda, 0x61, 0xb1, 0x42, 0x2f, 0xa0, 0x25, 0x7b, 0xf8, 0x61, 0x40, 0xb8,
+	0x70, 0x04, 0x55, 0x9b, 0x72, 0xd2, 0xeb, 0x6c, 0x52, 0x33, 0x4d, 0xcf, 0xe2, 0x2c, 0x6e, 0xba,
+	0xf9, 0x23, 0x7a, 0x0e, 0xd7, 0xce, 0x27, 0x4e, 0x68, 0xe0, 0xb2, 0xad, 0xdc, 0x0a, 0xf9, 0x48,
+	0xb7, 0xc4, 0x61, 0x81, 0xda, 0x92, 0x77, 0x5d, 0x39, 0x9f, 0xb8, 0x95, 0x25, 0x7f, 0xa5, 0x5b,
+	0x83, 0x05, 0xfa, 0x0f, 0x70, 0x7d, 0xe7, 0x73, 0x91, 0x93, 0x00, 0xd3, 0xbf, 0x37, 0x94, 0x8b,
+	0xbc, 0x43, 0x94, 0xbc, 0x43, 0xf4, 0x19, 0x3c, 0x7e, 0x50, 0xc2, 0xa3, 0x30, 0xe0, 0x14, 0xfd,
+	0x04, 0x8d, 0x9c, 0x87, 0xb9, 0xaa, 0x74, 0xcf, 0x7b, 0xf5, 0xe1, 0xa3, 0x22, 0xa5, 0xf1, 0x01,
+	0x53, 0x7f, 0x06, 0x5f, 0xfe, 0x42, 0x8b, 0xc6, 0x38, 0x32, 0xae, 0xfe, 0x02, 0x3a, 0x39, 0xd6,
+	0x6f, 0x54, 0x30, 0xdf, 0x8d, 0x05, 0x8f, 0xff, 0x00, 0x92, 0x56, 0xc3, 0x32, 0x46, 0x8f, 0xe0,
+	0xc2, 0x0d, 0x37, 0x81, 0x48, 0xfd, 0x9d, 0x1c, 0x74, 0x0c, 0xda, 0x83, 0x72, 0x9e, 0xcd, 0x7f,
+	0x0b, 0xd5, 0x75, 0x02, 0xa5, 0xa3, 0x6b, 0x45, 0xa3, 0x27, 0x55, 0x78, 0x47, 0xd5, 0x3d, 0xf8,
+	0xea, 0x70, 0xf6, 0xac, 0x6d, 0xe1, 0x13, 0xd0, 0x2d, 0xd4, 0x93, 0x52, 0x22, 0xed, 0x58, 0x92,
+	0x4b, 0xbe, 0xca, 0x6e, 0x4a, 0xaa, 0xa5, 0x13, 0x61, 0x9d, 0xc5, 0xfd, 0x3e, 0x5c, 0x1e, 0x19,
+	0x15, 0x01, 0x54, 0x66, 0x16, 0xfe, 0xc3, 0xc2, 0xed, 0x33, 0x54, 0x87, 0xaa, 0x89, 0xa7, 0x93,
+	0x37, 0xd3, 0x97, 0x6d, 0xa5, 0xbf, 0x04, 0xd8, 0x77, 0x41, 0x1d, 0x68, 0x62, 0xeb, 0xf7, 0xb9,
+	0x35, 0xb3, 0x89, 0x39, 0x9d, 0x4f, 0xec, 0x84, 0x7d, 0x67, 0xd8, 0xd6, 0xc4, 0xfc, 0xb3, 0xad,
+	0x20, 0x04, 0xad, 0xd7, 0xb6, 0xfd, 0x96, 0xfc, 0xf8, 0xfe, 0x7d, 0x4a, 0x28, 0x65, 0xd8, 0x6d,
+	0x86, 0x9d, 0x67, 0xd8, 0x30, 0xc3, 0xca, 0xfd, 0x37, 0xd0, 0x3c, 0x30, 0x25, 0x7a, 0x02, 0x9a,
+	0x89, 0x2d, 0xc3, 0xb6, 0xc8, 0x78, 0xf2, 0x0a, 0x1b, 0x33, 0x1b, 0xcf, 0x4d, 0x7b, 0x8e, 0x2d,
+	0xf2, 0xce, 0x18, 0xc7, 0x37, 0x37, 0xa1, 0x36, 0x9b, 0x9b, 0xa6, 0x65, 0x8d, 0xac, 0x51, 0x5b,
+	0x89, 0x9f, 0xf0, 0xca, 0x18, 0xdf, 0x59, 0xa3, 0x76, 0x69, 0xf8, 0x5f, 0x09, 0x1a, 0xb9, 0x27,
+	0x72, 0xf4, 0x0e, 0xda, 0x47, 0x4e, 0xe3, 0xe8, 0x69, 0xa6, 0x53, 0xb1, 0x6f, 0xb5, 0xee, 0x69,
+	0x42, 0xb2, 0x65, 0xfd, 0x0c, 0x19, 0xd0, 0x91, 0x53, 0xd3, 0xfc, 0x27, 0xb2, 0xd0, 0xa6, 0x5a,
+	0x21, 0xaa, 0x9f, 0xa1, 0xd7, 0xd0, 0x3a, 0x5c, 0x3a, 0x7a, 0x92, 0x31, 0x0b, 0x9d, 0x7c, 0xb2,
+	0x13, 0x3d, 0xb6, 0x7e, 0x6a, 0x1f, 0xf4, 0xed, 0x89, 0x86, 0x87, 0xf6, 0xd2, 0xbe, 0x39, 0xed,
+	0x51, 0xbe, 0x7f, 0xf3, 0xcb, 0xea, 0x5f, 0x17, 0xc9, 0x57, 0xab, 0x22, 0x7f, 0x9e, 0xff, 0x1f,
+	0x00, 0x00, 0xff, 0xff, 0xb5, 0x5a, 0xa8, 0xbf, 0x6f, 0x06, 0x00, 0x00,
 }

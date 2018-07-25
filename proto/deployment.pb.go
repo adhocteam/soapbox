@@ -3,10 +3,10 @@
 
 package proto
 
-import proto1 "github.com/golang/protobuf/proto"
+import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -14,18 +14,46 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto1.Marshal
+var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type ListDeploymentRequest struct {
-	ApplicationId int32 `protobuf:"varint,1,opt,name=application_id,json=applicationId" json:"application_id,omitempty"`
+	ApplicationId        int32    `protobuf:"varint,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListDeploymentRequest) Reset()                    { *m = ListDeploymentRequest{} }
-func (m *ListDeploymentRequest) String() string            { return proto1.CompactTextString(m) }
-func (*ListDeploymentRequest) ProtoMessage()               {}
-func (*ListDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
+func (m *ListDeploymentRequest) Reset()         { *m = ListDeploymentRequest{} }
+func (m *ListDeploymentRequest) String() string { return proto.CompactTextString(m) }
+func (*ListDeploymentRequest) ProtoMessage()    {}
+func (*ListDeploymentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{0}
+}
+func (m *ListDeploymentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListDeploymentRequest.Unmarshal(m, b)
+}
+func (m *ListDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListDeploymentRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListDeploymentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDeploymentRequest.Merge(dst, src)
+}
+func (m *ListDeploymentRequest) XXX_Size() int {
+	return xxx_messageInfo_ListDeploymentRequest.Size(m)
+}
+func (m *ListDeploymentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListDeploymentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListDeploymentRequest proto.InternalMessageInfo
 
 func (m *ListDeploymentRequest) GetApplicationId() int32 {
 	if m != nil {
@@ -35,13 +63,35 @@ func (m *ListDeploymentRequest) GetApplicationId() int32 {
 }
 
 type ListDeploymentResponse struct {
-	Deployments []*Deployment `protobuf:"bytes,1,rep,name=deployments" json:"deployments,omitempty"`
+	Deployments          []*Deployment `protobuf:"bytes,1,rep,name=deployments,proto3" json:"deployments,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *ListDeploymentResponse) Reset()                    { *m = ListDeploymentResponse{} }
-func (m *ListDeploymentResponse) String() string            { return proto1.CompactTextString(m) }
-func (*ListDeploymentResponse) ProtoMessage()               {}
-func (*ListDeploymentResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
+func (m *ListDeploymentResponse) Reset()         { *m = ListDeploymentResponse{} }
+func (m *ListDeploymentResponse) String() string { return proto.CompactTextString(m) }
+func (*ListDeploymentResponse) ProtoMessage()    {}
+func (*ListDeploymentResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{1}
+}
+func (m *ListDeploymentResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListDeploymentResponse.Unmarshal(m, b)
+}
+func (m *ListDeploymentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListDeploymentResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListDeploymentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDeploymentResponse.Merge(dst, src)
+}
+func (m *ListDeploymentResponse) XXX_Size() int {
+	return xxx_messageInfo_ListDeploymentResponse.Size(m)
+}
+func (m *ListDeploymentResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListDeploymentResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListDeploymentResponse proto.InternalMessageInfo
 
 func (m *ListDeploymentResponse) GetDeployments() []*Deployment {
 	if m != nil {
@@ -51,13 +101,35 @@ func (m *ListDeploymentResponse) GetDeployments() []*Deployment {
 }
 
 type GetDeploymentRequest struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeploymentRequest) Reset()                    { *m = GetDeploymentRequest{} }
-func (m *GetDeploymentRequest) String() string            { return proto1.CompactTextString(m) }
-func (*GetDeploymentRequest) ProtoMessage()               {}
-func (*GetDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
+func (m *GetDeploymentRequest) Reset()         { *m = GetDeploymentRequest{} }
+func (m *GetDeploymentRequest) String() string { return proto.CompactTextString(m) }
+func (*GetDeploymentRequest) ProtoMessage()    {}
+func (*GetDeploymentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{2}
+}
+func (m *GetDeploymentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeploymentRequest.Unmarshal(m, b)
+}
+func (m *GetDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeploymentRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetDeploymentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeploymentRequest.Merge(dst, src)
+}
+func (m *GetDeploymentRequest) XXX_Size() int {
+	return xxx_messageInfo_GetDeploymentRequest.Size(m)
+}
+func (m *GetDeploymentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeploymentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeploymentRequest proto.InternalMessageInfo
 
 func (m *GetDeploymentRequest) GetId() int32 {
 	if m != nil {
@@ -67,14 +139,36 @@ func (m *GetDeploymentRequest) GetId() int32 {
 }
 
 type GetLatestDeploymentRequest struct {
-	ApplicationId int32 `protobuf:"varint,1,opt,name=application_id,json=applicationId" json:"application_id,omitempty"`
-	EnvironmentId int32 `protobuf:"varint,2,opt,name=environment_id,json=environmentId" json:"environment_id,omitempty"`
+	ApplicationId        int32    `protobuf:"varint,1,opt,name=application_id,json=applicationId,proto3" json:"application_id,omitempty"`
+	EnvironmentId        int32    `protobuf:"varint,2,opt,name=environment_id,json=environmentId,proto3" json:"environment_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetLatestDeploymentRequest) Reset()                    { *m = GetLatestDeploymentRequest{} }
-func (m *GetLatestDeploymentRequest) String() string            { return proto1.CompactTextString(m) }
-func (*GetLatestDeploymentRequest) ProtoMessage()               {}
-func (*GetLatestDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{3} }
+func (m *GetLatestDeploymentRequest) Reset()         { *m = GetLatestDeploymentRequest{} }
+func (m *GetLatestDeploymentRequest) String() string { return proto.CompactTextString(m) }
+func (*GetLatestDeploymentRequest) ProtoMessage()    {}
+func (*GetLatestDeploymentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{3}
+}
+func (m *GetLatestDeploymentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetLatestDeploymentRequest.Unmarshal(m, b)
+}
+func (m *GetLatestDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetLatestDeploymentRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetLatestDeploymentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetLatestDeploymentRequest.Merge(dst, src)
+}
+func (m *GetLatestDeploymentRequest) XXX_Size() int {
+	return xxx_messageInfo_GetLatestDeploymentRequest.Size(m)
+}
+func (m *GetLatestDeploymentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetLatestDeploymentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetLatestDeploymentRequest proto.InternalMessageInfo
 
 func (m *GetLatestDeploymentRequest) GetApplicationId() int32 {
 	if m != nil {
@@ -91,18 +185,40 @@ func (m *GetLatestDeploymentRequest) GetEnvironmentId() int32 {
 }
 
 type Deployment struct {
-	Id          int32                      `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	Application *Application               `protobuf:"bytes,2,opt,name=application" json:"application,omitempty"`
-	Env         *Environment               `protobuf:"bytes,3,opt,name=env" json:"env,omitempty"`
-	Committish  string                     `protobuf:"bytes,4,opt,name=committish" json:"committish,omitempty"`
-	State       string                     `protobuf:"bytes,5,opt,name=state" json:"state,omitempty"`
-	CreatedAt   *google_protobuf.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt" json:"created_at,omitempty"`
+	Id                   int32                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Application          *Application         `protobuf:"bytes,2,opt,name=application,proto3" json:"application,omitempty"`
+	Env                  *Environment         `protobuf:"bytes,3,opt,name=env,proto3" json:"env,omitempty"`
+	Committish           string               `protobuf:"bytes,4,opt,name=committish,proto3" json:"committish,omitempty"`
+	State                string               `protobuf:"bytes,5,opt,name=state,proto3" json:"state,omitempty"`
+	CreatedAt            *timestamp.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *Deployment) Reset()                    { *m = Deployment{} }
-func (m *Deployment) String() string            { return proto1.CompactTextString(m) }
-func (*Deployment) ProtoMessage()               {}
-func (*Deployment) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{4} }
+func (m *Deployment) Reset()         { *m = Deployment{} }
+func (m *Deployment) String() string { return proto.CompactTextString(m) }
+func (*Deployment) ProtoMessage()    {}
+func (*Deployment) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{4}
+}
+func (m *Deployment) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Deployment.Unmarshal(m, b)
+}
+func (m *Deployment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Deployment.Marshal(b, m, deterministic)
+}
+func (dst *Deployment) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Deployment.Merge(dst, src)
+}
+func (m *Deployment) XXX_Size() int {
+	return xxx_messageInfo_Deployment.Size(m)
+}
+func (m *Deployment) XXX_DiscardUnknown() {
+	xxx_messageInfo_Deployment.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Deployment proto.InternalMessageInfo
 
 func (m *Deployment) GetId() int32 {
 	if m != nil {
@@ -139,7 +255,7 @@ func (m *Deployment) GetState() string {
 	return ""
 }
 
-func (m *Deployment) GetCreatedAt() *google_protobuf.Timestamp {
+func (m *Deployment) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
@@ -147,13 +263,35 @@ func (m *Deployment) GetCreatedAt() *google_protobuf.Timestamp {
 }
 
 type StartDeploymentResponse struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *StartDeploymentResponse) Reset()                    { *m = StartDeploymentResponse{} }
-func (m *StartDeploymentResponse) String() string            { return proto1.CompactTextString(m) }
-func (*StartDeploymentResponse) ProtoMessage()               {}
-func (*StartDeploymentResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{5} }
+func (m *StartDeploymentResponse) Reset()         { *m = StartDeploymentResponse{} }
+func (m *StartDeploymentResponse) String() string { return proto.CompactTextString(m) }
+func (*StartDeploymentResponse) ProtoMessage()    {}
+func (*StartDeploymentResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{5}
+}
+func (m *StartDeploymentResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StartDeploymentResponse.Unmarshal(m, b)
+}
+func (m *StartDeploymentResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StartDeploymentResponse.Marshal(b, m, deterministic)
+}
+func (dst *StartDeploymentResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StartDeploymentResponse.Merge(dst, src)
+}
+func (m *StartDeploymentResponse) XXX_Size() int {
+	return xxx_messageInfo_StartDeploymentResponse.Size(m)
+}
+func (m *StartDeploymentResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_StartDeploymentResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StartDeploymentResponse proto.InternalMessageInfo
 
 func (m *StartDeploymentResponse) GetId() int32 {
 	if m != nil {
@@ -163,13 +301,35 @@ func (m *StartDeploymentResponse) GetId() int32 {
 }
 
 type GetDeploymentStatusRequest struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeploymentStatusRequest) Reset()                    { *m = GetDeploymentStatusRequest{} }
-func (m *GetDeploymentStatusRequest) String() string            { return proto1.CompactTextString(m) }
-func (*GetDeploymentStatusRequest) ProtoMessage()               {}
-func (*GetDeploymentStatusRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{6} }
+func (m *GetDeploymentStatusRequest) Reset()         { *m = GetDeploymentStatusRequest{} }
+func (m *GetDeploymentStatusRequest) String() string { return proto.CompactTextString(m) }
+func (*GetDeploymentStatusRequest) ProtoMessage()    {}
+func (*GetDeploymentStatusRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{6}
+}
+func (m *GetDeploymentStatusRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeploymentStatusRequest.Unmarshal(m, b)
+}
+func (m *GetDeploymentStatusRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeploymentStatusRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetDeploymentStatusRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeploymentStatusRequest.Merge(dst, src)
+}
+func (m *GetDeploymentStatusRequest) XXX_Size() int {
+	return xxx_messageInfo_GetDeploymentStatusRequest.Size(m)
+}
+func (m *GetDeploymentStatusRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeploymentStatusRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeploymentStatusRequest proto.InternalMessageInfo
 
 func (m *GetDeploymentStatusRequest) GetId() int32 {
 	if m != nil {
@@ -179,13 +339,35 @@ func (m *GetDeploymentStatusRequest) GetId() int32 {
 }
 
 type GetDeploymentStatusResponse struct {
-	State string `protobuf:"bytes,1,opt,name=state" json:"state,omitempty"`
+	State                string   `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeploymentStatusResponse) Reset()                    { *m = GetDeploymentStatusResponse{} }
-func (m *GetDeploymentStatusResponse) String() string            { return proto1.CompactTextString(m) }
-func (*GetDeploymentStatusResponse) ProtoMessage()               {}
-func (*GetDeploymentStatusResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{7} }
+func (m *GetDeploymentStatusResponse) Reset()         { *m = GetDeploymentStatusResponse{} }
+func (m *GetDeploymentStatusResponse) String() string { return proto.CompactTextString(m) }
+func (*GetDeploymentStatusResponse) ProtoMessage()    {}
+func (*GetDeploymentStatusResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{7}
+}
+func (m *GetDeploymentStatusResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeploymentStatusResponse.Unmarshal(m, b)
+}
+func (m *GetDeploymentStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeploymentStatusResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetDeploymentStatusResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeploymentStatusResponse.Merge(dst, src)
+}
+func (m *GetDeploymentStatusResponse) XXX_Size() int {
+	return xxx_messageInfo_GetDeploymentStatusResponse.Size(m)
+}
+func (m *GetDeploymentStatusResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeploymentStatusResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeploymentStatusResponse proto.InternalMessageInfo
 
 func (m *GetDeploymentStatusResponse) GetState() string {
 	if m != nil {
@@ -195,13 +377,35 @@ func (m *GetDeploymentStatusResponse) GetState() string {
 }
 
 type TeardownDeploymentRequest struct {
-	Id int32 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TeardownDeploymentRequest) Reset()                    { *m = TeardownDeploymentRequest{} }
-func (m *TeardownDeploymentRequest) String() string            { return proto1.CompactTextString(m) }
-func (*TeardownDeploymentRequest) ProtoMessage()               {}
-func (*TeardownDeploymentRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{8} }
+func (m *TeardownDeploymentRequest) Reset()         { *m = TeardownDeploymentRequest{} }
+func (m *TeardownDeploymentRequest) String() string { return proto.CompactTextString(m) }
+func (*TeardownDeploymentRequest) ProtoMessage()    {}
+func (*TeardownDeploymentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_deployment_ba44ab60cbc2b9fd, []int{8}
+}
+func (m *TeardownDeploymentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TeardownDeploymentRequest.Unmarshal(m, b)
+}
+func (m *TeardownDeploymentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TeardownDeploymentRequest.Marshal(b, m, deterministic)
+}
+func (dst *TeardownDeploymentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TeardownDeploymentRequest.Merge(dst, src)
+}
+func (m *TeardownDeploymentRequest) XXX_Size() int {
+	return xxx_messageInfo_TeardownDeploymentRequest.Size(m)
+}
+func (m *TeardownDeploymentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_TeardownDeploymentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TeardownDeploymentRequest proto.InternalMessageInfo
 
 func (m *TeardownDeploymentRequest) GetId() int32 {
 	if m != nil {
@@ -211,15 +415,15 @@ func (m *TeardownDeploymentRequest) GetId() int32 {
 }
 
 func init() {
-	proto1.RegisterType((*ListDeploymentRequest)(nil), "soapbox.ListDeploymentRequest")
-	proto1.RegisterType((*ListDeploymentResponse)(nil), "soapbox.ListDeploymentResponse")
-	proto1.RegisterType((*GetDeploymentRequest)(nil), "soapbox.GetDeploymentRequest")
-	proto1.RegisterType((*GetLatestDeploymentRequest)(nil), "soapbox.GetLatestDeploymentRequest")
-	proto1.RegisterType((*Deployment)(nil), "soapbox.Deployment")
-	proto1.RegisterType((*StartDeploymentResponse)(nil), "soapbox.StartDeploymentResponse")
-	proto1.RegisterType((*GetDeploymentStatusRequest)(nil), "soapbox.GetDeploymentStatusRequest")
-	proto1.RegisterType((*GetDeploymentStatusResponse)(nil), "soapbox.GetDeploymentStatusResponse")
-	proto1.RegisterType((*TeardownDeploymentRequest)(nil), "soapbox.TeardownDeploymentRequest")
+	proto.RegisterType((*ListDeploymentRequest)(nil), "soapbox.ListDeploymentRequest")
+	proto.RegisterType((*ListDeploymentResponse)(nil), "soapbox.ListDeploymentResponse")
+	proto.RegisterType((*GetDeploymentRequest)(nil), "soapbox.GetDeploymentRequest")
+	proto.RegisterType((*GetLatestDeploymentRequest)(nil), "soapbox.GetLatestDeploymentRequest")
+	proto.RegisterType((*Deployment)(nil), "soapbox.Deployment")
+	proto.RegisterType((*StartDeploymentResponse)(nil), "soapbox.StartDeploymentResponse")
+	proto.RegisterType((*GetDeploymentStatusRequest)(nil), "soapbox.GetDeploymentStatusRequest")
+	proto.RegisterType((*GetDeploymentStatusResponse)(nil), "soapbox.GetDeploymentStatusResponse")
+	proto.RegisterType((*TeardownDeploymentRequest)(nil), "soapbox.TeardownDeploymentRequest")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -230,8 +434,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Deployments service
-
+// DeploymentsClient is the client API for Deployments service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DeploymentsClient interface {
 	ListDeployments(ctx context.Context, in *ListDeploymentRequest, opts ...grpc.CallOption) (*ListDeploymentResponse, error)
 	GetDeployment(ctx context.Context, in *GetDeploymentRequest, opts ...grpc.CallOption) (*Deployment, error)
@@ -251,7 +456,7 @@ func NewDeploymentsClient(cc *grpc.ClientConn) DeploymentsClient {
 
 func (c *deploymentsClient) ListDeployments(ctx context.Context, in *ListDeploymentRequest, opts ...grpc.CallOption) (*ListDeploymentResponse, error) {
 	out := new(ListDeploymentResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Deployments/ListDeployments", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Deployments/ListDeployments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +465,7 @@ func (c *deploymentsClient) ListDeployments(ctx context.Context, in *ListDeploym
 
 func (c *deploymentsClient) GetDeployment(ctx context.Context, in *GetDeploymentRequest, opts ...grpc.CallOption) (*Deployment, error) {
 	out := new(Deployment)
-	err := grpc.Invoke(ctx, "/soapbox.Deployments/GetDeployment", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Deployments/GetDeployment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +474,7 @@ func (c *deploymentsClient) GetDeployment(ctx context.Context, in *GetDeployment
 
 func (c *deploymentsClient) GetLatestDeployment(ctx context.Context, in *GetLatestDeploymentRequest, opts ...grpc.CallOption) (*Deployment, error) {
 	out := new(Deployment)
-	err := grpc.Invoke(ctx, "/soapbox.Deployments/GetLatestDeployment", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Deployments/GetLatestDeployment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +483,7 @@ func (c *deploymentsClient) GetLatestDeployment(ctx context.Context, in *GetLate
 
 func (c *deploymentsClient) StartDeployment(ctx context.Context, in *Deployment, opts ...grpc.CallOption) (*StartDeploymentResponse, error) {
 	out := new(StartDeploymentResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Deployments/StartDeployment", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Deployments/StartDeployment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +492,7 @@ func (c *deploymentsClient) StartDeployment(ctx context.Context, in *Deployment,
 
 func (c *deploymentsClient) GetDeploymentStatus(ctx context.Context, in *GetDeploymentStatusRequest, opts ...grpc.CallOption) (*GetDeploymentStatusResponse, error) {
 	out := new(GetDeploymentStatusResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Deployments/GetDeploymentStatus", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Deployments/GetDeploymentStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -296,15 +501,14 @@ func (c *deploymentsClient) GetDeploymentStatus(ctx context.Context, in *GetDepl
 
 func (c *deploymentsClient) TeardownDeployment(ctx context.Context, in *TeardownDeploymentRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := grpc.Invoke(ctx, "/soapbox.Deployments/TeardownDeployment", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Deployments/TeardownDeployment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Deployments service
-
+// DeploymentsServer is the server API for Deployments service.
 type DeploymentsServer interface {
 	ListDeployments(context.Context, *ListDeploymentRequest) (*ListDeploymentResponse, error)
 	GetDeployment(context.Context, *GetDeploymentRequest) (*Deployment, error)
@@ -459,9 +663,9 @@ var _Deployments_serviceDesc = grpc.ServiceDesc{
 	Metadata: "deployment.proto",
 }
 
-func init() { proto1.RegisterFile("deployment.proto", fileDescriptor5) }
+func init() { proto.RegisterFile("deployment.proto", fileDescriptor_deployment_ba44ab60cbc2b9fd) }
 
-var fileDescriptor5 = []byte{
+var fileDescriptor_deployment_ba44ab60cbc2b9fd = []byte{
 	// 500 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xdf, 0x6e, 0xd3, 0x30,
 	0x14, 0xc6, 0x9b, 0x96, 0x6e, 0xda, 0xa9, 0xda, 0xc1, 0x59, 0x81, 0x60, 0xc4, 0x56, 0x19, 0x98,

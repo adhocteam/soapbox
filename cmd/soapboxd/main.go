@@ -62,6 +62,7 @@ func main() {
 	pb.RegisterDeploymentsServer(server, apiServer)
 	pb.RegisterUsersServer(server, apiServer)
 	pb.RegisterVersionServer(server, apiServer)
+	pb.RegisterActivitiesServer(server, apiServer)
 	log.Printf("soapboxd listening on 0.0.0.0:%d", *port)
 	log.Fatal(server.Serve(ln))
 }

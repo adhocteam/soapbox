@@ -4,7 +4,7 @@ RELEASE=${RELEASE-latest}
 if [[ $RELEASE =~ ^[a-fA-F0-9]{40}$ ]]
 then
   # IF $RELEASE is a committish, use the first seven characters
-  RELEASE=$(echo $RELEASE | awk '{print substr($0,0,7)}')
+  RELEASE=${RELEASE:0:7}
 fi
 
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \

@@ -14,6 +14,10 @@ import (
 
 	"github.com/adhocteam/soapbox/models"
 	pb "github.com/adhocteam/soapbox/proto"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
+	"github.com/aws/aws-sdk-go/service/elbv2"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -38,20 +42,21 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	app.Slug = slugify(app.GetName())
 
 	model := &models.Application{
-		ID:                 int(app.Id),
-		UserID:             int(app.UserId),
-		Name:               app.GetName(),
-		Slug:               app.GetSlug(),
-		Description:        newNullString(app.Description),
-		ExternalDNS:        newNullString(app.ExternalDns),
-		GithubRepoURL:      newNullString(app.GithubRepoUrl),
-		DockerfilePath:     newNullString(app.DockerfilePath),
-		EntrypointOverride: newNullString(app.EntrypointOverride),
-		Type:               appTypePbToModel(app.Type),
-		InternalDNS:        newNullString(app.InternalDns),
-		CreatedAt:          time.Now(),
-		UpdatedAt:          time.Now(),
-		CreationState:      models.CreationStateTypeCreateInfrastructureWait,
+		ID:                  int(app.Id),
+		UserID:              int(app.UserId),
+		Name:                app.GetName(),
+		Slug:                app.GetSlug(),
+		Description:         newNullString(app.Description),
+		ExternalDNS:         newNullString(app.ExternalDns),
+		GithubRepoURL:       newNullString(app.GithubRepoUrl),
+		DockerfilePath:      newNullString(app.DockerfilePath),
+		EntrypointOverride:  newNullString(app.EntrypointOverride),
+		Type:                appTypePbToModel(app.Type),
+		InternalDNS:         newNullString(app.InternalDns),
+		CreatedAt:           time.Now(),
+		UpdatedAt:           time.Now(),
+		CreationState:       models.CreationStateTypeCreateInfrastructureWait,
+		AwsEncryptionKeyArn: app.GetAwsEncryptionKeyArn(),
 	}
 
 	if err := model.Insert(s.db); err != nil {
@@ -101,6 +106,7 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 				"-a", slug,
 				"-e", "test", // TODO(paulsmith): FIXME
 				"-t", "network")
+
 			cmd.Dir = scriptsPath
 			var buf bytes.Buffer
 			cmd.Stdout = &buf
@@ -138,6 +144,35 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			return cmd.Run()
+		})
+
+		// Assuming that the network plan and apply worked, get the ARN from the
+		//   newly created KMS key and update the application DB record with it.
+		do(func() error {
+			log.Printf("running terraform output - aws_kms_arn")
+			cmd := exec.Command("terraform", "output", "aws_kms_arn",
+				"-no-color")
+			cmd.Dir = networkDir
+			// The command will return the value of the specified output variable, so
+			//   we redirect STDOUT to our buffer so we can capture it.
+			var buf bytes.Buffer
+			cmd.Stdout = &buf
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				return errors.Wrap(err, "running `terraform output aws_kms_arn`")
+			}
+			app.AwsEncryptionKeyArn = strings.TrimSpace(buf.String())
+			// We now have the ARN, so we just have to fetch our record from the DB,
+			//   add the ARN to it, and update the record in the DB.
+			model, err := models.ApplicationByID(s.db, int(app.Id))
+			if err != nil {
+				return errors.Wrap(err, "getting application by ID from db")
+			}
+			model.AwsEncryptionKeyArn = app.GetAwsEncryptionKeyArn()
+			if err := model.Update(s.db); err != nil {
+				return errors.Wrap(err, "updating application in db")
+			}
+			return nil
 		})
 
 		do(func() error {
@@ -194,6 +229,9 @@ func (s *server) createAppInfrastructure(app *pb.Application) {
 		do(func() error {
 			setState(pb.CreationState_SUCCEEDED)
 			log.Printf("done")
+			if err := s.AddApplicationActivity(context.Background(), app.GetId(), app.GetUserId()); err != nil {
+				return errors.Wrap(err, "error adding activity")
+			}
 			return nil
 		})
 	case pb.CreationState_SUCCEEDED:
@@ -308,11 +346,13 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 	}
 
 	app := &pb.Application{
-		Id:        int32(model.ID),
-		Name:      model.Name,
-		Slug:      model.Slug,
-		Type:      appTypeModelToPb(model.Type),
-		CreatedAt: new(gpb.Timestamp),
+		Id:                  int32(model.ID),
+		UserId:              int32(model.UserID),
+		Name:                model.Name,
+		Slug:                model.Slug,
+		Type:                appTypeModelToPb(model.Type),
+		AwsEncryptionKeyArn: model.AwsEncryptionKeyArn,
+		CreatedAt:           new(gpb.Timestamp),
 	}
 
 	if model.Description.Valid {
@@ -343,4 +383,119 @@ func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationReque
 
 func setPbTimestamp(ts *gpb.Timestamp, t time.Time) {
 	ts.Seconds = t.Unix()
+}
+
+type metricParams struct {
+	count      string
+	dimName    string
+	metricType pb.MetricType
+	metricName string
+}
+
+func newMetricParams(metricType pb.MetricType) metricParams {
+	var params metricParams
+	switch metricType {
+	case pb.MetricType_REQUEST_COUNT:
+		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "RequestCount"}
+	case pb.MetricType_LATENCY:
+		params = metricParams{count: "Average", dimName: "LoadBalancer", metricType: metricType, metricName: "TargetResponseTime"}
+	case pb.MetricType_HTTP_4XX_COUNT:
+		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "HTTPCode_Target_4XX_Count"}
+	case pb.MetricType_HTTP_5XX_COUNT:
+		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "HTTPCode_Target_5XX_Count"}
+	case pb.MetricType_HTTP_2XX_COUNT:
+		params = metricParams{count: "Sum", dimName: "LoadBalancer", metricType: metricType, metricName: "HTTPCode_Target_2XX_Count"}
+	}
+
+	return params
+}
+
+func (m metricParams) getCountFromDataPoint(d cloudwatch.Datapoint) int32 {
+	var count int32
+	switch m.metricType {
+	case pb.MetricType_REQUEST_COUNT:
+		count = int32(*d.Sum)
+	case pb.MetricType_LATENCY:
+		count = int32(*d.Average * 1000) // get milliseconds
+	case pb.MetricType_HTTP_4XX_COUNT:
+		count = int32(*d.Sum)
+	case pb.MetricType_HTTP_5XX_COUNT:
+		count = int32(*d.Sum)
+	case pb.MetricType_HTTP_2XX_COUNT:
+		count = int32(*d.Sum)
+	}
+	return count
+}
+
+func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicationMetricsRequest) (*pb.ApplicationMetricsResponse, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, errors.Wrap(err, "new AWS session")
+	}
+
+	var slug string
+	{
+		// Get the application
+		id := req.GetId()
+		app, err := s.GetApplication(ctx, &pb.GetApplicationRequest{Id: id})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get application from id")
+		}
+		slug = app.GetSlug()
+	}
+
+	var lbName string
+	{
+		// Get the load balancer
+		svc := elbv2.New(sess)
+		lbs, err := svc.DescribeLoadBalancers(nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "describing load balancers")
+		}
+		name := slug + "-test" // FIXME(paulsmith)
+		for _, lb := range lbs.LoadBalancers {
+			if *lb.LoadBalancerName == name {
+				arn := strings.Split(*lb.LoadBalancerArn, "/")
+				tmp := []string{"app", name, arn[len(arn)-1]}
+				lbName = strings.Join(tmp, "/")
+				break
+			}
+		}
+	}
+
+	if lbName == "" {
+		return &pb.ApplicationMetricsResponse{}, nil
+	}
+
+	var metrics []*pb.ApplicationMetric
+
+	// Get metrics from CloudWatch
+	svc := cloudwatch.New(sess)
+	dimension := cloudwatch.Dimension{}
+	dimension.SetName("LoadBalancer").SetValue(lbName)
+	dimensions := []*cloudwatch.Dimension{&dimension}
+	metricParams := newMetricParams(req.GetMetricType())
+	statistics := []*string{&metricParams.count}
+	metricInput := cloudwatch.GetMetricStatisticsInput{}
+	metricInput.SetDimensions(dimensions).
+		SetNamespace("AWS/ApplicationELB").
+		SetMetricName(metricParams.metricName).
+		SetPeriod(360).
+		SetStatistics(statistics).
+		SetStartTime(time.Now().AddDate(0, 0, -3)).
+		SetEndTime(time.Now())
+	output, err := svc.GetMetricStatistics(&metricInput)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving metric statistics from cloudwatch")
+	}
+
+	for _, d := range output.Datapoints {
+		metric := pb.ApplicationMetric{
+			Time:  d.Timestamp.Format("2006-01-02 15:04:05"),
+			Count: metricParams.getCountFromDataPoint(*d),
+		}
+		metrics = append(metrics, &metric)
+	}
+
+	return &pb.ApplicationMetricsResponse{Metrics: metrics}, nil
 }

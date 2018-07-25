@@ -1,9 +1,11 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   before_action :require_login
+
   helper_method :current_user
   helper_method :refresh_user
   helper_method :octokit
+  helper_method :get_metrics
 
   def require_login
     redirect_to login_user_path unless current_user
@@ -24,6 +26,21 @@ class ApplicationController < ActionController::Base
   def get_user(email)
     req = Soapbox::GetUserRequest.new(email: email)
     $api_user_client.get_user(req)
+  end
+
+  def get_metrics(app_id, metric_type)
+    req = Soapbox::GetApplicationMetricsRequest.new(id: app_id, metric_type: metric_type)
+    @metrics = []
+    app_metrics = $api_client.get_application_metrics(req)
+    sorted_metrics = app_metrics.metrics.sort_by {|metric|
+      Time.parse(metric.time)
+    }
+    sorted_metrics.each do |metric|
+      m = [metric.time, metric.count]
+      @metrics << m
+    end
+
+    @metrics
   end
 
   def octokit

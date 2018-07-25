@@ -4,7 +4,24 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
 
 ## Getting started
 
-### Requirements
+### Quick and dirty using docker-compose
+
+ - Install Go 1.8 or greater - see directions [here](https://golang.org/doc/install).
+ - Install [Docker](https://docs.docker.com/engine/installation/) and [Compose](https://docs.docker.com/compose/install/). (Note that Mac and Windows users already have Compose if they install Docker.)
+ - Install [modd](https://github.com/cortesi/modd) using `go get github.com/cortesi/modd/cmd/modd`.
+ - Run `docker-compose up` to build, create and start the containers with streaming logs.
+ - Run `modd` in another terminal to start the file-watcher. Any changes to local files will rebuild binaries and restart services as needed.
+ - Visit [http://localhost:3000/](http://localhost:3000/) and go!
+   - Note that you'll have to set up Github OAuth (instructions below) in order to create and manage applications.
+ - When done, `CTRL-C` to stop the containers. Don't use `docker-compose down`, as that will remove your containers and erase the DB.
+ - To start back up again, use `docker-compose up --no-recreate`.
+
+#### Possible issues when working w/ docker-compose
+
+ - If Rails did not gracefully shutdown, you may see an error when running `docker-compose` that says, "A server is already running."  More than likely, a server is not running; docker only thinks one is.  Deleting the file `web/tmp/pids/server.pid` from the soapbox project root should solve this issue.
+ - Getting Rails errors on the landing page?  This is usually a product of having no users available in the database, so navigating to `/user/new` and creating a user should fix the problem.  If not, try clearing the `_web_session` cookie from the page.
+
+### Local requirements without docker-compose
 
  - Go 1.8 or greater - see directions [here](https://golang.org/doc/install)
  - Ruby 2.2 or greater - see directions [here](https://www.ruby-lang.org/en/documentation/installation/)
@@ -68,17 +85,29 @@ page and click on `Register a new application`.
 4. When you submit, you will see a `Client ID` and a `Client Secret`.
 Set these as the environment variables `GITHUB_OAUTH_CLIENT_ID` and
 `GITHUB_OAUTH_CLIENT_SECRET` (be sure to restart your Rails server after
-these are set).
+these are set).  If you are using `docker-compose` to build and run soapbox,
+add these to your `.env` file.
 5. Create a user in the Soapbox web UI, click `Link to GitHub` on your
 profile page, and grant the requested permissions.
 
 ## Developing Soapbox
 
 ### Installing protoc
-1. Download the latest protoc for your platform [here](https://github.com/google/protobuf/releases)
+
+`protoc` is the program that compiles protobuf files into language-specific generated code.
+
+#### Homebrew on macOS
+
+``` shell
+$ brew install protobuf
+```
+
+#### Any platform
+
+1. Download the latest `protoc` for your platform [here](https://github.com/google/protobuf/releases)
 2. Unzip the file
 3. Copy the `bin/` folder to `/usr/local/bin`
-4. Copy the 'include/' folder to `/usr/local/include`
+4. Copy the `include/` folder to `/usr/local/include`
 
 ### Making changes to protobufs
 
@@ -96,6 +125,22 @@ $ make protobufs
 $ make models
 $ make all
 ```
+
+### Making changes to the database schema
+
+Soapbox uses [xo](https://github.com/knq/xo) to generate database models.
+
+To install, run the command:
+
+``` shell
+$ go get -u github.com/knq/xo
+```
+
+Then, after you modify `db/schema.sql`, run `make schema` to generate the
+database models.
+
+(Go 1.8.0 has a [known bug](https://github.com/knq/xo/issues/95) which prevents
+xo from running, upgrade to 1.8.1 or higher)
 
 ### Go dependencies
 

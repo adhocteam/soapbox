@@ -28,6 +28,7 @@ create table applications (
        github_repo_url text,
        dockerfile_path text,
        entrypoint_override text,
+       aws_encryption_key_arn text not null default '',
        creation_state creation_state_type not null default 'CREATE_INFRASTRUCTURE_WAIT',
        created_at timestamp with time zone not null default now(),
        updated_at timestamp with time zone not null default now()
@@ -45,17 +46,9 @@ create table environments (
 
 create table configurations (
        environment_id integer references environments on delete cascade,
-       version integer not null default 1, -- TODO(paulsmith): might want to do auto-incrementing here with a sequence + trigger
+       version integer generated always as identity,
        created_at timestamp with time zone not null default now(),
        unique (environment_id, version)
-);
-
-create table config_vars (
-       environment_id integer references environments on delete cascade,
-       version integer not null,
-       name text not null,
-       value text not null,
-       unique (environment_id, version, name)
 );
 
 create table deployments (
@@ -66,4 +59,22 @@ create table deployments (
        -- TODO(paulsmith): enum? some type safety on valid values of 'current_state'?
        current_state text not null default '',
        created_at timestamp with time zone not null default now()
+);
+
+create type activity_type as enum (
+        'application_created',
+        'deployment_started',
+        'deployment_success',
+        'deployment_failure',
+        'environment_created',
+        'environment_destroyed');
+
+create table activities (
+        id serial not null primary key,
+        user_id integer references users,
+        activity activity_type,
+        application_id integer references applications,
+        deployment_id integer references deployments,
+        environment_id integer references environments,
+        created_at timestamp with time zone not null default now()
 );

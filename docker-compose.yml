@@ -1,0 +1,40 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_DB=soapbox_dev
+      - POSTGRES_USER=soapbox
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    expose:
+      - '5432'
+  soapboxd:
+    build: .
+    env_file:
+      - ./.env
+    environment:
+      - AWS_REGION=us-east-1
+      - PGHOST=postgres
+      - PGUSER=soapbox
+      - PGDATABASE=soapbox_dev
+      - PGSSLMODE=disable
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    expose:
+      - '9090'
+    depends_on:
+      - postgres
+  rails:
+    build: ./web
+    environment:
+      - SOAPBOX_API_SERVER=soapboxd:9090
+      - GITHUB_OAUTH_CLIENT_ID
+      - GITHUB_OAUTH_CLIENT_SECRET
+    volumes:
+      - ./web:/web
+    ports:
+      - '3000:3000'
+    depends_on:
+      - soapboxd
+      - postgres

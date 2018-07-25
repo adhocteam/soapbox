@@ -82,6 +82,17 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 	req.CreatedAt = new(gpb.Timestamp)
 	setPbTimestamp(req.CreatedAt, createdAt)
 
+	// create environment configuration
+	configReq := pb.CreateConfigurationRequest{EnvironmentId: req.Id}
+	_, err := s.CreateConfiguration(ctx, &configReq)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.AddCreateEnvironmentActivity(ctx, req); err != nil {
+		return nil, err
+	}
+
 	return req, nil
 }
 
@@ -89,6 +100,14 @@ func (s *server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironm
 	deleteSQL := "DELETE FROM environments WHERE id = $1"
 	if _, err := s.db.Exec(deleteSQL, req.GetId()); err != nil {
 		return nil, errors.Wrap(err, "deleting row from db")
+	}
+	activity := pb.Activity{
+		Type:          pb.ActivityType_ENVIRONMENT_DESTROYED,
+		EnvironmentId: req.GetId(),
+	}
+
+	if _, err := s.AddActivity(ctx, &activity); err != nil {
+		return &pb.Empty{}, err
 	}
 	return &pb.Empty{}, nil
 }

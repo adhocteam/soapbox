@@ -29,6 +29,7 @@ message CreateUserRequest {
 
 message GetUserRequest {
     string email = 1;
+    int32 id = 2;
 }
 
 message LoginUserRequest {

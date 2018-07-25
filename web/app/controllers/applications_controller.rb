@@ -77,7 +77,6 @@ class ApplicationsController < ApplicationController
     req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
     @app = $api_client.get_application(req)
     $api_client.delete_application(@app)
-    sleep 2
     redirect_to application_path(@app.id)
   end
 

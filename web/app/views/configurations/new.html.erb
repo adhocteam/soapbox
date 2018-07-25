@@ -1,29 +1,27 @@
 <div class="card">
-    <div class="card-header">
-	<%= @app.name %> / <%= @environment.name %>
-    </div>
-    <div class="card-block" >
-	<h4 class="card-title">Create a new configuration</h4>
-	<%= form_for :configuration, url: application_environment_configurations_path, html: {class: "configuration"} do |f| %>
-	    <% if @form.errors.any? %>
-		<div class="alert alert-danger" role="alert" >
-		    <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this configuration from being created.
-		</div>
-	    <% end %>
-	    <div id="config-vars-app"></div>
-	    <div>
-		<%= link_to 'Cancel', application_environment_configurations_path, class: "btn" %>
-		<%= f.submit "Create configuration", class: "btn btn-primary" %>
-	    </div>
-	<% end %>
-    </div>
+  <div class="card-header">
+    <%= @app.name %> / <%= @environment.name %>
+  </div>
+  <div class="card-block" >
+    <h4 class="card-title">Create a new configuration</h4>
+    <%= form_for :configuration, url: application_environment_configurations_path, html: {class: "configuration"} do |f| %>
+      <% if @form.errors.any? %>
+        <div class="alert alert-danger" role="alert" >
+          <strong>Whoops!</strong> <%= pluralize(@form.errors.count, "error") %> prevented this configuration from being created.
+        </div>
+      <% end %>
+      <div id="config-vars-app"></div>
+      <div>
+        <%= link_to 'Cancel', application_environment_configurations_path, class: "btn" %>
+        <%= f.submit "Create configuration", class: "btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
 </div>
-
 <script>
- document.addEventListener("DOMContentLoaded", () => {
-     let el = document.getElementById("config-vars-app");
-     let initial = <%= @form.config_vars.to_json.html_safe %>;
-     new ConfigVarsApp(el, initial);
- });
+  document.addEventListener("DOMContentLoaded", () => {
+    let el = document.getElementById("config-vars-app");
+    let initial = <%= @form.config_vars.to_json.html_safe %>;
+    new ConfigVarsApp(el, initial);
+  });
 </script>
-

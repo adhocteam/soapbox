@@ -1,17 +1,17 @@
 <div class="card">
   <div class="card-header" >
-      <%= link_to @app.name, application_path(@app.id) %> <span style="color: rgba(0, 0, 0, 0.3)">/</span>
-      <%= link_to 'Environments', application_environments_path(@app.id) %>
+    <%= link_to @app.name, application_path(@app.id) %> <span style="color: rgba(0, 0, 0, 0.3)">/</span>
+    <%= link_to 'Environments', application_environments_path(@app.id) %>
   </div>
   <div class="card-block" >
     <h4 class="card-title"><%= @environment.name %></h4>
     <ul class="card-text">
-	<li>
-	    <%= link_to 'Configuration', application_environment_configurations_path(environment_id: params[:id].to_i) %>
-	</li>
+      <li>
+        <%= link_to 'Configuration', application_environment_configurations_path(environment_id: params[:id].to_i) %>
+      </li>
     </ul>
     <p class="card-text text-muted">
-	<small>Created: <%= Time.at(@environment.created_at.seconds).strftime('%b %d, %Y · %l:%M %P') %></small>
+      <small>Created: <%= Time.at(@environment.created_at.seconds).strftime('%b %d, %Y · %l:%M %P') %></small>
     </p>
   </div>
 </div>

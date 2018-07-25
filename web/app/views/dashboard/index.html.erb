@@ -7,13 +7,13 @@
           <div class="card-block">
             <h5 class="card-title">Applications</h5>
             <% if @num_applications == 0 %>
-            <p class="card-text h1 mb-3">
-              <i>None yet &hellip;</i>
-            </p>
-            <%= link_to 'Create your first application!', new_application_path, class: 'btn bg-inverse text-white' %>
-          <% else  %>
-            <p class="card-text h1 mb-3"><%= @num_applications %></p>
-            <%= link_to 'Go to applications', applications_path, class: 'btn bg-inverse text-white' %>
+              <p class="card-text h1 mb-3">
+                <i>None yet &hellip;</i>
+              </p>
+              <%= link_to 'Create your first application!', new_application_path, class: 'btn bg-inverse text-white' %>
+            <% else  %>
+              <p class="card-text h1 mb-3"><%= @num_applications %></p>
+              <%= link_to 'Go to applications', applications_path, class: 'btn bg-inverse text-white' %>
             <% end %>
           </div>
         </div>
@@ -28,70 +28,71 @@
       </div>
       <br/>
       <div style="margin-top:20px;>
-      <div class="col-sm-12">
-        <table class="table table-striped">
-          <% @activities.each do |activity| %>
-          <%
-          if activity.type != :ENVIRONMENT_CREATED && activity.type != :ENVIRONMENT_DESTROYED
-            app_name = get_application_name activity.application_id
-            user_name = get_user_name activity.user_id
-          end
-          created_at = Time.at(activity.created_at.seconds).strftime('%b %d, %Y · %l:%M %P')
-          %>
-          <% case activity.type
-        when :APPLICATION_CREATED %>
-          <tr>
-            <td><%= user_name %>
-              created application:
-              <%= app_name %></td>
-            <td><%= created_at %></td>
-          </tr>
-          <% when :APPLICATION_DELETED %>
-            <tr>
-              <td><%= user_name %>
-                deleted application:
-                <%= app_name %></td>
-              <td><%= created_at %></td>
-            </tr>
-          <% when :DEPLOYMENT_STARTED %>
-          <tr>
-            <td><%= user_name %>
-              started deployment:
-              <%= app_name %></td>
-            <td><%= created_at %></td>
-          </tr>
-          <% when :DEPLOYMENT_SUCCESS %>
-          <tr>
-            <td><%= app_name %>
-              deployed successfully</td>
-            <td><%= created_at %></td>
-          </tr>
-          <% when :DEPLOYMENT_FAILURE %>
-          <tr>
-            <td><%= app_name %>
-              failed to deploy</td>
-            <td><%= created_at %></td>
-          </tr>
-          <% when :ENVIRONMENT_CREATED %>
-          <tr>
-            <td>
-              Environment:
-              <%= get_environment_name activity.environment_id %>
-              created</td>
-            <td><%= created_at %></td>
-          </tr>
-          <% when :ENVIRONMENT_DESTROYED %>
-          <tr>
-            <td>
-              Environment:
-              <%= get_environment_name activity.environment_id %>
-              deleted</td>
-            <td><%= created_at %></td>
-          </tr>
-          <% end %>
-          <% end %>
-        </table>
+        <div class="col-sm-12">
+          <table class="table table-striped">
+            <% @activities.each do |activity| %>
+              <%
+              if activity.type != :ENVIRONMENT_CREATED && activity.type != :ENVIRONMENT_DESTROYED
+                app_name = get_application_name activity.application_id
+                user_name = get_user_name activity.user_id
+              end
+              created_at = Time.at(activity.created_at.seconds).strftime('%b %d, %Y · %l:%M %P')
+              %>
+              <%
+              case activity.type
+                when :APPLICATION_CREATED %>
+                  <tr>
+                    <td><%= user_name %>
+                      created application:
+                    <%= app_name %></td>
+                    <td><%= created_at %></td>
+                  </tr>
+                <% when :APPLICATION_DELETED %>
+                  <tr>
+                    <td><%= user_name %>
+                      deleted application:
+                    <%= app_name %></td>
+                    <td><%= created_at %></td>
+                  </tr>
+                <% when :DEPLOYMENT_STARTED %>
+                  <tr>
+                    <td><%= user_name %>
+                      started deployment:
+                    <%= app_name %></td>
+                    <td><%= created_at %></td>
+                  </tr>
+                <% when :DEPLOYMENT_SUCCESS %>
+                  <tr>
+                    <td><%= app_name %>
+                    deployed successfully</td>
+                    <td><%= created_at %></td>
+                  </tr>
+                <% when :DEPLOYMENT_FAILURE %>
+                  <tr>
+                    <td><%= app_name %>
+                    failed to deploy</td>
+                    <td><%= created_at %></td>
+                  </tr>
+                <% when :ENVIRONMENT_CREATED %>
+                  <tr>
+                    <td>
+                      Environment:
+                      <%= get_environment_name activity.environment_id %>
+                    created</td>
+                    <td><%= created_at %></td>
+                  </tr>
+                <% when :ENVIRONMENT_DESTROYED %>
+                  <tr>
+                    <td>
+                      Environment:
+                      <%= get_environment_name activity.environment_id %>
+                    deleted</td>
+                    <td><%= created_at %></td>
+                  </tr>
+              <% end %>
+            <% end %>
+          </table>
+        </div>
       </div>
-    </div>
     </div>
   </div>

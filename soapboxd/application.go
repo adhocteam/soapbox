@@ -263,8 +263,8 @@ func canAccessURL(client httpHead, url string) error {
 }
 
 func (s *server) ListApplications(ctx context.Context, req *pb.ListApplicationRequest) (*pb.ListApplicationResponse, error) {
-	const query = `SELECT id, name, description, created_at FROM applications WHERE user_id = $1 ORDER BY created_at ASC`
-	rows, err := s.db.Query(query, req.UserId)
+	const query = `SELECT id, name, description, created_at FROM applications WHERE user_id = $1 AND deletion_state = $2 ORDER BY created_at ASC`
+	rows, err := s.db.Query(query, req.UserId, "NOT_DELETED")
 	if err != nil {
 		return nil, errors.Wrap(err, "querying db for apps list")
 	}

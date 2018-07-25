@@ -418,12 +418,12 @@ func setPbTimestamp(ts *gpb.Timestamp, t time.Time) {
 }
 
 func (s *server) DeleteApplication(ctx context.Context, app *pb.Application) (*pb.Empty, error) {
-	go s.deleteAppInfrastructure(app)
+	go s.deleteAppInfrastructure(ctx, app)
 
 	return &pb.Empty{}, nil
 }
 
-func (s *server) deleteAppInfrastructure(app *pb.Application) {
+func (s *server) deleteAppInfrastructure(ctx context.Context, app *pb.Application) {
 	setState := func(state pb.DeletionState) {
 		app.DeletionState = state
 		updateSQL := "UPDATE applications SET deletion_state = $1 WHERE id = $2"

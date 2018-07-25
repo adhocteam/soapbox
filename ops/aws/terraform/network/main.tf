@@ -12,6 +12,7 @@ provider "aws" {
 # KMS Application Key (for encrypting and decrypting configurations / secrets)
 resource "aws_kms_key" "config_encryption_key" {
   description = "Encryption key used to access application configurations."
+
   tags {
     Name = "${var.application_name}: ${var.environment} kms encryption key"
     app  = "${var.application_name}"

@@ -15,16 +15,16 @@
  */
 
 form .required label {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 form .required label:after {
-    content: " *";
+  content: " *";
 }
 
 main footer {
-    border-top: 1px dotted #ccc;
-    text-align: center;
-    margin: 40px 0 40px;
-    padding: 40px 0 40px;
+  border-top: 1px dotted #ccc;
+  text-align: center;
+  margin: 40px 0 40px;
+  padding: 40px 0 40px;
 }

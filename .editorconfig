@@ -11,3 +11,6 @@ insert_final_newline = true
 [{*.go,Makefile}]
 indent_style = tab
 indent_size = 4
+
+[*.proto]
+indent_size = 4

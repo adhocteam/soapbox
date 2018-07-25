@@ -35,7 +35,7 @@ Default: `["a", "b"]`
 
 Availability zones within the region that should be used.
 
-Example: `terraform apply -var 'availability_zones=["a", "b", "c"]'
+Example: `terraform apply -var 'availability_zones=["a", "b", "c"]'`
 
 NOTE: If you specify more than two availability_zones, you _must_ make corresponding changes to `az_cidr_blocks`.
 

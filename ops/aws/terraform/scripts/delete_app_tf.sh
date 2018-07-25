@@ -14,26 +14,26 @@ DYNAMO_TABLE="${DYNAMO_TABLE-soapbox-app-state-locking}"
 PWD=$(pwd)
 
 usage() {
-    echo "Usage: $(basename $0) [-a application] [-e environment]" 1>&2
-    exit 1
+  echo "Usage: $(basename $0) [-a application] [-e environment]" 1>&2
+  exit 1
 }
 
 while getopts ":a:e:" opt; do
-    case "$opt" in
-	a)
-	    APP="$OPTARG"
-	    ;;
-	e)
-	    ENV="$OPTARG"
-	    ;;
-        *)
-            usage
-            ;;
-    esac
+  case "$opt" in
+    a)
+      APP="$OPTARG"
+      ;;
+    e)
+      ENV="$OPTARG"
+      ;;
+    *)
+      usage
+      ;;
+  esac
 done
 
 if [ -z "$APP" ] || [ -z "$ENV" ]; then
-    usage
+  usage
 fi
 
 # Get a temp dir, copy the required tf files

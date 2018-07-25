@@ -16,6 +16,21 @@ Soapbox provides managed web application hosting services, encapsulating best-pr
  - When done, `CTRL-C` to stop the containers. Don't use `docker-compose down`, as that will remove your containers and erase the DB.
  - To start back up again, use `docker-compose up --no-recreate`.
 
+#### Useful docker-compose commands
+
+ - Connect to the soapboxd container:
+```
+$ docker-compose run soapboxd sh
+```
+ - Connect to the database console:
+```
+$ docker-compose run postgres psql -h postgres -U soapbox -d soapbox_dev
+```
+- Connect to the rails console:
+```
+$ docker-compose run rails rails c
+```
+
 #### Possible issues when working w/ docker-compose
 
  - If Rails did not gracefully shutdown, you may see an error when running `docker-compose` that says, "A server is already running."  More than likely, a server is not running; docker only thinks one is.  Deleting the file `web/tmp/pids/server.pid` from the soapbox project root should solve this issue.

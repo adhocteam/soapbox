@@ -57,7 +57,7 @@
       			    <%= deployment.env.name %>
       			</td>
       			<td>
-			    <%= ['success', 'failed'].include?(deployment.state) || index != 0 ? nil : render("shared/spinner") %>
+			    <%= ['success', 'failed'].include?(deployment.state) || index != 0 ? nil : render(partial: "shared/spinner", locals: { pre_text: 'Deploying...'}) %>
 			    <span class="deploy-status <%=
 						       case deployment.state
 						       when "success" then "deploy-status-success"

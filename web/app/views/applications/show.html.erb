@@ -20,13 +20,19 @@
             id="current-application"
             data-id="<%= @app.id %>"
             data-state="<%= @app.creation_state %>">
-	      <%=
-	      case @app.creation_state
-	      when :CREATE_INFRASTRUCTURE_WAIT then render("shared/spinner")
-	      when :SUCCEEDED then 'Ready'
-	      when :FAILED then 'Failed to build'
-	      end
-	      %>
+        <%=
+        case @app.deletion_state
+          when :NOT_DELETED
+            case @app.creation_state
+              when :CREATE_INFRASTRUCTURE_WAIT then render(partial: "shared/spinner", locals: { pre_text: 'Creating...' })
+              when :CREATE_INFRASTRUCTURE_SUCCEEDED then 'Ready'
+              when :CREATE_INFRASTRUCTURE_FAILED then 'Failed to build'
+            end
+          when :DELETE_INFRASTRUCTURE_WAIT then render(partial: "shared/spinner", locals: { pre_text: 'Deleting...' })
+          when :DELETE_INFRASTRUCTURE_SUCCEEDED then 'Deleted'
+          when :DELETE_INFRASTRUCTURE_FAILED then 'Failed to delete'
+        end
+        %>
           </td>
         </tr>
         <tr>
@@ -39,15 +45,15 @@
             data-id="<%= @deployment.id %>">
             <th>Latest deployment</th>
               <td>
-                <%= ['success', 'failed'].include?(@deployment.state) ?  nil : render("shared/spinner") %>
-		  <span class="deploy-status <%=
-					     case @deployment.state
-					     when "success" then "deploy-status-success"
-					     when "failed" then "deploy-status-failed"
-					     when "rollout-wait", "evaluate-wait", "rollforward" then "deploy-status-inprogress"
-					     else "deploy-status-unknown"
-					     end
-					     %>" title="<%= @deployment.state || 'unknown' %>"></span>
+                <%= ['success', 'failed'].include?(@deployment.state) ?  nil : render(partial: "shared/spinner", locals: { pre_text: 'Deploying...' }) %>
+      <span class="deploy-status <%=
+               case @deployment.state
+                 when "success" then "deploy-status-success"
+                 when "failed" then "deploy-status-failed"
+                 when "rollout-wait", "evaluate-wait", "rollforward" then "deploy-status-inprogress"
+                 else "deploy-status-unknown"
+               end
+               %>" title="<%= @deployment.state || 'unknown' %>"></span>
 
 
               </td>
@@ -70,6 +76,7 @@
     <p class="card-text text-muted"><small>Created: <%= Time.at(@app.created_at.seconds).strftime('%b %-d, %Y') %></small></p>
     <%= link_to 'View Environments', application_environments_path(@app.id), class: "btn btn-secondary" %>
     <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
+    <%= link_to 'Delete Application', application_path(@app.id), method: :delete, class: "btn btn-danger", data: { confirm: 'Are you sure? This will remove all application resources and make the application unavailable.' } %>
   </div>
 
 </div>

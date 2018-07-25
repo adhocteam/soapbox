@@ -46,6 +46,13 @@
               <%= app_name %></td>
             <td><%= created_at %></td>
           </tr>
+          <% when :APPLICATION_DELETED %>
+            <tr>
+              <td><%= user_name %>
+                deleted application:
+                <%= app_name %></td>
+              <td><%= created_at %></td>
+            </tr>
           <% when :DEPLOYMENT_STARTED %>
           <tr>
             <td><%= user_name %>

@@ -20,7 +20,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :slug, :string, 11
     optional :internal_dns, :string, 12
     optional :creation_state, :enum, 13, "soapbox.CreationState"
-    optional :aws_encryption_key_arn, :string, 14
+    optional :deletion_state, :enum, 14, "soapbox.DeletionState"
+    optional :aws_encryption_key_arn, :string, 15
   end
   add_message "soapbox.ListApplicationRequest" do
     optional :user_id, :int32, 1
@@ -55,8 +56,14 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_enum "soapbox.CreationState" do
     value :CREATE_INFRASTRUCTURE_WAIT, 0
-    value :SUCCEEDED, 1
-    value :FAILED, 2
+    value :CREATE_INFRASTRUCTURE_SUCCEEDED, 1
+    value :CREATE_INFRASTRUCTURE_FAILED, 2
+  end
+  add_enum "soapbox.DeletionState" do
+    value :NOT_DELETED, 0
+    value :DELETE_INFRASTRUCTURE_WAIT, 1
+    value :DELETE_INFRASTRUCTURE_SUCCEEDED, 2
+    value :DELETE_INFRASTRUCTURE_FAILED, 3
   end
 end
 
@@ -71,4 +78,5 @@ module Soapbox
   ApplicationType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.ApplicationType").enummodule
   MetricType = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.MetricType").enummodule
   CreationState = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.CreationState").enummodule
+  DeletionState = Google::Protobuf::DescriptorPool.generated_pool.lookup("soapbox.DeletionState").enummodule
 end

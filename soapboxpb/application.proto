@@ -9,6 +9,7 @@ service Applications {
     rpc ListApplications (ListApplicationRequest) returns (ListApplicationResponse) {}
     rpc CreateApplication (Application) returns (Application) {}
     rpc GetApplication (GetApplicationRequest) returns (Application) {}
+    rpc DeleteApplication (Application) returns (soapbox.Empty) {}
     rpc GetApplicationMetrics (GetApplicationMetricsRequest) returns (ApplicationMetricsResponse) {}
 }
 
@@ -32,8 +33,15 @@ enum MetricType {
 
 enum CreationState {
     CREATE_INFRASTRUCTURE_WAIT = 0;
-    SUCCEEDED = 1;
-    FAILED = 2;
+    CREATE_INFRASTRUCTURE_SUCCEEDED = 1;
+    CREATE_INFRASTRUCTURE_FAILED = 2;
+}
+
+enum DeletionState {
+    NOT_DELETED = 0;
+    DELETE_INFRASTRUCTURE_WAIT = 1;
+    DELETE_INFRASTRUCTURE_SUCCEEDED = 2;
+    DELETE_INFRASTRUCTURE_FAILED = 3;
 }
 
 message Application {
@@ -50,7 +58,8 @@ message Application {
     string slug = 11;
     string internal_dns = 12;
     CreationState creation_state = 13;
-    string aws_encryption_key_arn = 14;
+    DeletionState deletion_state = 14;
+    string aws_encryption_key_arn = 15;
 }
 
 message ListApplicationRequest {

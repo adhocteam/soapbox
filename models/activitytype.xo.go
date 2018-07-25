@@ -15,20 +15,23 @@ const (
 	// ActivityTypeApplicationCreated is the 'application_created' ActivityType.
 	ActivityTypeApplicationCreated = ActivityType(1)
 
+	// ActivityTypeApplicationDeleted is the 'application_deleted' ActivityType.
+	ActivityTypeApplicationDeleted = ActivityType(2)
+
 	// ActivityTypeDeploymentStarted is the 'deployment_started' ActivityType.
-	ActivityTypeDeploymentStarted = ActivityType(2)
+	ActivityTypeDeploymentStarted = ActivityType(3)
 
 	// ActivityTypeDeploymentSuccess is the 'deployment_success' ActivityType.
-	ActivityTypeDeploymentSuccess = ActivityType(3)
+	ActivityTypeDeploymentSuccess = ActivityType(4)
 
 	// ActivityTypeDeploymentFailure is the 'deployment_failure' ActivityType.
-	ActivityTypeDeploymentFailure = ActivityType(4)
+	ActivityTypeDeploymentFailure = ActivityType(5)
 
 	// ActivityTypeEnvironmentCreated is the 'environment_created' ActivityType.
-	ActivityTypeEnvironmentCreated = ActivityType(5)
+	ActivityTypeEnvironmentCreated = ActivityType(6)
 
 	// ActivityTypeEnvironmentDestroyed is the 'environment_destroyed' ActivityType.
-	ActivityTypeEnvironmentDestroyed = ActivityType(6)
+	ActivityTypeEnvironmentDestroyed = ActivityType(7)
 )
 
 // String returns the string value of the ActivityType.
@@ -38,6 +41,9 @@ func (at ActivityType) String() string {
 	switch at {
 	case ActivityTypeApplicationCreated:
 		enumVal = "application_created"
+
+	case ActivityTypeApplicationDeleted:
+		enumVal = "application_deleted"
 
 	case ActivityTypeDeploymentStarted:
 		enumVal = "deployment_started"
@@ -68,6 +74,9 @@ func (at *ActivityType) UnmarshalText(text []byte) error {
 	switch string(text) {
 	case "application_created":
 		*at = ActivityTypeApplicationCreated
+
+	case "application_deleted":
+		*at = ActivityTypeApplicationDeleted
 
 	case "deployment_started":
 		*at = ActivityTypeDeploymentStarted

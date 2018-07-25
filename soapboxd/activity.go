@@ -19,6 +19,7 @@ var activityTypeToModel = map[pb.ActivityType]models.ActivityType{
 	pb.ActivityType_DEPLOYMENT_FAILURE:    models.ActivityTypeDeploymentFailure,
 	pb.ActivityType_ENVIRONMENT_CREATED:   models.ActivityTypeEnvironmentCreated,
 	pb.ActivityType_ENVIRONMENT_DESTROYED: models.ActivityTypeEnvironmentDestroyed,
+	pb.ActivityType_APPLICATION_DELETED:   models.ActivityTypeApplicationDeleted,
 }
 
 func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Empty, error) {
@@ -49,6 +50,7 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 		models.ActivityTypeDeploymentFailure:    pb.ActivityType_DEPLOYMENT_FAILURE,
 		models.ActivityTypeEnvironmentCreated:   pb.ActivityType_ENVIRONMENT_CREATED,
 		models.ActivityTypeEnvironmentDestroyed: pb.ActivityType_ENVIRONMENT_DESTROYED,
+		models.ActivityTypeApplicationDeleted:   pb.ActivityType_APPLICATION_DELETED,
 	}
 
 	const query = `
@@ -108,14 +110,14 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 	return &pb.ListActivitiesResponse{Activities: activities}, nil
 }
 
-func (s *server) AddApplicationActivity(ctx context.Context, applicationId int32, userId int32) error {
+func (s *server) AddApplicationActivity(ctx context.Context, applicationId int32, userId int32, activityType models.ActivityType) error {
 	query := `
 	INSERT INTO activities (user_id, activity, application_id)
 	VALUES ($1, $2, $3)
 	`
 	_, err := s.db.Exec(query,
 		userId,
-		models.ActivityTypeApplicationCreated,
+		activityType,
 		applicationId,
 	)
 	if err != nil {

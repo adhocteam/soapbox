@@ -15,11 +15,11 @@ const (
 	// CreationStateTypeCreateInfrastructureWait is the 'CREATE_INFRASTRUCTURE_WAIT' CreationStateType.
 	CreationStateTypeCreateInfrastructureWait = CreationStateType(1)
 
-	// CreationStateTypeSucceeded is the 'SUCCEEDED' CreationStateType.
-	CreationStateTypeSucceeded = CreationStateType(2)
+	// CreationStateTypeCreateInfrastructureSucceeded is the 'CREATE_INFRASTRUCTURE_SUCCEEDED' CreationStateType.
+	CreationStateTypeCreateInfrastructureSucceeded = CreationStateType(2)
 
-	// CreationStateTypeFailed is the 'FAILED' CreationStateType.
-	CreationStateTypeFailed = CreationStateType(3)
+	// CreationStateTypeCreateInfrastructureFailed is the 'CREATE_INFRASTRUCTURE_FAILED' CreationStateType.
+	CreationStateTypeCreateInfrastructureFailed = CreationStateType(3)
 )
 
 // String returns the string value of the CreationStateType.
@@ -30,11 +30,11 @@ func (cst CreationStateType) String() string {
 	case CreationStateTypeCreateInfrastructureWait:
 		enumVal = "CREATE_INFRASTRUCTURE_WAIT"
 
-	case CreationStateTypeSucceeded:
-		enumVal = "SUCCEEDED"
+	case CreationStateTypeCreateInfrastructureSucceeded:
+		enumVal = "CREATE_INFRASTRUCTURE_SUCCEEDED"
 
-	case CreationStateTypeFailed:
-		enumVal = "FAILED"
+	case CreationStateTypeCreateInfrastructureFailed:
+		enumVal = "CREATE_INFRASTRUCTURE_FAILED"
 	}
 
 	return enumVal
@@ -51,11 +51,11 @@ func (cst *CreationStateType) UnmarshalText(text []byte) error {
 	case "CREATE_INFRASTRUCTURE_WAIT":
 		*cst = CreationStateTypeCreateInfrastructureWait
 
-	case "SUCCEEDED":
-		*cst = CreationStateTypeSucceeded
+	case "CREATE_INFRASTRUCTURE_SUCCEEDED":
+		*cst = CreationStateTypeCreateInfrastructureSucceeded
 
-	case "FAILED":
-		*cst = CreationStateTypeFailed
+	case "CREATE_INFRASTRUCTURE_FAILED":
+		*cst = CreationStateTypeCreateInfrastructureFailed
 
 	default:
 		return errors.New("invalid CreationStateType")

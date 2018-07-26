@@ -1,32 +1,30 @@
-
-
 .deployments-active {
-    ul {
-	li {
-	    padding: 20px 0;
-	}
+  ul {
+    li {
+      padding: 20px 0;
     }
+  }
 }
 
 .deploy-status {
-    display: block;
-    border-radius: 100px;
-    width: 15px;
-    height: 15px;
+  display: block;
+  border-radius: 100px;
+  width: 15px;
+  height: 15px;
 }
 
 .deploy-status-success {
-    background: rgba(10, 190, 10, 100%);
+  background: rgba(10, 190, 10, 100%);
 }
 
 .deploy-status-unknown {
-    background: #999;
+  background: #999;
 }
 
 .deploy-status-failed {
-    background: rgba(190, 10, 10, 100%);
+  background: rgba(190, 10, 10, 100%);
 }
 
 .deploy-status-inprogress {
-    background: rgba(10, 10, 190, 100%);
+  background: rgba(10, 10, 190, 100%);
 }

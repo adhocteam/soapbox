@@ -20,19 +20,19 @@
             id="current-application"
             data-id="<%= @app.id %>"
             data-state="<%= @app.creation_state %>">
-        <%=
-        case @app.deletion_state
-          when :NOT_DELETED
-            case @app.creation_state
-              when :CREATE_INFRASTRUCTURE_WAIT then render(partial: "shared/spinner", locals: { pre_text: 'Creating...' })
-              when :CREATE_INFRASTRUCTURE_SUCCEEDED then 'Ready'
-              when :CREATE_INFRASTRUCTURE_FAILED then 'Failed to build'
+            <%=
+            case @app.deletion_state
+              when :NOT_DELETED
+                case @app.creation_state
+                  when :CREATE_INFRASTRUCTURE_WAIT then render(partial: "shared/spinner", locals: { pre_text: 'Creating...' })
+                  when :CREATE_INFRASTRUCTURE_SUCCEEDED then 'Ready'
+                  when :CREATE_INFRASTRUCTURE_FAILED then 'Failed to build'
+                end
+              when :DELETE_INFRASTRUCTURE_WAIT then render(partial: "shared/spinner", locals: { pre_text: 'Deleting...' })
+              when :DELETE_INFRASTRUCTURE_SUCCEEDED then 'Deleted'
+              when :DELETE_INFRASTRUCTURE_FAILED then 'Failed to delete'
             end
-          when :DELETE_INFRASTRUCTURE_WAIT then render(partial: "shared/spinner", locals: { pre_text: 'Deleting...' })
-          when :DELETE_INFRASTRUCTURE_SUCCEEDED then 'Deleted'
-          when :DELETE_INFRASTRUCTURE_FAILED then 'Failed to delete'
-        end
-        %>
+            %>
           </td>
         </tr>
         <tr>
@@ -44,26 +44,24 @@
             data-state="<%= @deployment.state %>"
             data-id="<%= @deployment.id %>">
             <th>Latest deployment</th>
-              <td>
-                <%= ['success', 'failed'].include?(@deployment.state) ?  nil : render(partial: "shared/spinner", locals: { pre_text: 'Deploying...' }) %>
-      <span class="deploy-status <%=
-               case @deployment.state
-                 when "success" then "deploy-status-success"
-                 when "failed" then "deploy-status-failed"
-                 when "rollout-wait", "evaluate-wait", "rollforward" then "deploy-status-inprogress"
-                 else "deploy-status-unknown"
-               end
-               %>" title="<%= @deployment.state || 'unknown' %>"></span>
-
-
-              </td>
-              <td>
-                <code><%= link_to @deployment.committish[0..7], "#{@github_url}/commit/#{@deployment.committish}" %></code> /
-                <%= @deployment.env.name %>
-              </td>
-              <td>
-                <%= Time.at(@deployment.created_at.seconds).strftime('%b %d, %Y · %l:%M %P') %>
-              </td>
+            <td>
+              <%= ['success', 'failed'].include?(@deployment.state) ?  nil : render(partial: "shared/spinner", locals: { pre_text: 'Deploying...' }) %>
+              <span class="deploy-status <%=
+                case @deployment.state
+                  when "success" then "deploy-status-success"
+                  when "failed" then "deploy-status-failed"
+                  when "rollout-wait", "evaluate-wait", "rollforward" then "deploy-status-inprogress"
+                  else "deploy-status-unknown"
+                end
+              %>" title="<%= @deployment.state || 'unknown' %>"></span>
+            </td>
+            <td>
+              <code><%= link_to @deployment.committish[0..7], "#{@github_url}/commit/#{@deployment.committish}" %></code> /
+              <%= @deployment.env.name %>
+            </td>
+            <td>
+              <%= Time.at(@deployment.created_at.seconds).strftime('%b %d, %Y · %l:%M %P') %>
+            </td>
           </tr>
         <% else %>
           <tr>
@@ -78,7 +76,6 @@
     <%= link_to 'View Deployments', application_deployments_path(@app.id), class: "btn btn-secondary" %>
     <%= link_to 'Delete Application', application_path(@app.id), method: :delete, class: "btn btn-danger", data: { confirm: 'Are you sure? This will remove all application resources and make the application unavailable.' } %>
   </div>
-
 </div>
 <div class="card">
   <div class="card-header">Stats</div>
@@ -98,7 +95,6 @@
     <div id="2xx_chart"></div>
   </div>
 </div>
-
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <%= javascript_tag do -%>
   google.charts.load('current', {'packages':['corechart']});
@@ -189,7 +185,6 @@
   }
 
 <% end -%>
-
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     let el = document.getElementById("current-deployment");

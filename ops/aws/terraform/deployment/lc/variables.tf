@@ -7,7 +7,7 @@ variable "application_name" {
 }
 
 variable "release" {
-  type = "string"
+  type    = "string"
   default = "latest"
 }
 

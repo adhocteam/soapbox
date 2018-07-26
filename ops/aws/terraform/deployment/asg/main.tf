@@ -44,10 +44,10 @@ module "launch_config" {
 
 # ALB target group and listeners
 resource "aws_alb_target_group" "application_target_group" {
-  name     = "${var.application_name}-${var.environment}"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = "${data.aws_vpc.application_vpc.id}"
+  name                 = "${var.application_name}-${var.environment}"
+  port                 = 80
+  protocol             = "HTTP"
+  vpc_id               = "${data.aws_vpc.application_vpc.id}"
   deregistration_delay = 60
 
   health_check {
@@ -139,7 +139,7 @@ resource "aws_autoscaling_group" "asg_blue" {
       key                 = "deploystate"
       value               = "blue"
       propagate_at_launch = false
-    }
+    },
   ]
 
   lifecycle {
@@ -195,7 +195,7 @@ resource "aws_autoscaling_group" "asg_green" {
       key                 = "deploystate"
       value               = "green"
       propagate_at_launch = false
-    }
+    },
   ]
 
   lifecycle {

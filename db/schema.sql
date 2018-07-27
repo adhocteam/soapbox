@@ -58,7 +58,7 @@ create table configurations (
   environment_id integer references environments on delete cascade,
   version integer generated always as identity,
   created_at timestamp with time zone not null default now(),
-  unique (environment_id, version)
+  primary key (environment_id, version)
 );
 
 create table deployments (

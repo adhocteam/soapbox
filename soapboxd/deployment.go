@@ -260,7 +260,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	const appdir = "appdir"
 	cmd := exec.Command("git", "clone", app.githubRepoUrl, appdir)
 	cmd.Dir = tempdir
-	log.Printf("cloning repo")
+	log.Println("cloning repo")
 	doCmd(cmd)
 
 	committish := dep.GetCommittish()
@@ -547,7 +547,7 @@ service nginx reload
 
 	setState("success")
 	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_SUCCESS, dep); err != nil {
-		log.Printf("error adding deployment activity", err)
+		log.Println("error adding deployment activity", err)
 	}
 }
 

@@ -1,10 +1,13 @@
 pipeline {
+  agent any
   stages {
     stage ("Build container") {
-      sh '''
-        set -e
-        docker build --target builder -t soapboxbuilder .
-      '''
+      steps {
+        sh '''
+          set -e
+          docker build --target builder -t soapboxbuilder .
+        '''
+      }
     }
     stage ("Check formatting") {
       steps {

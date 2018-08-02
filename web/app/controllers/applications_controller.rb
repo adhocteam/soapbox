@@ -6,7 +6,7 @@ class ApplicationsController < ApplicationController
 
   def index
     req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)
-    res = $api_client.list_applications(req, user_metadata)
+    res = $api_client.applications.list_applications(req, user_metadata)
     if res.applications.count == 0
       redirect_to new_application_path
     else
@@ -49,7 +49,7 @@ class ApplicationsController < ApplicationController
                                      github_repo_url: @form.github_repo_url,
                                      type: type,
                                      user_id: current_user.id)
-      app = $api_client.create_application(app, user_metadata)
+      app = $api_client.applications.create_application(app, user_metadata)
       redirect_to application_path(app.id)
     else
       render :new
@@ -58,7 +58,7 @@ class ApplicationsController < ApplicationController
 
   def show
     req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
-    @app = $api_client.get_application(req, user_metadata)
+    @app = $api_client.applications.get_application(req, user_metadata)
 
     req = Soapbox::ListDeploymentRequest.new(application_id: params[:id].to_i)
     res = $api_client.deployments.list_deployments(req, user_metadata)
@@ -75,8 +75,8 @@ class ApplicationsController < ApplicationController
 
   def destroy
     req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
-    @app = $api_client.get_application(req)
-    $api_client.delete_application(@app)
+    @app = $api_client.applications.get_application(req)
+    $api_client.applications.delete_application(@app)
     redirect_to application_path(@app.id)
   end
 

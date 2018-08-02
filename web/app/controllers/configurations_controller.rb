@@ -35,7 +35,7 @@ class ConfigurationsController < ApplicationController
 
   def set_context
     req = Soapbox::GetApplicationRequest.new(id: params[:application_id].to_i)
-    @app = $api_client.get_application(req, user_metadata)
+    @app = $api_client.applications.get_application(req, user_metadata)
     req = Soapbox::GetEnvironmentRequest.new(id: params[:environment_id].to_i)
     @environment = $api_client.environments.get_environment(req, user_metadata)
   end

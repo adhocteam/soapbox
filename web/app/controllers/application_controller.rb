@@ -40,7 +40,7 @@ class ApplicationController < ActionController::Base
   def get_metrics(app_id, metric_type)
     req = Soapbox::GetApplicationMetricsRequest.new(id: app_id, metric_type: metric_type)
     @metrics = []
-    app_metrics = $api_client.get_application_metrics(req)
+    app_metrics = $api_client.applications.get_application_metrics(req)
     sorted_metrics = app_metrics.metrics.sort_by {|metric|
       Time.parse(metric.time)
     }

@@ -296,7 +296,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	const soapboxImageBucket = "soapbox-app-images"
 	objectKey := fmt.Sprintf("%s/%s-%s.tar.gz", app.slug, app.slug, committish)
 	do(func() error {
-		return newS3Storage(app.sess).uploadFile(soapboxImageBucket, objectKey, filename)
+		return s.objectStore.UploadFile(soapboxImageBucket, objectKey, filename)
 	})
 
 	setState("evaluate-wait")

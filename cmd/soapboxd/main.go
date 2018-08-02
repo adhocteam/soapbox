@@ -15,6 +15,8 @@ import (
 	"github.com/adhocteam/soapbox/buildinfo"
 	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/adhocteam/soapbox/soapboxd"
+	"github.com/adhocteam/soapbox/soapboxd/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	_ "github.com/lib/pq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -53,9 +55,24 @@ func main() {
 		opts = append(opts, serverInterceptor())
 	}
 
+	// create AWS session (read aws config)
+	sess, err := session.NewSession()
+	if err != nil {
+		log.Fatalf("couldn't load aws config")
+	}
+
+	// create s3storage service. it feels a little weird to pass this to the configStore
+	// and have it on the server struct, but it's used directly during deployments for storing docker images
+	s3 := aws.NewS3Storage(sess)
+
+	kms := aws.NewKMSClient(sess)
+
+	// storage for application-environment level sets of configuration variables
+	configStore := aws.NewS3ConfigurationStore(s3, "soapbox-app-configs", kms)
+
 	server := grpc.NewServer(opts...)
-	config := getConfig()
-	apiServer := soapboxd.NewServer(db, nil, config)
+	soapboxConfig := getConfig()
+	apiServer := soapboxd.NewServer(db, nil, soapboxConfig, configStore, s3)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterConfigurationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)

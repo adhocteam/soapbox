@@ -1,4 +1,4 @@
-package soapboxd
+package aws
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,7 +10,7 @@ type kmsClient struct {
 	svc *kms.KMS
 }
 
-func newKMSClient(sess *session.Session) *kmsClient {
+func NewKMSClient(sess *session.Session) *kmsClient {
 	return &kmsClient{svc: kms.New(sess)}
 }
 

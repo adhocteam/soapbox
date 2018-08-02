@@ -2,24 +2,16 @@ package soapboxd
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"os"
 	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/aws/aws-sdk-go/aws/session"
 
 	"github.com/adhocteam/soapbox/proto"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
-
-const soapboxConfigsBucket string = "soapbox-app-configs"
 
 func (s *server) ListConfigurations(ctx context.Context, req *proto.ListConfigurationRequest) (*proto.ListConfigurationResponse, error) {
 	// TODO(paulsmith): maybe embed actual config vars in response payload
@@ -76,28 +68,22 @@ LIMIT 1
 	}
 	setPbTimestamp(config.CreatedAt, createdAt)
 
-	sess, err := session.NewSession()
+	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
 	if err != nil {
-		return nil, errors.Wrap(err, "creating new session")
+		return nil, errors.Wrap(err, "getting environment")
 	}
 
-	configObjectKey, err := s.GetS3ObjectKey(ctx, envID, config.Version)
+	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
 	if err != nil {
-		return nil, errors.Wrap(err, "getting s3 object key")
+		return nil, errors.Wrap(err, "getting application")
 	}
 
-	encryptedConfig, err := newS3Storage(sess).downloadFile(soapboxConfigsBucket, configObjectKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "downloading config from s3")
-	}
+	appSlug := app.GetSlug()
+	envSlug := env.GetSlug()
 
-	serializedConfig, err := newKMSClient(sess).decrypt(encryptedConfig)
+	config.ConfigVars, err = s.configurationStore.GetConfigVars(appSlug, envSlug, config.Version)
 	if err != nil {
-		return nil, errors.Wrap(err, "decrypting config")
-	}
-
-	if json.Unmarshal([]byte(serializedConfig), &config.ConfigVars) != nil {
-		return nil, errors.Wrap(err, "parsing json")
+		return nil, errors.Wrap(err, "getting config variables")
 	}
 
 	return config, nil
@@ -126,15 +112,33 @@ RETURNING created_at, version`
 		return nil, errors.Wrap(err, "inserting into configurations table")
 	}
 
-	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "committing transaction")
-	}
-
 	setPbTimestamp(config.CreatedAt, createdAt)
 
-	err = s.UploadConfigurationsToS3(ctx, req, config)
+	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
 	if err != nil {
-		return nil, errors.Wrap(err, "uploading configurations to S3")
+		tx.Rollback()
+		return nil, errors.Wrap(err, "getting environment")
+	}
+
+	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
+	if err != nil {
+		tx.Rollback()
+		return nil, errors.Wrap(err, "getting application")
+	}
+
+	kmsKeyARN := app.GetAwsEncryptionKeyArn()
+
+	appSlug := app.GetSlug()
+	envSlug := env.GetSlug()
+
+	err = s.configurationStore.SaveConfigVars(appSlug, envSlug, config.Version, config.ConfigVars, kmsKeyARN)
+	if err != nil {
+		tx.Rollback()
+		return nil, errors.Wrap(err, "saving config variables")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "committing transaction")
 	}
 
 	return config, nil
@@ -151,22 +155,27 @@ func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfi
 
 	query := `DELETE FROM configurations WHERE environment_id = $1 AND version = $2`
 	if _, err := tx.Exec(query, envID, version); err != nil {
-		return nil, errors.Wrap(err, "deleting config_vars")
+		return nil, errors.Wrap(err, "deleting configuration from local database")
 	}
 
-	sess, err := session.NewSession()
+	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
 	if err != nil {
-		return nil, errors.Wrap(err, "creating new aws session")
+		tx.Rollback()
+		return nil, errors.Wrap(err, "getting environment")
 	}
 
-	key, err := s.GetS3ObjectKey(ctx, envID, version)
+	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
 	if err != nil {
-		return nil, errors.Wrap(err, "getting s3 object key")
+		tx.Rollback()
+		return nil, errors.Wrap(err, "getting application")
 	}
 
-	err = newS3Storage(sess).deleteFile(soapboxConfigsBucket, key)
+	appSlug := app.GetSlug()
+	envSlug := env.GetSlug()
+
+	err = s.configurationStore.DeleteConfigVars(appSlug, envSlug, version)
 	if err != nil {
-		return nil, errors.Wrap(err, "deleting file")
+		return nil, errors.Wrap(err, "deleting config variables")
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -174,72 +183,4 @@ func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfi
 	}
 
 	return &proto.Empty{}, nil
-}
-
-func (s *server) GetS3ObjectKey(ctx context.Context, envID int32, version int32) (string, error) {
-	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
-	if err != nil {
-		return "", errors.Wrap(err, "getting environment")
-	}
-
-	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
-	if err != nil {
-		return "", errors.Wrap(err, "getting application")
-	}
-
-	appSlug := app.GetSlug()
-	envSlug := env.GetSlug()
-	return fmt.Sprintf("%s/%s/%s-configuration-v%d.json", appSlug, envSlug, appSlug, version), nil
-
-}
-
-func (s *server) UploadConfigurationsToS3(ctx context.Context, req *proto.CreateConfigurationRequest, config *proto.Configuration) error {
-	// First, get all of the application data.
-	envID := req.GetEnvironmentId()
-	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
-	if err != nil {
-		return errors.Wrap(err, "getting environment")
-	}
-	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
-	if err != nil {
-		return errors.Wrap(err, "getting application")
-	}
-
-	// Encode configurations to JSON.
-	serializedConfigs, err := json.Marshal(config.ConfigVars)
-	if err != nil {
-		return errors.Wrap(err, "serializing configurations to JSON")
-	}
-
-	// Create a new AWS session.
-	sess, err := session.NewSession()
-	if err != nil {
-		return errors.Wrap(err, "creating new session")
-	}
-
-	// Encrypt the JSON using KMS
-	// The encryption key is stored in the applications table of the database.
-	encryptedConfigs, err := newKMSClient(sess).encrypt(app.GetAwsEncryptionKeyArn(), serializedConfigs)
-	if err != nil {
-		return errors.Wrap(err, "encrypting configurations")
-	}
-
-	tmpfile, err := ioutil.TempFile("", "config")
-	if err != nil {
-		return errors.Wrap(err, "creating temporary file")
-	}
-
-	defer os.Remove(tmpfile.Name())
-
-	if _, err := tmpfile.Write(encryptedConfigs.CiphertextBlob); err != nil {
-		return errors.Wrap(err, "writing encrypted config to temporary file")
-	}
-
-	// Upload the encrypted configs JSON file to S3
-	configObjectKey, err := s.GetS3ObjectKey(ctx, envID, config.GetVersion())
-	if err != nil {
-		return errors.Wrap(err, "getting s3 object key")
-	}
-
-	return newS3Storage(sess).uploadFile(soapboxConfigsBucket, configObjectKey, tmpfile.Name())
 }

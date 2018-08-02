@@ -16,29 +16,29 @@ DYNAMO_TABLE="${DYNAMO_TABLE-soapbox-app-state-locking}"
 PWD=$(pwd)
 
 usage() {
-    echo "Usage: $(basename $0) [-a application] [-e environment] [-t <network|deployment>]" 1>&2
-    exit 1
+  echo "Usage: $(basename $0) [-a application] [-e environment] [-t <network|deployment>]" 1>&2
+  exit 1
 }
 
 while getopts ":a:e:t:" opt; do
-    case "$opt" in
-	a)
-	    APP="$OPTARG"
-	    ;;
-	e)
-	    ENV="$OPTARG"
-	    ;;
-        t)
-            TYPE="$OPTARG"
-            ;;
-        *)
-            usage
-            ;;
-    esac
+  case "$opt" in
+    a)
+      APP="$OPTARG"
+      ;;
+    e)
+      ENV="$OPTARG"
+      ;;
+    t)
+      TYPE="$OPTARG"
+      ;;
+    *)
+      usage
+      ;;
+  esac
 done
 
 if [ -z "$APP" ] || [ -z "$ENV" ] || [ -z "$TYPE" ]; then
-    usage
+  usage
 fi
 
 # Get a temp dir, copy the required tf files
@@ -60,11 +60,11 @@ fi
 # in-place. The variable name should be surrounded by '#'s in the
 # file, for example: #APP_NAME#
 replace_in_place () {
-    local name="$1"
-    local value="$2"
-    local filename="$3"
-    sed -e "s/#${name}#/$value/" "$filename" > "$filename.new"
-    mv -- "$filename.new" "$filename"
+  local name="$1"
+  local value="$2"
+  local filename="$3"
+  sed -e "s/#${name}#/$value/" "$filename" > "$filename.new"
+  mv -- "$filename.new" "$filename"
 }
 
 # Populate backend.tfvar.sample with appropriate valuess

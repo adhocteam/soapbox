@@ -21,6 +21,7 @@ enum ActivityType {
     DEPLOYMENT_FAILURE = 3;
     ENVIRONMENT_CREATED = 4;
     ENVIRONMENT_DESTROYED = 5;
+    APPLICATION_DELETED = 6;
 }
 
 message ListActivitiesResponse {

@@ -8,6 +8,11 @@ variable "application_releases_bucket" {
   default = "soapbox-app-images"
 }
 
+variable "application_configs_bucket" {
+  type    = "string"
+  default = "soapbox-app-configs"
+}
+
 variable "application_state_bucket" {
   type    = "string"
   default = "soapbox-app-tf-state"

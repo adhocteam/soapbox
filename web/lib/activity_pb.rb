@@ -27,6 +27,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     value :DEPLOYMENT_FAILURE, 3
     value :ENVIRONMENT_CREATED, 4
     value :ENVIRONMENT_DESTROYED, 5
+    value :APPLICATION_DELETED, 6
   end
 end
 

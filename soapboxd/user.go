@@ -101,7 +101,7 @@ func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 	if getUserErr == sql.ErrNoRows {
 		return res, nil
 	} else if getUserErr != nil {
-		return nil, getUserErr
+		return nil, errors.Cause(getUserErr)
 	}
 
 	if bcryptErr := bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password)); bcryptErr != nil {

@@ -2,7 +2,7 @@ require 'application_pb'
 require 'deployment_pb'
 
 class ApplicationsController < ApplicationController
-  before_action :find_repositories, only: [:new, :create], if: :current_user
+  before_action :find_repositories, only: %i[new create], if: :current_user
 
   def index
     req = Soapbox::ListApplicationRequest.new(user_id: current_user.id)
@@ -71,6 +71,13 @@ class ApplicationsController < ApplicationController
       format.html
       format.json { render json: @app.as_json }
     end
+  end
+
+  def destroy
+    req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
+    @app = $api_client.get_application(req)
+    $api_client.delete_application(@app)
+    redirect_to application_path(@app.id)
   end
 
   private

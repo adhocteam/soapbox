@@ -3,7 +3,7 @@
 
 package proto
 
-import proto1 "github.com/golang/protobuf/proto"
+import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
 
@@ -13,20 +13,48 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto1.Marshal
+var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type GetVersionResponse struct {
-	Version   string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
-	GitCommit string `protobuf:"bytes,2,opt,name=git_commit,json=gitCommit" json:"git_commit,omitempty"`
-	BuildTime string `protobuf:"bytes,3,opt,name=build_time,json=buildTime" json:"build_time,omitempty"`
+	Version              string   `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	GitCommit            string   `protobuf:"bytes,2,opt,name=git_commit,json=gitCommit,proto3" json:"git_commit,omitempty"`
+	BuildTime            string   `protobuf:"bytes,3,opt,name=build_time,json=buildTime,proto3" json:"build_time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetVersionResponse) Reset()                    { *m = GetVersionResponse{} }
-func (m *GetVersionResponse) String() string            { return proto1.CompactTextString(m) }
-func (*GetVersionResponse) ProtoMessage()               {}
-func (*GetVersionResponse) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
+func (m *GetVersionResponse) Reset()         { *m = GetVersionResponse{} }
+func (m *GetVersionResponse) String() string { return proto.CompactTextString(m) }
+func (*GetVersionResponse) ProtoMessage()    {}
+func (*GetVersionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_version_05ac553e5bec2404, []int{0}
+}
+func (m *GetVersionResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetVersionResponse.Unmarshal(m, b)
+}
+func (m *GetVersionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetVersionResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetVersionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVersionResponse.Merge(dst, src)
+}
+func (m *GetVersionResponse) XXX_Size() int {
+	return xxx_messageInfo_GetVersionResponse.Size(m)
+}
+func (m *GetVersionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVersionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVersionResponse proto.InternalMessageInfo
 
 func (m *GetVersionResponse) GetVersion() string {
 	if m != nil {
@@ -50,7 +78,7 @@ func (m *GetVersionResponse) GetBuildTime() string {
 }
 
 func init() {
-	proto1.RegisterType((*GetVersionResponse)(nil), "soapbox.GetVersionResponse")
+	proto.RegisterType((*GetVersionResponse)(nil), "soapbox.GetVersionResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -61,8 +89,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Version service
-
+// VersionClient is the client API for Version service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type VersionClient interface {
 	GetVersion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVersionResponse, error)
 }
@@ -77,15 +106,14 @@ func NewVersionClient(cc *grpc.ClientConn) VersionClient {
 
 func (c *versionClient) GetVersion(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetVersionResponse, error) {
 	out := new(GetVersionResponse)
-	err := grpc.Invoke(ctx, "/soapbox.Version/GetVersion", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/soapbox.Version/GetVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Version service
-
+// VersionServer is the server API for Version service.
 type VersionServer interface {
 	GetVersion(context.Context, *Empty) (*GetVersionResponse, error)
 }
@@ -125,9 +153,9 @@ var _Version_serviceDesc = grpc.ServiceDesc{
 	Metadata: "version.proto",
 }
 
-func init() { proto1.RegisterFile("version.proto", fileDescriptor7) }
+func init() { proto.RegisterFile("version.proto", fileDescriptor_version_05ac553e5bec2404) }
 
-var fileDescriptor7 = []byte{
+var fileDescriptor_version_05ac553e5bec2404 = []byte{
 	// 174 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2d, 0x4b, 0x2d, 0x2a,
 	0xce, 0xcc, 0xcf, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2f, 0xce, 0x4f, 0x2c, 0x48,

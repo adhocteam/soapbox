@@ -1,8 +1,9 @@
 require 'deployment_pb'
 
 class DeploymentsController < ApplicationController
-  before_action :set_application, only: [:index, :create, :new, :show]
-  before_action :set_environments, only: [:new, :create]
+  before_action :set_application, only: %i[index create new show]
+  before_action :set_environments, only: %i[new create]
+  before_action :find_commits, only: :new
 
   def index
     req = Soapbox::ListDeploymentRequest.new(application_id: params[:application_id].to_i)
@@ -69,5 +70,23 @@ class DeploymentsController < ApplicationController
 
   def set_environments
     @environments = list_environments(params[:application_id].to_i)
+  end
+
+  def find_commits
+    repo_pat = %r{https://(www\.)?github\.com/([^/]+)/(.+)}
+    if repo_pat.match(@app.github_repo_url) do |m|
+         repo = "#{m[2]}/#{m[3]}"
+         if repo.end_with?('.git')
+           repo = repo[0..-5]
+         end
+         # TODO(paulsmith): allow user to override branch to fetch commits from
+         @commits = octokit.commits(repo, 'master', per_page: 1000).map do |c|
+           ["#{c.commit.message} (#{c.sha})", c.sha]
+         end
+       end
+    else
+      # TODO(paulsmith): warn/error invalid GitHub repo URL
+      @commits = []
+    end
   end
 end

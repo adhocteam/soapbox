@@ -17,7 +17,7 @@ protobufs:
 	make -C web
 
 models:
-	PGSSLMODE=disable xo pgsql://localhost/soapbox_dev -o models --template-path models/templates/
+	PGSSLMODE=disable xo pgsql://soapbox@localhost:54320/soapbox_dev -o models --template-path models/templates/
 
 .PHONY: models
 

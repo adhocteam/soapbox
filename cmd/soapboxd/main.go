@@ -157,7 +157,7 @@ func (e *emptyMetadataErr) Error() string {
 }
 
 func authorize(ctx context.Context) error {
-	if md, ok := metadata.FromContext(ctx); ok {
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		userID := []byte(md["user_id"][0])
 		sentToken, err := base64.StdEncoding.DecodeString(md["login_token"][0])
 		if err != nil {

@@ -68,18 +68,10 @@ LIMIT 1
 	}
 	setPbTimestamp(config.CreatedAt, createdAt)
 
-	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
+	appSlug, envSlug, err := s.getSlugs(ctx, envID)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting environment")
+		return nil, errors.Wrap(err, "getting env and app slugs")
 	}
-
-	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting application")
-	}
-
-	appSlug := app.GetSlug()
-	envSlug := env.GetSlug()
 
 	config.ConfigVars, err = s.configurationStore.GetConfigVars(appSlug, envSlug, config.Version)
 	if err != nil {
@@ -95,6 +87,7 @@ func (s *server) CreateConfiguration(ctx context.Context, req *proto.CreateConfi
 	if err != nil {
 		return nil, errors.Wrap(err, "beginning transaction")
 	}
+	defer tx.Rollback()
 
 	config := &proto.Configuration{
 		EnvironmentId: envID,
@@ -116,13 +109,11 @@ RETURNING created_at, version`
 
 	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
 	if err != nil {
-		tx.Rollback()
 		return nil, errors.Wrap(err, "getting environment")
 	}
 
 	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
 	if err != nil {
-		tx.Rollback()
 		return nil, errors.Wrap(err, "getting application")
 	}
 
@@ -133,7 +124,6 @@ RETURNING created_at, version`
 
 	err = s.configurationStore.SaveConfigVars(appSlug, envSlug, config.Version, config.ConfigVars, kmsKeyARN)
 	if err != nil {
-		tx.Rollback()
 		return nil, errors.Wrap(err, "saving config variables")
 	}
 
@@ -152,26 +142,17 @@ func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfi
 	if err != nil {
 		return nil, errors.Wrap(err, "beginning transaction")
 	}
+	defer tx.Rollback()
 
 	query := `DELETE FROM configurations WHERE environment_id = $1 AND version = $2`
 	if _, err := tx.Exec(query, envID, version); err != nil {
 		return nil, errors.Wrap(err, "deleting configuration from local database")
 	}
 
-	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
+	appSlug, envSlug, err := s.getSlugs(ctx, envID)
 	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "getting environment")
+		return nil, errors.Wrap(err, "getting env and app slugs")
 	}
-
-	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
-	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "getting application")
-	}
-
-	appSlug := app.GetSlug()
-	envSlug := env.GetSlug()
 
 	err = s.configurationStore.DeleteConfigVars(appSlug, envSlug, version)
 	if err != nil {
@@ -183,4 +164,18 @@ func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfi
 	}
 
 	return &proto.Empty{}, nil
+}
+
+func (s *server) getSlugs(ctx context.Context, envID int32) (string, string, error) {
+	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
+	if err != nil {
+		return "", "", errors.Wrap(err, "getting environment")
+	}
+
+	app, err := s.GetApplication(ctx, &proto.GetApplicationRequest{Id: env.GetApplicationId()})
+	if err != nil {
+		return "", "", errors.Wrap(err, "getting application")
+	}
+
+	return app.GetSlug(), env.GetSlug(), nil
 }

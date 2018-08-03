@@ -36,17 +36,17 @@ func NewCloudProvider() soapboxd.CloudProvider {
 }
 
 func (a *aws) UploadFile(bucket string, key string, filename string) error {
-	return nil
+	return a.s3.uploadFile(bucket, key, filename)
 }
 
 func (a *aws) GetConfigVars(appSlug string, envSlug string, version int32) ([]*proto.ConfigVar, error) {
-	return nil, nil
+	return a.config.getConfigVars(appSlug, envSlug, version)
 }
 
 func (a *aws) SaveConfigVars(appSlug string, envSlug string, version int32, configVars []*proto.ConfigVar, kmsKeyARN string) error {
-	return nil
+	return a.config.saveConfigVars(appSlug, envSlug, version, configVars, kmsKeyARN)
 }
 
 func (a *aws) DeleteConfigVars(appSlug string, envSlug string, version int32) error {
-	return nil
+	return a.config.deleteConfigVars(appSlug, envSlug, version)
 }

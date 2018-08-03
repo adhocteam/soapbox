@@ -18,6 +18,26 @@ import (
 	"github.com/pkg/errors"
 )
 
+func (a *aws) rollforward() error {
+	log.Printf("detaching (stale) green ASG from load balancer")
+	do(func() error {
+		return greenASG.detachFromLBTargetGroup(target.arn)
+	})
+
+	// TODO(paulsmith): there is a race condition because we can't
+	// update the tags atomically, so a reader might see both
+	// groups as green, or blue, or some indeterminate combination
+	// ... risk is pretty low ATM but we should address this
+	// somehow later.
+	log.Printf("swapping blue/green pointers")
+	do(func() error {
+		return greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}})
+	})
+	do(func() error {
+		return blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}})
+	})
+}
+
 func (a *aws) deploy() error {
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
@@ -141,7 +161,7 @@ service nginx reload
 
 	var securityGroupID string
 
-	securityGroupId, err = app.getAppSecurityGroupId(env)
+	securityGroupId, err = getAppSecurityGroupId(env)
 	if err != nil {
 		return err
 	}
@@ -335,8 +355,8 @@ func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
 	input := &ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{
 			{
-				Name:   aws.String("group-name"),
-				Values: []*string{aws.String(sgname)},
+				Name:   amazon.String("group-name"),
+				Values: []*string{amazon.String(sgname)},
 			},
 		},
 	}
@@ -353,17 +373,17 @@ func (a *application) getRecentAmiId(amiNameGlob string) (string, error) {
 	svc := ec2.New(a.sess)
 	filters := []*ec2.Filter{
 		&ec2.Filter{
-			Name:   aws.String("virtualization-type"),
-			Values: []*string{aws.String("hvm")},
+			Name:   amazon.String("virtualization-type"),
+			Values: []*string{amazon.String("hvm")},
 		},
 		&ec2.Filter{
-			Name:   aws.String("name"),
-			Values: []*string{aws.String(amiNameGlob)},
+			Name:   amazon.String("name"),
+			Values: []*string{amazon.String(amiNameGlob)},
 		},
 	}
 	descImagesInput := ec2.DescribeImagesInput{
 		Filters: filters,
-		Owners:  []*string{aws.String("self")},
+		Owners:  []*string{amazon.String("self")},
 	}
 	amiRes, err := svc.DescribeImages(&descImagesInput)
 	if err != nil {
@@ -412,7 +432,7 @@ func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
 
 func lifecycleState(state string, svc *autoscaling.AutoScaling, name string) (int, error) {
 	out, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: []*string{aws.String(name)},
+		AutoScalingGroupNames: []*string{amazon.String(name)},
 	})
 	if err != nil {
 		return 0, err
@@ -462,7 +482,7 @@ func (g *targetGroup) waitUntilInstancesReady(asg *autoScalingGroup) error {
 		}
 	}
 	input := &elbv2.DescribeTargetHealthInput{
-		TargetGroupArn: aws.String(g.arn),
+		TargetGroupArn: amazon.String(g.arn),
 		Targets:        targets,
 	}
 	deadline := time.Now().Add(10 * time.Minute)
@@ -491,5 +511,21 @@ func (g *targetGroup) waitUntilInstancesReady(asg *autoScalingGroup) error {
 			return fmt.Errorf("timeout waiting for target group instances to be healthy")
 		}
 		time.Sleep(5 * time.Second)
+	}
+}
+
+type tag struct {
+	key               string
+	value             string
+	propagateAtLaunch bool
+}
+
+func (t tag) autoscaling(name string) *autoscaling.Tag {
+	return &autoscaling.Tag{
+		Key:               amazon.String(t.key),
+		ResourceId:        amazon.String(name),
+		ResourceType:      amazon.String("auto-scaling-group"),
+		Value:             amazon.String(t.value),
+		PropagateAtLaunch: amazon.Bool(t.propagateAtLaunch),
 	}
 }

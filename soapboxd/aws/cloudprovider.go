@@ -54,3 +54,7 @@ func (a *aws) DeleteConfigVars(appSlug string, envSlug string, version int32) er
 func (a *aws) Deploy() error {
 	return a.deploy()
 }
+
+func (a *aws) Rollforward() error {
+	return a.rollforward()
+}

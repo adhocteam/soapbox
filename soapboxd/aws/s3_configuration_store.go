@@ -11,22 +11,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-type S3ConfigurationStore struct {
+type s3ConfigurationStore struct {
 	s3     *s3storage
 	bucket string
 	kms    *kmsClient
 }
 
-func NewS3ConfigurationStore(s3 *s3storage, bucket string, kms *kmsClient) *S3ConfigurationStore {
-	return &S3ConfigurationStore{
+func newS3ConfigurationStore(s3 *s3storage, bucket string, kms *kmsClient) *s3ConfigurationStore {
+	return &s3ConfigurationStore{
 		s3:     s3,
 		bucket: bucket,
 		kms:    kms,
 	}
 }
 
-func (s *S3ConfigurationStore) GetConfigVars(appSlug string, envSlug string, version int32) ([]*proto.ConfigVar, error) {
-	encryptedConfig, err := s.s3.DownloadFile(s.bucket, getS3ObjectKey(appSlug, envSlug, version))
+func (s *s3ConfigurationStore) getConfigVars(appSlug string, envSlug string, version int32) ([]*proto.ConfigVar, error) {
+	encryptedConfig, err := s.s3.downloadFile(s.bucket, getS3ObjectKey(appSlug, envSlug, version))
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving config from s3")
 	}
@@ -46,7 +46,7 @@ func (s *S3ConfigurationStore) GetConfigVars(appSlug string, envSlug string, ver
 
 }
 
-func (s *S3ConfigurationStore) SaveConfigVars(appSlug string, envSlug string, version int32, configVars []*proto.ConfigVar, kmsKeyARN string) error {
+func (s *s3ConfigurationStore) saveConfigVars(appSlug string, envSlug string, version int32, configVars []*proto.ConfigVar, kmsKeyARN string) error {
 	serializedConfigs, err := json.Marshal(configVars)
 	if err != nil {
 		return errors.Wrap(err, "serializing configurations to JSON")
@@ -68,11 +68,11 @@ func (s *S3ConfigurationStore) SaveConfigVars(appSlug string, envSlug string, ve
 		return errors.Wrap(err, "writing encrypted config to temporary file")
 	}
 
-	return s.s3.UploadFile(s.bucket, getS3ObjectKey(appSlug, envSlug, version), tmpfile.Name())
+	return s.s3.uploadFile(s.bucket, getS3ObjectKey(appSlug, envSlug, version), tmpfile.Name())
 }
 
-func (s *S3ConfigurationStore) DeleteConfigVars(appSlug string, envSlug string, version int32) error {
-	return s.s3.DeleteFile(s.bucket, getS3ObjectKey(appSlug, envSlug, version))
+func (s *s3ConfigurationStore) deleteConfigVars(appSlug string, envSlug string, version int32) error {
+	return s.s3.deleteFile(s.bucket, getS3ObjectKey(appSlug, envSlug, version))
 }
 
 func getS3ObjectKey(appSlug string, envSlug string, version int32) string {

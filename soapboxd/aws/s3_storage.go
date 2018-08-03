@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/aws/aws-sdk-go/aws"
+	amazon "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
@@ -15,11 +15,11 @@ type s3storage struct {
 	svc *s3.S3
 }
 
-func NewS3Storage(sess *session.Session) *s3storage {
+func newS3Storage(sess *session.Session) *s3storage {
 	return &s3storage{svc: s3.New(sess)}
 }
 
-func (s *s3storage) UploadFile(bucket string, key string, filename string) error {
+func (s *s3storage) uploadFile(bucket string, key string, filename string) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("opening file %s: %v", filename, err)
@@ -27,17 +27,17 @@ func (s *s3storage) UploadFile(bucket string, key string, filename string) error
 	defer f.Close()
 	input := &s3.PutObjectInput{
 		Body:   f,
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
+		Bucket: amazon.String(bucket),
+		Key:    amazon.String(key),
 	}
 	_, err = s.svc.PutObject(input)
 	return err
 }
 
-func (s *s3storage) DownloadFile(bucket string, key string) ([]byte, error) {
+func (s *s3storage) downloadFile(bucket string, key string) ([]byte, error) {
 	input := &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
+		Bucket: amazon.String(bucket),
+		Key:    amazon.String(key),
 	}
 
 	object, err := s.svc.GetObject(input)
@@ -55,10 +55,10 @@ func (s *s3storage) DownloadFile(bucket string, key string) ([]byte, error) {
 	return body, nil
 }
 
-func (s *s3storage) DeleteFile(bucket string, key string) error {
+func (s *s3storage) deleteFile(bucket string, key string) error {
 	input := &s3.DeleteObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
+		Bucket: amazon.String(bucket),
+		Key:    amazon.String(key),
 	}
 
 	_, err := s.svc.DeleteObject(input)

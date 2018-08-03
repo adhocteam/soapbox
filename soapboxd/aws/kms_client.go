@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
+	amazon "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 )
@@ -10,13 +10,13 @@ type kmsClient struct {
 	svc *kms.KMS
 }
 
-func NewKMSClient(sess *session.Session) *kmsClient {
+func newKMSClient(sess *session.Session) *kmsClient {
 	return &kmsClient{svc: kms.New(sess)}
 }
 
 func (k *kmsClient) encrypt(kmsKeyARN string, content []byte) (*kms.EncryptOutput, error) {
 	input := &kms.EncryptInput{
-		KeyId:     aws.String(kmsKeyARN),
+		KeyId:     amazon.String(kmsKeyARN),
 		Plaintext: []byte(content),
 	}
 	return k.svc.Encrypt(input)

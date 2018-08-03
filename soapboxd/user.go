@@ -1,7 +1,12 @@
 package soapboxd
 
 import (
+	"crypto/hmac"
+	"crypto/sha512"
 	"database/sql"
+	"encoding/base64"
+	"fmt"
+	"os"
 
 	"github.com/adhocteam/soapbox/models"
 	pb "github.com/adhocteam/soapbox/proto"
@@ -98,12 +103,13 @@ func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 		return nil, errors.Cause(err)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password)); err != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password)); err != nil {
 		return res, nil
 	}
 
 	res.User = user
 	res.Error = ""
+	res.Hmac = computeHmac512(fmt.Sprint(user.Id), os.Getenv("LOGIN_SECRET_KEY"))
 
 	return res, nil
 }
@@ -121,4 +127,10 @@ func (s *server) AssignGithubOmniauthTokenToUser(ctx context.Context, user *pb.U
 	}
 
 	return user, nil
+}
+
+func computeHmac512(message string, secret string) string {
+	h := hmac.New(sha512.New, []byte(secret))
+	h.Write([]byte(message))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

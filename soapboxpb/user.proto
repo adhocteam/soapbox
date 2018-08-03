@@ -40,4 +40,5 @@ message LoginUserRequest {
 message LoginUserResponse {
     string error = 1;
     User user = 2;
+    string hmac = 3;
 }

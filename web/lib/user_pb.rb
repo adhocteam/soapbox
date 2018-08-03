@@ -30,6 +30,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "soapbox.LoginUserResponse" do
     optional :error, :string, 1
     optional :user, :message, 2, "soapbox.User"
+    optional :hmac, :string, 3
   end
 end
 

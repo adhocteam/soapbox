@@ -50,3 +50,7 @@ func (a *aws) SaveConfigVars(appSlug string, envSlug string, version int32, conf
 func (a *aws) DeleteConfigVars(appSlug string, envSlug string, version int32) error {
 	return a.config.deleteConfigVars(appSlug, envSlug, version)
 }
+
+func (a *aws) Deploy() error {
+	return a.deploy()
+}

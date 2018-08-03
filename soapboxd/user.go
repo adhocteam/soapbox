@@ -97,7 +97,6 @@ func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 	}
 
 	user, err := s.getUserByEmail(ctx, req.GetEmail())
-	err = errors.Cause(err)
 	if err == sql.ErrNoRows {
 		return res, nil
 	} else if err != nil {

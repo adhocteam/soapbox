@@ -156,6 +156,8 @@ func (e *emptyMetadataErr) Error() string {
 	return fmt.Sprint("No metadata attached with request")
 }
 
+// TODO(kalilsn) The token calculated here is static, so it can't be revoked, and if stolen
+// would allow an attacker to impersonate a user indefinitely.
 func authorize(ctx context.Context) error {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		userID := []byte(md["user_id"][0])

@@ -96,15 +96,15 @@ func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 		Error: genericLoginErrorMsg,
 	}
 
-	user, getUserErr := s.getUserByEmail(ctx, req.GetEmail())
-	getUserErr = errors.Cause(getUserErr)
-	if getUserErr == sql.ErrNoRows {
+	user, err := s.getUserByEmail(ctx, req.GetEmail())
+	err = errors.Cause(err)
+	if err == sql.ErrNoRows {
 		return res, nil
-	} else if getUserErr != nil {
-		return nil, errors.Cause(getUserErr)
+	} else if err != nil {
+		return nil, errors.Cause(err)
 	}
 
-	if bcryptErr := bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password)); bcryptErr != nil {
+	if err = bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(req.Password)); err != nil {
 		return res, nil
 	}
 

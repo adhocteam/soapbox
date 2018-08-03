@@ -18,11 +18,12 @@ RSpec.describe ApplicationsController, type: :controller do
           committish: "abcdef0123456789"
         )
     }
+    let(:session) { {login_token: 'ijkN8a5iAluZY4Cv7qOHsruLBJNheehdVTzCqp/tEzUK/VGM91OH6ZH6FwB9D4jZLKh4SYx51aVAr2VJpGHUeg=='} }
 
     before do
-      allow($api_client).to receive(:get_application) { app }
+      allow($api_client.applications).to receive(:get_application) { app }
       allow(Soapbox::ListDeploymentRequest).to receive(:new) { nil }
-      allow($api_deployment_client).to receive(:list_deployments) {
+      allow($api_client.deployments).to receive(:list_deployments) {
         ::Soapbox::ListDeploymentResponse.new(
           deployments: [dep]
         )
@@ -34,12 +35,12 @@ RSpec.describe ApplicationsController, type: :controller do
 
     context "github URL with oauth and .git" do
       it "responds correctly" do
-        get :show, params: {id: 1}
+        get :show, params: {id: 1}, session: session
         expect(response.success?)
       end
 
       it "sets the correct github url" do
-        get :show, params: {id: 1}
+        get :show, params: {id: 1}, session: session
         expect(@controller.instance_variable_get(:@github_url)).to eq "https://github.com/bananas/shorts"
       end
     end
@@ -52,12 +53,12 @@ RSpec.describe ApplicationsController, type: :controller do
       }
 
       it "responds correctly" do
-        get :show, params: {id: 1}
+        get :show, params: {id: 1}, session: session
         expect(response.success?)
       end
 
       it "sets the correct github url" do
-        get :show, params: {id: 1}
+        get :show, params: {id: 1}, session: session
         expect(@controller.instance_variable_get(:@github_url)).to eq "https://github.com/bananas/shorts"
       end
     end

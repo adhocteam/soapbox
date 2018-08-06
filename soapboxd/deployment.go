@@ -23,6 +23,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+//Make exported so that deployer can use it
+const SoapboxImageBucket = "soapbox-app-images"
+
 func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
 	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
@@ -221,7 +224,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	do(func() error {
 		var err error
 		config, err = s.GetLatestConfiguration(context.TODO(), &pb.GetLatestConfigurationRequest{
-			EnvironmentId: env.id,
+			EnvironmentId: env.ID,
 		})
 		return err
 	})
@@ -240,7 +243,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	// clone the repo at the committish
 	const appdir = "appdir"
-	cmd := exec.Command("git", "clone", app.githubRepoURL, appdir)
+	cmd := exec.Command("git", "clone", app.GithubRepoURL, appdir)
 	cmd.Dir = tempdir
 	log.Println("cloning repo")
 	doCmd(cmd)
@@ -257,9 +260,9 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	}
 
 	// Save the short committish into app for use during deployment
-	app.committish = committish
+	app.Committish = committish
 
-	image := fmt.Sprintf("soapbox/%s:%s", app.slug, committish)
+	image := fmt.Sprintf("soapbox/%s:%s", app.Slug, committish)
 
 	// build the docker image from the repo
 	cmd = exec.Command("docker", "build", "-t", image, ".")
@@ -278,23 +281,20 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	// upload docker image to S3 bucket
 	log.Println("upload docker image to S3")
-	const soapboxImageBucket = "soapbox-app-images"
-	objectKey := fmt.Sprintf("%s/%s-%s.tar.gz", app.slug, app.slug, committish)
+	objectKey := fmt.Sprintf("%s/%s-%s.tar.gz", app.Slug, app.Slug, committish)
 	do(func() error {
-		return s.objectStore.UploadFile(soapboxImageBucket, objectKey, filename)
+		return s.objectStore.UploadFile(SoapboxImageBucket, objectKey, filename)
 	})
 
 	setState("evaluate-wait")
 
 	do(func() error {
-		// LOL YEAH RIGHT SO NOT HERE YET
 		return s.deployer.Deploy(app, env, config)
 	})
 
 	setState("rollforward")
 
 	do(func() error {
-		// LOL YEAH RIGHT SO NOT HERE YET
 		return s.deployer.Rollforward(app, env)
 	})
 
@@ -310,32 +310,32 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 // Application is a minimal version of the information about an app on the platform
 type Application struct {
-	name          string
-	slug          string
-	githubRepoURL string
-	committish    string
+	Name          string
+	Slug          string
+	GithubRepoURL string
+	Committish    string
 }
 
 func newAppFromProtoBuf(appPb *pb.Application) Application {
 	return Application{
-		name:          appPb.GetName(),
-		slug:          appPb.GetSlug(),
-		githubRepoURL: appPb.GetGithubRepoUrl(),
+		Name:          appPb.GetName(),
+		Slug:          appPb.GetSlug(),
+		GithubRepoURL: appPb.GetGithubRepoUrl(),
 	}
 }
 
 // Environment is a minimal version of the information about an environment into which an application can be deployed
 type Environment struct {
-	id   int32
-	name string
-	slug string
+	ID   int32
+	Name string
+	Slug string
 }
 
 func newEnvFromProtoBuf(envPb *pb.Environment) Environment {
 	return Environment{
-		id:   envPb.GetId(),
-		name: envPb.GetName(),
-		slug: envPb.GetSlug(),
+		ID:   envPb.GetId(),
+		Name: envPb.GetName(),
+		Slug: envPb.GetSlug(),
 	}
 }
 

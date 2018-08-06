@@ -20,45 +20,13 @@ import (
 
 const deployStateTagName = "deploystate"
 
-func (a *aws) rollforward(app soapboxd.Application, env soapboxd.Environment) error {
-	blueASG, greenASG, err := a.blueGreenASGs(app, env)
-	if err != nil {
-		return err
-	}
-
-	target, err := greenASG.getTargetGroup(a.sess)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("detaching (stale) green ASG from load balancer")
-	if err := greenASG.detachFromLBTargetGroup(target.arn); err != nil {
-		return err
-	}
-
-	// TODO(paulsmith): there is a race condition because we can't
-	// update the tags atomically, so a reader might see both
-	// groups as green, or blue, or some indeterminate combination
-	// ... risk is pretty low ATM but we should address this
-	// somehow later.
-	log.Printf("swapping blue/green pointers")
-	if err := greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}}); err != nil {
-		return err
-	}
-	if err := blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}}); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config *pb.Configuration) error {
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
 
 	var tmpl *template.Template
 
-	tmpl, err = template.ParseFiles("user-data.tmpl")
+	tmpl, err := template.ParseFiles("user-data.tmpl")
 	if err != nil {
 		return err
 	}
@@ -74,25 +42,25 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 		Variables     []*pb.ConfigVar
 		ConfigVersion string
 	}{
-		app.slug,
+		app.Slug,
 		// TODO(paulsmith): un-hardcode
 		8080,
-		soapboxImageBucket,
-		env.slug,
-		fmt.Sprintf("soapbox/%s:%s", app.slug, app.committish),
-		app.committish,
+		soapboxd.SoapboxImageBucket,
+		env.Slug,
+		fmt.Sprintf("soapbox/%s:%s", app.Slug, app.Committish),
+		app.Committish,
 		config.ConfigVars,
 		strconv.Itoa(int(config.Version)),
 	}); err != nil {
 		return err
 	}
 
-	securityGroupID, err := getAppSecurityGroupID(app, env)
+	securityGroupID, err := a.getAppSecurityGroupID(app, env)
 	if err != nil {
 		return err
 	}
 
-	launchConfig, err := a.createLaunchConfig(app.slug, env.slug, app.committish, securityGroupID, time.Now(), userData.String())
+	launchConfig, err := a.createLaunchConfig(app.Slug, env.Slug, app.Committish, securityGroupID, time.Now(), userData.String())
 	if err != nil {
 		return err
 	}
@@ -144,7 +112,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 
 	defer func() {
 		log.Printf("cleaning up: terminating instances in blue ASG")
-		blueASG, err := a.getASGByColor(env, "blue")
+		blueASG, err := a.getASGByColor(app, env, "blue")
 		if err != nil {
 			log.Printf("getting blue ASG: %v", err)
 		}
@@ -155,7 +123,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	}()
 
 	log.Printf("tagging blue ASG with release info")
-	if err := blueASG.updateTags([]tag{{key: "release", value: committish}}); err != nil {
+	if err := blueASG.updateTags([]tag{{key: "release", value: app.Committish}}); err != nil {
 		return err
 	}
 
@@ -185,12 +153,14 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	if err := target.waitUntilInstancesReady(blueASG); err != nil {
 		return err
 	}
+
+	return nil
 }
 
 func (a *aws) createLaunchConfig(appSlug string, envSlug string, committish string, securityGroupID string, t time.Time, userData string) (string, error) {
 	name := fmt.Sprintf("%s-%s-%s-%d", appSlug, envSlug, committish, t.Unix())
 
-	amiID, err := app.getRecentAmiId(a.config.AmiName)
+	amiID, err := a.getRecentAmiID()
 	if err != nil {
 		return "", fmt.Errorf("determining ami id: %v", err)
 	}
@@ -198,8 +168,8 @@ func (a *aws) createLaunchConfig(appSlug string, envSlug string, committish stri
 	input := &autoscaling.CreateLaunchConfigurationInput{
 		IamInstanceProfile:      amazon.String(a.config.IamProfile),
 		ImageId:                 amazon.String(amiID),
-		InstanceType:            amazon.String(config.InstanceType),
-		KeyName:                 amazon.String(config.KeyName),
+		InstanceType:            amazon.String(a.config.InstanceType),
+		KeyName:                 amazon.String(a.config.KeyName),
 		LaunchConfigurationName: amazon.String(name),
 		SecurityGroups:          []*string{amazon.String(securityGroupID)},
 		UserData:                amazon.String(base64.StdEncoding.EncodeToString([]byte(userData))),
@@ -215,12 +185,12 @@ func (a *aws) createLaunchConfig(appSlug string, envSlug string, committish stri
 }
 
 func (a *aws) blueGreenASGs(app soapboxd.Application, env soapboxd.Environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
-	blue, err = a.getASGByColor(env, "blue")
+	blue, err = a.getASGByColor(app, env, "blue")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting blue ASG")
 	}
 
-	green, err = a.getASGByColor(env, "green")
+	green, err = a.getASGByColor(app, env, "green")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting green ASG")
 	}
@@ -228,7 +198,7 @@ func (a *aws) blueGreenASGs(app soapboxd.Application, env soapboxd.Environment) 
 	return blue, green, nil
 }
 
-func (a *aws) getASGByColor(env soapboxd.Environment, color string) (*autoScalingGroup, error) {
+func (a *aws) getASGByColor(app soapboxd.Application, env soapboxd.Environment, color string) (*autoScalingGroup, error) {
 	// get a list of all ASGs and iterate over until find
 	// "deploystate" tags for our app and environment
 
@@ -245,11 +215,11 @@ func (a *aws) getASGByColor(env soapboxd.Environment, color string) (*autoScalin
 		for _, tag := range asg.Tags {
 			switch *tag.Key {
 			case "app":
-				if *tag.Value == a.slug {
+				if *tag.Value == app.Slug {
 					found["app"] = true
 				}
 			case "env":
-				if *tag.Value == env.slug {
+				if *tag.Value == env.Slug {
 					found["env"] = true
 				}
 			case deployStateTagName:
@@ -265,18 +235,17 @@ func (a *aws) getASGByColor(env soapboxd.Environment, color string) (*autoScalin
 	}
 
 	if group == nil {
-		return nil, errors.Wrapf(err, "could not find %s ASG in %s environment", color, env.slug)
+		return nil, errors.Wrapf(err, "could not find %s ASG in %s environment", color, env.Slug)
 	}
 
 	return &autoScalingGroup{
-		sess: a.sess,
 		svc:  svc,
 		name: *group.AutoScalingGroupName,
 	}, nil
 }
 
 func (a *aws) getAppSecurityGroupID(app soapboxd.Application, env soapboxd.Environment) (string, error) {
-	sgname := fmt.Sprintf("%s: %s application subnet security group", app.slug, env.slug)
+	sgname := fmt.Sprintf("%s: %s application subnet security group", app.Slug, env.Slug)
 	svc := ec2.New(a.sess)
 	input := &ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{
@@ -295,7 +264,7 @@ func (a *aws) getAppSecurityGroupID(app soapboxd.Application, env soapboxd.Envir
 	return *sg.GroupId, nil
 }
 
-func (a *aws) getRecentAmiId(amiNameGlob string) (string, error) {
+func (a *aws) getRecentAmiID() (string, error) {
 	svc := ec2.New(a.sess)
 	filters := []*ec2.Filter{
 		&ec2.Filter{
@@ -304,7 +273,7 @@ func (a *aws) getRecentAmiId(amiNameGlob string) (string, error) {
 		},
 		&ec2.Filter{
 			Name:   amazon.String("name"),
-			Values: []*string{amazon.String(amiNameGlob)},
+			Values: []*string{amazon.String(a.config.AmiName)},
 		},
 	}
 	descImagesInput := ec2.DescribeImagesInput{
@@ -332,4 +301,36 @@ func (a AmiByCreationDate) Swap(i, j int) {
 
 func (a AmiByCreationDate) Less(i, j int) bool {
 	return *a[i].CreationDate > *a[j].CreationDate
+}
+
+func (a *aws) rollforward(app soapboxd.Application, env soapboxd.Environment) error {
+	blueASG, greenASG, err := a.blueGreenASGs(app, env)
+	if err != nil {
+		return err
+	}
+
+	target, err := greenASG.getTargetGroup(a.sess)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("detaching (stale) green ASG from load balancer")
+	if err := greenASG.detachFromLBTargetGroup(target.arn); err != nil {
+		return err
+	}
+
+	// TODO(paulsmith): there is a race condition because we can't
+	// update the tags atomically, so a reader might see both
+	// groups as green, or blue, or some indeterminate combination
+	// ... risk is pretty low ATM but we should address this
+	// somehow later.
+	log.Printf("swapping blue/green pointers")
+	if err := greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}}); err != nil {
+		return err
+	}
+	if err := blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}}); err != nil {
+		return err
+	}
+
+	return nil
 }

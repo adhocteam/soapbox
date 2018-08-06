@@ -64,7 +64,7 @@ func main() {
 	cloud := aws.NewCloudProvider(soapboxConfig)
 
 	server := grpc.NewServer(opts...)
-	apiServer := soapboxd.NewServer(db, nil, soapboxConfig, cloud)
+	apiServer := soapboxd.NewServer(db, nil, cloud)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterConfigurationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
@@ -86,8 +86,8 @@ func checkJobDependencies() error {
 	return nil
 }
 
-func getConfig() *soapbox.Config {
-	c := &soapbox.Config{
+func getConfig() soapbox.Config {
+	c := soapbox.Config{
 		AmiName:      "soapbox-aws-linux-ami-*",
 		Domain:       "soapbox.hosting",
 		IamProfile:   "soapbox-app",

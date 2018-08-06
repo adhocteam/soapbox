@@ -62,9 +62,8 @@ LIMIT 1
 	if err := s.db.QueryRow(query, envID).Scan(&config.Version, &createdAt); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Error(codes.NotFound, "no configuration found for environment")
-		} else {
-			return nil, errors.Wrap(err, "querying configurations table")
 		}
+		return nil, errors.Wrap(err, "querying configurations table")
 	}
 	setPbTimestamp(config.CreatedAt, createdAt)
 

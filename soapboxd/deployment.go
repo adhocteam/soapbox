@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-//Make exported so that deployer can use it
+//SoapboxImageBucket is the location within the blob store to hold build images
 const SoapboxImageBucket = "soapbox-app-images"
 
 func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {

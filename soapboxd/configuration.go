@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *server) ListConfigurations(ctx context.Context, req *proto.ListConfigurationRequest) (*proto.ListConfigurationResponse, error) {
+func (s *Server) ListConfigurations(ctx context.Context, req *proto.ListConfigurationRequest) (*proto.ListConfigurationResponse, error) {
 	// TODO(paulsmith): maybe embed actual config vars in response payload
 	query := `SELECT version, created_at FROM configurations WHERE environment_id = $1`
 	var configs []*proto.Configuration
@@ -42,7 +42,7 @@ func (s *server) ListConfigurations(ctx context.Context, req *proto.ListConfigur
 	return resp, nil
 }
 
-func (s *server) GetLatestConfiguration(ctx context.Context, req *proto.GetLatestConfigurationRequest) (*proto.Configuration, error) {
+func (s *Server) GetLatestConfiguration(ctx context.Context, req *proto.GetLatestConfigurationRequest) (*proto.Configuration, error) {
 	// TODO(paulsmith): FIXME return error or message with error
 	// semantics if we get nothing back from the db, instead of
 	// returning a zero-value configuration (in the case where an
@@ -65,6 +65,7 @@ LIMIT 1
 		}
 		return nil, errors.Wrap(err, "querying configurations table")
 	}
+
 	setPbTimestamp(config.CreatedAt, createdAt)
 
 	appSlug, envSlug, err := s.getSlugs(ctx, envID)
@@ -80,7 +81,7 @@ LIMIT 1
 	return config, nil
 }
 
-func (s *server) CreateConfiguration(ctx context.Context, req *proto.CreateConfigurationRequest) (*proto.Configuration, error) {
+func (s *Server) CreateConfiguration(ctx context.Context, req *proto.CreateConfigurationRequest) (*proto.Configuration, error) {
 	envID := req.GetEnvironmentId()
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -133,7 +134,7 @@ RETURNING created_at, version`
 	return config, nil
 }
 
-func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfigurationRequest) (*proto.Empty, error) {
+func (s *Server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfigurationRequest) (*proto.Empty, error) {
 	envID := req.GetEnvironmentId()
 	version := req.GetVersion()
 
@@ -165,7 +166,7 @@ func (s *server) DeleteConfiguration(ctx context.Context, req *proto.DeleteConfi
 	return &proto.Empty{}, nil
 }
 
-func (s *server) getSlugs(ctx context.Context, envID int32) (string, string, error) {
+func (s *Server) getSlugs(ctx context.Context, envID int32) (string, string, error) {
 	env, err := s.GetEnvironment(ctx, &proto.GetEnvironmentRequest{Id: envID})
 	if err != nil {
 		return "", "", errors.Wrap(err, "getting environment")

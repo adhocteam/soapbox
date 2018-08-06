@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRequest) (*pb.ListEnvironmentResponse, error) {
+func (s *Server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRequest) (*pb.ListEnvironmentResponse, error) {
 	listSQL := "SELECT id, application_id, name, slug, created_at FROM environments WHERE application_id = $1 ORDER BY id"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
 	if err != nil {
@@ -42,7 +42,7 @@ func (s *server) ListEnvironments(ctx context.Context, req *pb.ListEnvironmentRe
 	return res, nil
 }
 
-func (s *server) GetEnvironment(ctx context.Context, req *pb.GetEnvironmentRequest) (*pb.Environment, error) {
+func (s *Server) GetEnvironment(ctx context.Context, req *pb.GetEnvironmentRequest) (*pb.Environment, error) {
 	getSQL := "SELECT id, application_id, name, slug, created_at FROM environments WHERE id = $1"
 	env := &pb.Environment{
 		CreatedAt: new(gpb.Timestamp),
@@ -62,7 +62,7 @@ func (s *server) GetEnvironment(ctx context.Context, req *pb.GetEnvironmentReque
 	return env, nil
 }
 
-func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*pb.Environment, error) {
+func (s *Server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*pb.Environment, error) {
 	query := "INSERT INTO environments (application_id, name, slug) VALUES ($1, $2, $3) RETURNING id, created_at"
 
 	args := []interface{}{
@@ -96,7 +96,7 @@ func (s *server) CreateEnvironment(ctx context.Context, req *pb.Environment) (*p
 	return req, nil
 }
 
-func (s *server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironmentRequest) (*pb.Empty, error) {
+func (s *Server) DestroyEnvironment(ctx context.Context, req *pb.DestroyEnvironmentRequest) (*pb.Empty, error) {
 	deleteSQL := "DELETE FROM environments WHERE id = $1"
 	if _, err := s.db.Exec(deleteSQL, req.GetId()); err != nil {
 		return nil, errors.Wrap(err, "deleting row from db")

@@ -7,7 +7,8 @@ import (
 	pb "github.com/adhocteam/soapbox/proto"
 )
 
-type server struct {
+// Server is the basic soapbox server containing all the initialized items needed to perform its functions
+type Server struct {
 	db                 *sql.DB
 	httpClient         *http.Client
 	configurationStore ConfigurationStore
@@ -41,11 +42,11 @@ type Deployer interface {
 }
 
 // NewServer creates an new instance of the server object
-func NewServer(db *sql.DB, httpClient *http.Client, cloud CloudProvider) *server {
+func NewServer(db *sql.DB, httpClient *http.Client, cloud CloudProvider) *Server {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
-	return &server{
+	return &Server{
 		db:                 db,
 		httpClient:         httpClient,
 		configurationStore: cloud,

@@ -26,7 +26,7 @@ import (
 //SoapboxImageBucket is the location within the blob store to hold build images
 const SoapboxImageBucket = "soapbox-app-images"
 
-func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
+func (s *Server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequest) (*pb.ListDeploymentResponse, error) {
 	listSQL := "SELECT d.id, d.application_id, d.environment_id, d.committish, d.current_state, d.created_at, e.name FROM deployments d, environments e WHERE d.environment_id = e.id AND d.application_id = $1"
 	rows, err := s.db.Query(listSQL, req.GetApplicationId())
 	if err != nil {
@@ -67,12 +67,12 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 	if err != nil {
 		return nil, errors.Wrap(err, "getting environments")
 	}
-	byId := make(map[int32]*pb.Environment)
+	byID := make(map[int32]*pb.Environment)
 	for _, env := range envRes.Environments {
-		byId[env.GetId()] = env
+		byID[env.GetId()] = env
 	}
 	for _, d := range deployments {
-		d.Env = byId[d.GetEnv().GetId()]
+		d.Env = byID[d.GetEnv().GetId()]
 	}
 
 	res := &pb.ListDeploymentResponse{
@@ -81,12 +81,12 @@ func (s *server) ListDeployments(ctx context.Context, req *pb.ListDeploymentRequ
 	return res, nil
 }
 
-func (s *server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest) (*pb.Deployment, error) {
+func (s *Server) GetDeployment(ctx context.Context, req *pb.GetDeploymentRequest) (*pb.Deployment, error) {
 	return nil, nil
 }
 
 // GetLatestDeployment gets latest deployment for an application environment.
-func (s *server) GetLatestDeployment(ctx context.Context, req *pb.GetLatestDeploymentRequest) (*pb.Deployment, error) {
+func (s *Server) GetLatestDeployment(ctx context.Context, req *pb.GetLatestDeploymentRequest) (*pb.Deployment, error) {
 	appID := req.GetApplicationId()
 	envID := req.GetEnvironmentId()
 	query := `
@@ -111,20 +111,19 @@ LIMIT 1
 	if err := s.db.QueryRow(query, appID, envID).Scan(dest...); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, status.Error(codes.NotFound, "no deployment found for application environment")
-		} else {
-			return nil, errors.Wrap(err, "querying deployments table")
 		}
+		return nil, errors.Wrap(err, "querying deployments table")
 	}
 	setPbTimestamp(dep.CreatedAt, createdAt)
 	return dep, nil
 }
 
-func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
+func (s *Server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.StartDeploymentResponse, error) {
 	req.State = "rollout-wait"
 	query := `INSERT INTO deployments (application_id, environment_id, committish, current_state) VALUES ($1, $2, $3, $4) RETURNING id`
-	appId := int(req.GetApplication().GetId())
+	appID := int(req.GetApplication().GetId())
 	args := []interface{}{
-		appId,
+		appID,
 		req.GetEnv().GetId(),
 		req.GetCommittish(),
 		req.GetState(),
@@ -136,7 +135,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 		return nil, errors.Wrap(err, "inserting new row into db")
 	}
 	// TODO(paulsmith): hydrate fields for app and env
-	app, err := models.ApplicationByID(s.db, appId)
+	app, err := models.ApplicationByID(s.db, appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting application model from db")
 	}
@@ -166,7 +165,7 @@ func (s *server) StartDeployment(ctx context.Context, req *pb.Deployment) (*pb.S
 	return res, nil
 }
 
-func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentStatusRequest) (*pb.GetDeploymentStatusResponse, error) {
+func (s *Server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentStatusRequest) (*pb.GetDeploymentStatusResponse, error) {
 	var state string
 	query := `SELECT current_state FROM deployments WHERE id = $1`
 	if err := s.db.QueryRow(query, req.GetId()).Scan(&state); err != nil {
@@ -178,13 +177,13 @@ func (s *server) GetDeploymentStatus(ctx context.Context, req *pb.GetDeploymentS
 	return res, nil
 }
 
-func (s *server) TeardownDeployment(ctx context.Context, req *pb.TeardownDeploymentRequest) (*pb.Empty, error) {
+func (s *Server) TeardownDeployment(ctx context.Context, req *pb.TeardownDeploymentRequest) (*pb.Empty, error) {
 	return nil, nil
 }
 
 var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 
-func (s *server) startDeployment(dep *pb.Deployment) {
+func (s *Server) startDeployment(dep *pb.Deployment) {
 	setState := func(state string) {
 		if dep.State == "failed" {
 			return

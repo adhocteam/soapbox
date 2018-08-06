@@ -92,7 +92,6 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 				desiredInstances = i
 			}
 		}
-
 	}
 
 	log.Printf("ensuring blue ASG has no instances")
@@ -134,7 +133,6 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	}
 
 	log.Printf("blue ASG instances ready")
-
 	target, err := greenASG.getTargetGroup(a.sess)
 	if err != nil {
 		return err
@@ -286,21 +284,21 @@ func (a *aws) getRecentAmiID() (string, error) {
 		fmt.Println(fmt.Sprintf("describing AMIs: %s", err))
 		return "", err
 	}
-	sort.Sort(AmiByCreationDate(amiRes.Images))
+	sort.Sort(amiByCreationDate(amiRes.Images))
 	return *amiRes.Images[0].ImageId, nil
 }
 
-type AmiByCreationDate []*ec2.Image
+type amiByCreationDate []*ec2.Image
 
-func (a AmiByCreationDate) Len() int {
+func (a amiByCreationDate) Len() int {
 	return len(a)
 }
 
-func (a AmiByCreationDate) Swap(i, j int) {
+func (a amiByCreationDate) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 
-func (a AmiByCreationDate) Less(i, j int) bool {
+func (a amiByCreationDate) Less(i, j int) bool {
 	return *a[i].CreationDate > *a[j].CreationDate
 }
 

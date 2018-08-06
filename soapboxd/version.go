@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *server) GetVersion(ctx context.Context, req *pb.Empty) (*pb.GetVersionResponse, error) {
+func (s *Server) GetVersion(ctx context.Context, req *pb.Empty) (*pb.GetVersionResponse, error) {
 	return &pb.GetVersionResponse{
 		Version:   buildinfo.Version,
 		GitCommit: buildinfo.GitCommit,

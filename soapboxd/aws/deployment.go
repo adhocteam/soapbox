@@ -10,13 +10,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/adhocteam/soapbox"
 	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/adhocteam/soapbox/soapboxd"
 	amazon "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/pkg/errors"
 )
 
@@ -80,7 +78,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 		return err
 	}
 
-	launchConfig, err := createLaunchConfig(a.config, app.slug, env.slug, app.committish, securityGroupID, time.Now(), userData.String())
+	launchConfig, err := a.createLaunchConfig(app.slug, env.slug, app.committish, securityGroupID, time.Now(), userData.String())
 	if err != nil {
 		return err
 	}
@@ -132,7 +130,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 
 	defer func() {
 		log.Printf("cleaning up: terminating instances in blue ASG")
-		blueASG, err := app.getASGByColor(env, "blue")
+		blueASG, err := a.getASGByColor(env, "blue")
 		if err != nil {
 			log.Printf("getting blue ASG: %v", err)
 		}
@@ -175,16 +173,16 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	}
 }
 
-func createLaunchConfig(config *soapbox.Config, appSlug string, envSlug string, committish string, securityGroupID string, t time.Time, userData string) (string, error) {
+func (a *aws) createLaunchConfig(appSlug string, envSlug string, committish string, securityGroupID string, t time.Time, userData string) (string, error) {
 	name := fmt.Sprintf("%s-%s-%s-%d", appSlug, envSlug, committish, t.Unix())
 
-	amiID, err := app.getRecentAmiId(config.AmiName)
+	amiID, err := app.getRecentAmiId(a.config.AmiName)
 	if err != nil {
 		return "", fmt.Errorf("determining ami id: %v", err)
 	}
 
 	input := &autoscaling.CreateLaunchConfigurationInput{
-		IamInstanceProfile:      amazon.String(config.IamProfile),
+		IamInstanceProfile:      amazon.String(a.config.IamProfile),
 		ImageId:                 amazon.String(amiID),
 		InstanceType:            amazon.String(config.InstanceType),
 		KeyName:                 amazon.String(config.KeyName),
@@ -193,7 +191,7 @@ func createLaunchConfig(config *soapbox.Config, appSlug string, envSlug string, 
 		UserData:                amazon.String(base64.StdEncoding.EncodeToString([]byte(userData))),
 	}
 
-	svc := autoscaling.New(app.sess)
+	svc := autoscaling.New(a.sess)
 	_, err = svc.CreateLaunchConfiguration(input)
 	if err != nil {
 		return "", fmt.Errorf("creating launch config: %v", err)
@@ -202,7 +200,7 @@ func createLaunchConfig(config *soapbox.Config, appSlug string, envSlug string, 
 	return name, nil
 }
 
-func getASGByColor(env *environment, color string) (*autoScalingGroup, error) {
+func (a *aws) getASGByColor(env soapboxd.Environment, color string) (*autoScalingGroup, error) {
 	// get a list of all ASGs and iterate over until find
 	// "deploystate" tags for our app and environment
 
@@ -320,126 +318,4 @@ func (a AmiByCreationDate) Swap(i, j int) {
 
 func (a AmiByCreationDate) Less(i, j int) bool {
 	return *a[i].CreationDate > *a[j].CreationDate
-}
-
-// wait for instances to be marked in-service in the ASG lifecycle
-func (g *autoScalingGroup) waitUntilInstancesReady(n int) error {
-	deadline := time.Now().Add(10 * time.Minute)
-	for {
-		count, err := inService(g.svc, g.name)
-		if err != nil {
-			return err
-		}
-		if count == n {
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("timeout waiting for ASG instances to be ready)")
-		}
-		time.Sleep(5 * time.Second)
-	}
-}
-
-func inService(svc *autoscaling.AutoScaling, name string) (int, error) {
-	return lifecycleState("InService", svc, name)
-}
-
-func lifecycleState(state string, svc *autoscaling.AutoScaling, name string) (int, error) {
-	out, err := svc.DescribeAutoScalingGroups(&autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: []*string{amazon.String(name)},
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	count := 0
-	group := out.AutoScalingGroups[0]
-	for _, inst := range group.Instances {
-		if *inst.LifecycleState == state {
-			count++
-		}
-	}
-	return count, nil
-}
-
-func (g *autoScalingGroup) waitUntilGroupEmpty() error {
-	deadline := time.Now().Add(10 * time.Minute)
-	for {
-		instances, err := g.getInstances()
-		if err != nil {
-			return errors.Wrap(err, "getting group's instances")
-		}
-		if len(instances) == 0 {
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("timeout waiting for ASG to be empty)")
-		}
-		time.Sleep(5 * time.Second)
-	}
-}
-
-type targetGroup struct {
-	svc *elbv2.ELBV2
-	arn string
-}
-
-func (g *targetGroup) waitUntilInstancesReady(asg *autoScalingGroup) error {
-	instances, err := asg.getInstances()
-	if err != nil {
-		return fmt.Errorf("getting ASG's instances: %v", err)
-	}
-	targets := make([]*elbv2.TargetDescription, len(instances))
-	for i, inst := range instances {
-		targets[i] = &elbv2.TargetDescription{
-			Id: inst.InstanceId,
-		}
-	}
-	input := &elbv2.DescribeTargetHealthInput{
-		TargetGroupArn: amazon.String(g.arn),
-		Targets:        targets,
-	}
-	deadline := time.Now().Add(10 * time.Minute)
-	for {
-		res, err := g.svc.DescribeTargetHealth(input)
-		if err != nil {
-			return fmt.Errorf("describing target group health: %v", err)
-		}
-		allHealthy := true
-		for _, health := range res.TargetHealthDescriptions {
-			// TargetHealthStateEnum:
-			// - initial
-			// - healthy
-			// - unhealthy
-			// - unused
-			// - draining
-			if *health.TargetHealth.State != "healthy" {
-				allHealthy = false
-				break
-			}
-		}
-		if allHealthy {
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("timeout waiting for target group instances to be healthy")
-		}
-		time.Sleep(5 * time.Second)
-	}
-}
-
-type tag struct {
-	key               string
-	value             string
-	propagateAtLaunch bool
-}
-
-func (t tag) autoscaling(name string) *autoscaling.Tag {
-	return &autoscaling.Tag{
-		Key:               amazon.String(t.key),
-		ResourceId:        amazon.String(name),
-		ResourceType:      amazon.String("auto-scaling-group"),
-		Value:             amazon.String(t.value),
-		PropagateAtLaunch: amazon.Bool(t.propagateAtLaunch),
-	}
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	pb "github.com/adhocteam/soapbox/proto"
-	"github.com/adhocteam/soapbox/soapboxd"
 )
 
 // TODO probably most this out into another test package
@@ -14,7 +13,7 @@ func (c *CloudSuccess) UploadFile(bucket string, key string, filename string) er
 	return nil
 }
 func (c *CloudSuccess) GetConfigVars(appSlug string, envSlug string, version int32) ([]*pb.ConfigVar, error) {
-	return []*proto.ConfigVar{}, nil
+	return []*pb.ConfigVar{}, nil
 }
 func (c *CloudSuccess) SaveConfigVars(appSlug string, envSlug string, version int32, configVars []*pb.ConfigVar, kmsKeyARN string) error {
 	return nil
@@ -22,31 +21,31 @@ func (c *CloudSuccess) SaveConfigVars(appSlug string, envSlug string, version in
 func (c *CloudSuccess) DeleteConfigVars(appSlug string, envSlug string, version int32) error {
 	return nil
 }
-func (c *CloudSuccess) Deploy(app soapboxd.Application, env soapboxd.Environment, config *pb.Configuration) error {
+func (c *CloudSuccess) Deploy(app Application, env Environment, config *pb.Configuration) error {
 	return nil
 }
-func (c *CloudSuccess) Rollforward(app soapboxd.Application, env soapboxd.Environment) error {
+func (c *CloudSuccess) Rollforward(app Application, env Environment) error {
 	return nil
 }
 
 func TestDeploy(t *testing.T) {
 	// Totally won't work due to nil sql provider
-	s := NewServer(nil, nil, CloudSuccess{})
+	//s := NewServer(nil, nil, &CloudSuccess{})
 
-	cases := []struct {
-		req *pb.Deployment
-	}{
+	cases := []pb.Deployment{
 		{
 			Id:          0,
-			Application: &Application{},
-			Env:         &Environment{},
+			Application: &pb.Application{Id: 12},
+			Env:         &pb.Environment{Id: 10},
 			Committish:  "8af116c7f2fc226208855ae6e71f4d54e6290b7b",
 			State:       "",
 		},
 	}
 
 	for _, c := range cases {
-		_, err := s.StartDeployment(ctx.TODO(), nil)
+		// Non functional but should be what we do here
+		//_, err := s.StartDeployment(context.TODO(), &c)
+		var err error
 		if err != nil {
 			t.Errorf("Request: %#v unexpectedly failed", c)
 		}

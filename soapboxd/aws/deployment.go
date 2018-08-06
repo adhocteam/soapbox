@@ -24,6 +24,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
 
+	// Create a userdata script tailored to this application deploy
 	var tmpl *template.Template
 
 	tmpl, err := template.ParseFiles("user-data.tmpl")
@@ -55,12 +56,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 		return err
 	}
 
-	securityGroupID, err := a.getAppSecurityGroupID(app, env)
-	if err != nil {
-		return err
-	}
-
-	launchConfig, err := a.createLaunchConfig(app.Slug, env.Slug, app.Committish, securityGroupID, time.Now(), userData.String())
+	launchConfig, err := a.createLaunchConfig(app, env, userData.String())
 	if err != nil {
 		return err
 	}
@@ -157,12 +153,17 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	return nil
 }
 
-func (a *aws) createLaunchConfig(appSlug string, envSlug string, committish string, securityGroupID string, t time.Time, userData string) (string, error) {
-	name := fmt.Sprintf("%s-%s-%s-%d", appSlug, envSlug, committish, t.Unix())
+func (a *aws) createLaunchConfig(app soapboxd.Application, env soapboxd.Environment, userData string) (string, error) {
+	name := fmt.Sprintf("%s-%s-%s-%d", app.Slug, env.Slug, app.Committish, time.Now().Unix())
 
 	amiID, err := a.getRecentAmiID()
 	if err != nil {
 		return "", fmt.Errorf("determining ami id: %v", err)
+	}
+
+	securityGroupID, err := a.getAppSecurityGroupID(app, env)
+	if err != nil {
+		return "", err
 	}
 
 	input := &autoscaling.CreateLaunchConfigurationInput{

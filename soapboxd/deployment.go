@@ -18,7 +18,6 @@ import (
 
 	"github.com/adhocteam/soapbox/models"
 	pb "github.com/adhocteam/soapbox/proto"
-	"github.com/aws/aws-sdk-go/aws/session"
 	gpb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -218,14 +217,8 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	}
 
 	app := newAppFromProtoBuf(dep.GetApplication())
-
-	do(func() error {
-		var err error
-		app.sess, err = session.NewSession()
-		return err
-	})
-
 	env := newEnvFromProtoBuf(dep.GetEnv())
+
 	var config *pb.Configuration
 	do(func() error {
 		var err error
@@ -249,7 +242,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	// clone the repo at the committish
 	const appdir = "appdir"
-	cmd := exec.Command("git", "clone", app.githubRepoUrl, appdir)
+	cmd := exec.Command("git", "clone", app.githubRepoURL, appdir)
 	cmd.Dir = tempdir
 	log.Println("cloning repo")
 	doCmd(cmd)
@@ -264,6 +257,9 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 		// use short committish from here on out
 		committish = committish[:7]
 	}
+
+	// Save the short committish into app for use during deployment
+	app.committish = committish
 
 	image := fmt.Sprintf("soapbox/%s:%s", app.slug, committish)
 
@@ -294,7 +290,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	do(func() error {
 		// LOL YEAH RIGHT SO NOT HERE YET
-		return s.deployer.Deploy()
+		return s.deployer.Deploy(app, env, config)
 	})
 
 	setState("rollforward")
@@ -314,30 +310,31 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 	}
 }
 
-type application struct {
+// Application is a minimal version of the information about an app on the platform
+type Application struct {
 	name          string
 	slug          string
-	githubRepoUrl string
-
-	sess *session.Session
+	githubRepoURL string
+	committish    string
 }
 
-func newAppFromProtoBuf(appPb *pb.Application) *application {
-	return &application{
+func newAppFromProtoBuf(appPb *pb.Application) Application {
+	return Application{
 		name:          appPb.GetName(),
 		slug:          appPb.GetSlug(),
-		githubRepoUrl: appPb.GetGithubRepoUrl(),
+		githubRepoURL: appPb.GetGithubRepoUrl(),
 	}
 }
 
-type environment struct {
+// Environment is a minimal version of the information about an environment into which an application can be deployed
+type Environment struct {
 	id   int32
 	name string
 	slug string
 }
 
-func newEnvFromProtoBuf(envPb *pb.Environment) *environment {
-	return &environment{
+func newEnvFromProtoBuf(envPb *pb.Environment) Environment {
+	return Environment{
 		id:   envPb.GetId(),
 		name: envPb.GetName(),
 		slug: envPb.GetSlug(),

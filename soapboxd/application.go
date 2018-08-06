@@ -534,6 +534,9 @@ func (m metricParams) getCountFromDataPoint(d cloudwatch.Datapoint) int32 {
 }
 
 func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicationMetricsRequest) (*pb.ApplicationMetricsResponse, error) {
+
+	//TODO(bob) Need to Remove this to aws package
+
 	sess, err := session.NewSession()
 	if err != nil {
 		return nil, errors.Wrap(err, "new AWS session")

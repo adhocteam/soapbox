@@ -5,13 +5,12 @@ import (
 	"net/http"
 
 	"github.com/adhocteam/soapbox"
-	"github.com/adhocteam/soapbox/proto"
+	pb "github.com/adhocteam/soapbox/proto"
 )
 
 type server struct {
 	db                 *sql.DB
 	httpClient         *http.Client
-	config             *soapbox.Config
 	configurationStore ConfigurationStore
 	objectStore        ObjectStore
 	deployer           Deployer
@@ -19,6 +18,7 @@ type server struct {
 
 // CloudProvider is a summation type of all the interfaces that a cloud must provide
 type CloudProvider interface {
+	NewCloudProvider(config soapbox.Config) CloudProvider
 	ObjectStore
 	ConfigurationStore
 	Deployer
@@ -31,26 +31,25 @@ type ObjectStore interface {
 
 // ConfigurationStore represents a place that can store and retrieve configurations for applications
 type ConfigurationStore interface {
-	GetConfigVars(appSlug string, envSlug string, version int32) ([]*proto.ConfigVar, error)
-	SaveConfigVars(appSlug string, envSlug string, version int32, configVars []*proto.ConfigVar, kmsKeyARN string) error
+	GetConfigVars(appSlug string, envSlug string, version int32) ([]*pb.ConfigVar, error)
+	SaveConfigVars(appSlug string, envSlug string, version int32, configVars []*pb.ConfigVar, kmsKeyARN string) error
 	DeleteConfigVars(appSlug string, envSlug string, version int32) error
 }
 
 // Deployer represents something that can blue/green deploy an image to a cloud provider
 type Deployer interface {
-	Deploy() error      // Initiate a deployment
-	Rollforward() error // Finalize a successful deployment
+	Deploy(app Application, env Environment, config *pb.Configuration) error // Deploy is defined by the trio of application, environment, and configuration
+	Rollforward() error                                                      // Finalize a successful deployment
 }
 
 // NewServer creates an new instance of the server object
-func NewServer(db *sql.DB, httpClient *http.Client, config *soapbox.Config, cloud CloudProvider) *server {
+func NewServer(db *sql.DB, httpClient *http.Client, cloud CloudProvider) *server {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 	return &server{
 		db:                 db,
 		httpClient:         httpClient,
-		config:             config,
 		configurationStore: cloud,
 		objectStore:        cloud,
 		deployer:           cloud,

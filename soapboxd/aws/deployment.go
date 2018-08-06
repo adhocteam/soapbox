@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/adhocteam/soapbox"
+	pb "github.com/adhocteam/soapbox/proto"
+	"github.com/adhocteam/soapbox/soapboxd"
 	amazon "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -38,7 +40,7 @@ func (a *aws) rollforward() error {
 	}
 }
 
-func (a *aws) deploy() error {
+func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config *pb.Configuration) error {
 	// start an ec2 instance, passing a user-data script which
 	// installs the docker image and gets the container running
 
@@ -65,24 +67,20 @@ func (a *aws) deploy() error {
 		8080,
 		soapboxImageBucket,
 		env.slug,
-		image,
-		committish,
+		fmt.Sprintf("soapbox/%s:%s", app.slug, app.committish),
+		app.committish,
 		config.ConfigVars,
 		strconv.Itoa(int(config.Version)),
 	}); err != nil {
 		return err
 	}
 
-	var securityGroupID string
-
-	securityGroupId, err = getAppSecurityGroupId(env)
+	securityGroupID, err := getAppSecurityGroupID(app, env)
 	if err != nil {
 		return err
 	}
 
-	var launchConfig string
-
-	launchConfig, err = createLaunchConfig(s.config, app, env, committish, securityGroupId, time.Now(), userData.String())
+	launchConfig, err := createLaunchConfig(a.config, app.slug, env.slug, app.committish, securityGroupID, time.Now(), userData.String())
 	if err != nil {
 		return err
 	}
@@ -204,7 +202,7 @@ func createLaunchConfig(config *soapbox.Config, appSlug string, envSlug string, 
 	return name, nil
 }
 
-func (a *application) getASGByColor(env *environment, color string) (*autoScalingGroup, error) {
+func getASGByColor(env *environment, color string) (*autoScalingGroup, error) {
 	// get a list of all ASGs and iterate over until find
 	// "deploystate" tags for our app and environment
 
@@ -265,8 +263,8 @@ func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, g
 	return blue, green, nil
 }
 
-func (a *application) getAppSecurityGroupId(env *environment) (string, error) {
-	sgname := fmt.Sprintf("%s: %s application subnet security group", a.slug, env.slug)
+func (a *aws) getAppSecurityGroupID(app soapboxd.Application, env soapboxd.Environment) (string, error) {
+	sgname := fmt.Sprintf("%s: %s application subnet security group", app.slug, env.slug)
 	svc := ec2.New(a.sess)
 	input := &ec2.DescribeSecurityGroupsInput{
 		Filters: []*ec2.Filter{

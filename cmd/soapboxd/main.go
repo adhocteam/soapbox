@@ -60,10 +60,10 @@ func main() {
 		opts = append(opts, serverInterceptor(timingInterceptor))
 	}
 
-	cloud := aws.NewCloudProvider()
+	soapboxConfig := getConfig()
+	cloud := aws.NewCloudProvider(soapboxConfig)
 
 	server := grpc.NewServer(opts...)
-	soapboxConfig := getConfig()
 	apiServer := soapboxd.NewServer(db, nil, soapboxConfig, cloud)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterConfigurationsServer(server, apiServer)

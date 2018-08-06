@@ -8,7 +8,7 @@ class ApplicationController < ActionController::Base
   helper_method :get_metrics
 
   def require_login
-    redirect_to login_user_path unless current_user
+    redirect_to login_user_path unless current_user && session[:login_token]
   end
 
   # Finds the User with the ID stored in the session with the key
@@ -25,13 +25,22 @@ class ApplicationController < ActionController::Base
 
   def get_user(email)
     req = Soapbox::GetUserRequest.new(email: email)
-    $api_user_client.get_user(req)
+    $api_client.users.get_user(req)
+  end
+
+  def user_metadata
+    {
+      metadata: {
+        user_id: current_user.id.to_s,
+        login_token: session[:login_token]
+      }
+    }
   end
 
   def get_metrics(app_id, metric_type)
     req = Soapbox::GetApplicationMetricsRequest.new(id: app_id, metric_type: metric_type)
     @metrics = []
-    app_metrics = $api_client.get_application_metrics(req)
+    app_metrics = $api_client.applications.get_application_metrics(req)
     sorted_metrics = app_metrics.metrics.sort_by {|metric|
       Time.parse(metric.time)
     }

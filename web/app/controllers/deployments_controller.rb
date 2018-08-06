@@ -7,7 +7,7 @@ class DeploymentsController < ApplicationController
 
   def index
     req = Soapbox::ListDeploymentRequest.new(application_id: params[:application_id].to_i)
-    res = $api_deployment_client.list_deployments(req)
+    res = $api_client.deployments.list_deployments(req, user_metadata)
     if res.deployments.count == 0
       redirect_to new_application_deployment_path
     else
@@ -24,7 +24,7 @@ class DeploymentsController < ApplicationController
 
   def new
     req = Soapbox::ListEnvironmentRequest.new(application_id: params[:application_id].to_i)
-    res = $api_environment_client.list_environments(req)
+    res = $api_client.environments.list_environments(req, user_metadata)
     if res.environments.count == 0
       redirect_to new_application_environment_path
     else
@@ -38,7 +38,7 @@ class DeploymentsController < ApplicationController
       env = Soapbox::Environment.new(id: @form.environment_id)
       app = Soapbox::Application.new(id: params[:application_id].to_i)
       req = Soapbox::Deployment.new(committish: @form.committish, application: app, env: env)
-      res = $api_deployment_client.start_deployment(req)
+      res = $api_client.deployments.start_deployment(req, user_metadata)
       redirect_to application_deployments_path(application_id: params[:application_id].to_i)
     else
       render :new
@@ -47,7 +47,7 @@ class DeploymentsController < ApplicationController
 
   def show
     req = Soapbox::GetDeploymentStatusRequest.new(id: params[:id].to_i)
-    res = $api_deployment_client.get_deployment_status(req)
+    res = $api_client.deployments.get_deployment_status(req, user_metadata)
     @state = res.state
 
     respond_to do |format|
@@ -60,12 +60,12 @@ class DeploymentsController < ApplicationController
 
   def list_environments(application_id)
     req = Soapbox::ListEnvironmentRequest.new(application_id: application_id)
-    $api_environment_client.list_environments(req).environments
+    $api_client.environments.list_environments(req, user_metadata).environments
   end
 
   def set_application
     req = Soapbox::GetApplicationRequest.new(id: params[:application_id].to_i)
-    @app = $api_client.get_application(req)
+    @app = $api_client.applications.get_application(req, user_metadata)
   end
 
   def set_environments

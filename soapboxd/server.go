@@ -14,6 +14,7 @@ type server struct {
 	config             *soapbox.Config
 	configurationStore ConfigurationStore
 	objectStore        ObjectStore
+	deployer           Deployer
 }
 
 // CloudProvider is a summation type of all the interfaces that a cloud must provide
@@ -52,5 +53,6 @@ func NewServer(db *sql.DB, httpClient *http.Client, config *soapbox.Config, clou
 		config:             config,
 		configurationStore: cloud,
 		objectStore:        cloud,
+		deployer:           cloud,
 	}
 }

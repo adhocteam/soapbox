@@ -294,14 +294,14 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	do(func() error {
 		// LOL YEAH RIGHT SO NOT HERE YET
-		return cloud.Deploy()
+		return s.deployer.Deploy()
 	})
 
 	setState("rollforward")
 
 	do(func() error {
 		// LOL YEAH RIGHT SO NOT HERE YET
-		return cloud.Rollforward()
+		return s.deployer.Rollforward()
 	})
 
 	log.Printf("done")

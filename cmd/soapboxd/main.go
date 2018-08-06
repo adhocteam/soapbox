@@ -160,13 +160,13 @@ func (e *missingMetadataErr) Error() string {
 // would allow an attacker to impersonate a user indefinitely.
 func authorize(ctx context.Context) error {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		vals, err := md["user_id"]
-		if err != nil || len(vals) < 1 {
+		vals, ok := md["user_id"]
+		if !ok || len(vals) < 1 {
 			return &missingMetadataErr{}
 		}
 		userID := []byte(vals[0])
-		vals, err := md["login_token"]
-		if err != nil || len(vals) < 1 {
+		vals, ok = md["login_token"]
+		if !ok || len(vals) < 1 {
 			return &missingMetadataErr{}
 		}
 		sentToken, err := base64.StdEncoding.DecodeString(vals[0])

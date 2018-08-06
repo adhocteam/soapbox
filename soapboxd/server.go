@@ -20,6 +20,7 @@ type server struct {
 type CloudProvider interface {
 	ObjectStore
 	ConfigurationStore
+	Deployer
 }
 
 // ObjectStore represents a blob store that can hold arbitrary files
@@ -32,6 +33,12 @@ type ConfigurationStore interface {
 	GetConfigVars(appSlug string, envSlug string, version int32) ([]*proto.ConfigVar, error)
 	SaveConfigVars(appSlug string, envSlug string, version int32, configVars []*proto.ConfigVar, kmsKeyARN string) error
 	DeleteConfigVars(appSlug string, envSlug string, version int32) error
+}
+
+// Deployer represents something that can blue/green deploy an image to a cloud provider
+type Deployer interface {
+	Deploy() error      // Initiate a deployment
+	Rollforward() error // Finalize a successful deployment
 }
 
 // NewServer creates an new instance of the server object

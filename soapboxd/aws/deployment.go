@@ -20,9 +20,9 @@ import (
 
 func (a *aws) rollforward() error {
 	log.Printf("detaching (stale) green ASG from load balancer")
-	do(func() error {
-		return greenASG.detachFromLBTargetGroup(target.arn)
-	})
+	if err := greenASG.detachFromLBTargetGroup(target.arn); err != nil {
+		return err
+	}
 
 	// TODO(paulsmith): there is a race condition because we can't
 	// update the tags atomically, so a reader might see both
@@ -30,12 +30,12 @@ func (a *aws) rollforward() error {
 	// ... risk is pretty low ATM but we should address this
 	// somehow later.
 	log.Printf("swapping blue/green pointers")
-	do(func() error {
-		return greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}})
-	})
-	do(func() error {
-		return blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}})
-	})
+	if err := greenASG.updateTags([]tag{{key: deployStateTagName, value: "blue"}}); err != nil {
+		return err
+	}
+	if err := blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}}); err != nil {
+		return err
+	}
 }
 
 func (a *aws) deploy() error {
@@ -43,8 +43,8 @@ func (a *aws) deploy() error {
 	// installs the docker image and gets the container running
 
 	var tmpl *template.Template
-	tmpl, err = template.ParseFiles("user-data.tmpl")
 
+	tmpl, err = template.ParseFiles("user-data.tmpl")
 	if err != nil {
 		return err
 	}
@@ -122,14 +122,15 @@ func (a *aws) deploy() error {
 	}
 
 	log.Printf("ensuring blue ASG has no instances")
-	do(func() error {
-		return blueASG.ensureEmpty()
-	})
+
+	if err := blueASG.ensureEmpty(); err != nil {
+		return err
+	}
 
 	log.Printf("updating blue ASG with new launch config")
-	do(func() error {
-		return blueASG.updateLaunchConfig(launchConfig)
-	})
+	if err := blueASG.updateLaunchConfig(launchConfig); err != nil {
+		return err
+	}
 
 	defer func() {
 		log.Printf("cleaning up: terminating instances in blue ASG")
@@ -144,48 +145,49 @@ func (a *aws) deploy() error {
 	}()
 
 	log.Printf("tagging blue ASG with release info")
-	do(func() error {
-		return blueASG.updateTags([]tag{{key: "release", value: committish}})
-	})
+	if err := blueASG.updateTags([]tag{{key: "release", value: committish}}); err != nil {
+		return err
+	}
 
 	log.Printf("starting up blue ASG instances")
-	do(func() error {
-		return blueASG.resize(minInstances, maxInstances, desiredInstances)
-	})
+	if err := blueASG.resize(minInstances, maxInstances, desiredInstances); err != nil {
+		return err
+	}
 
 	log.Printf("waiting for blue ASG instances to be ready")
-	do(func() error { return blueASG.waitUntilInstancesReady(minInstances) })
+	if err := blueASG.waitUntilInstancesReady(minInstances); err != nil {
+		return err
+	}
+
 	log.Printf("blue ASG instances ready")
 
-	var target *targetGroup
-	do(func() error {
-		var err error
-		target, err = greenASG.getTargetGroup()
+	target, err := greenASG.getTargetGroup()
+	if err != nil {
 		return err
-	})
+	}
 
 	log.Printf("attaching blue ASG to load balancer")
-	do(func() error {
-		return blueASG.attachToLBTargetGroup(target.arn)
-	})
+	if err := blueASG.attachToLBTargetGroup(target.arn); err != nil {
+		return err
+	}
 
 	log.Printf("waiting for blue ASG instances to pass health checks in load balancer")
-	do(func() error {
-		return target.waitUntilInstancesReady(blueASG)
-	})
+	if err := target.waitUntilInstancesReady(blueASG); err != nil {
+		return err
+	}
 }
 
 func createLaunchConfig(config *soapbox.Config, appSlug string, envSlug string, committish string, securityGroupID string, t time.Time, userData string) (string, error) {
 	name := fmt.Sprintf("%s-%s-%s-%d", appSlug, envSlug, committish, t.Unix())
 
-	amiId, err := app.getRecentAmiId(config.AmiName)
+	amiID, err := app.getRecentAmiId(config.AmiName)
 	if err != nil {
 		return "", fmt.Errorf("determining ami id: %v", err)
 	}
 
 	input := &autoscaling.CreateLaunchConfigurationInput{
 		IamInstanceProfile:      amazon.String(config.IamProfile),
-		ImageId:                 amazon.String(amiId),
+		ImageId:                 amazon.String(amiID),
 		InstanceType:            amazon.String(config.InstanceType),
 		KeyName:                 amazon.String(config.KeyName),
 		LaunchConfigurationName: amazon.String(name),

@@ -181,8 +181,6 @@ func (s *server) TeardownDeployment(ctx context.Context, req *pb.TeardownDeploym
 
 var sha1Re = regexp.MustCompile(`^[a-fA-F0-9]{40}$`)
 
-const deployStateTagName = "deploystate"
-
 func (s *server) startDeployment(dep *pb.Deployment) {
 	setState := func(state string) {
 		if dep.State == "failed" {
@@ -297,7 +295,7 @@ func (s *server) startDeployment(dep *pb.Deployment) {
 
 	do(func() error {
 		// LOL YEAH RIGHT SO NOT HERE YET
-		return s.deployer.Rollforward()
+		return s.deployer.Rollforward(app, env)
 	})
 
 	log.Printf("done")

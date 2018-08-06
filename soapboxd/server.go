@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/adhocteam/soapbox"
 	pb "github.com/adhocteam/soapbox/proto"
 )
 
@@ -18,7 +17,6 @@ type server struct {
 
 // CloudProvider is a summation type of all the interfaces that a cloud must provide
 type CloudProvider interface {
-	NewCloudProvider(config soapbox.Config) CloudProvider
 	ObjectStore
 	ConfigurationStore
 	Deployer
@@ -39,7 +37,7 @@ type ConfigurationStore interface {
 // Deployer represents something that can blue/green deploy an image to a cloud provider
 type Deployer interface {
 	Deploy(app Application, env Environment, config *pb.Configuration) error // Deploy is defined by the trio of application, environment, and configuration
-	Rollforward() error                                                      // Finalize a successful deployment
+	Rollforward(app Application, env Environment) error                      // Finalize a successful deployment
 }
 
 // NewServer creates an new instance of the server object

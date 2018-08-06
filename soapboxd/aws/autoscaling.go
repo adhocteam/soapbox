@@ -5,6 +5,7 @@ import (
 	"time"
 
 	amazon "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/pkg/errors"
@@ -30,8 +31,8 @@ func (g *autoScalingGroup) updateTags(tags []tag) error {
 
 func (g *autoScalingGroup) updateLaunchConfig(lcName string) error {
 	input := &autoscaling.UpdateAutoScalingGroupInput{
-		AutoScalingGroupName:    aws.String(g.name),
-		LaunchConfigurationName: aws.String(lcName),
+		AutoScalingGroupName:    amazon.String(g.name),
+		LaunchConfigurationName: amazon.String(lcName),
 	}
 	_, err := g.svc.UpdateAutoScalingGroup(input)
 	return err
@@ -39,18 +40,18 @@ func (g *autoScalingGroup) updateLaunchConfig(lcName string) error {
 
 func (g *autoScalingGroup) attachToLBTargetGroup(targetGroupARN string) error {
 	input := &autoscaling.AttachLoadBalancerTargetGroupsInput{
-		AutoScalingGroupName: aws.String(g.name),
+		AutoScalingGroupName: amazon.String(g.name),
 		TargetGroupARNs: []*string{
-			aws.String(targetGroupARN),
+			amazon.String(targetGroupARN),
 		},
 	}
 	_, err := g.svc.AttachLoadBalancerTargetGroups(input)
 	return err
 }
 
-func (g *autoScalingGroup) getTargetGroup() (*targetGroup, error) {
+func (g *autoScalingGroup) getTargetGroup(sess *session.Session) (*targetGroup, error) {
 	input := &autoscaling.DescribeLoadBalancerTargetGroupsInput{
-		AutoScalingGroupName: aws.String(g.name),
+		AutoScalingGroupName: amazon.String(g.name),
 	}
 	res, err := g.svc.DescribeLoadBalancerTargetGroups(input)
 	if err != nil {
@@ -58,7 +59,7 @@ func (g *autoScalingGroup) getTargetGroup() (*targetGroup, error) {
 	}
 	group := res.LoadBalancerTargetGroups[0]
 	target := &targetGroup{
-		svc: elbv2.New(g.sess),
+		svc: elbv2.New(sess),
 		arn: *group.LoadBalancerTargetGroupARN,
 	}
 	return target, nil
@@ -66,9 +67,9 @@ func (g *autoScalingGroup) getTargetGroup() (*targetGroup, error) {
 
 func (g *autoScalingGroup) detachFromLBTargetGroup(targetGroupARN string) error {
 	input := &autoscaling.DetachLoadBalancerTargetGroupsInput{
-		AutoScalingGroupName: aws.String(g.name),
+		AutoScalingGroupName: amazon.String(g.name),
 		TargetGroupARNs: []*string{
-			aws.String(targetGroupARN),
+			amazon.String(targetGroupARN),
 		},
 	}
 	_, err := g.svc.DetachLoadBalancerTargetGroups(input)
@@ -94,10 +95,10 @@ func (g *autoScalingGroup) ensureEmpty() error { // Application is a minimal ver
 
 func (g *autoScalingGroup) resize(min, max, desired int) error {
 	input := &autoscaling.UpdateAutoScalingGroupInput{
-		AutoScalingGroupName: aws.String(g.name),
-		DesiredCapacity:      aws.Int64(int64(desired)),
-		MaxSize:              aws.Int64(int64(max)),
-		MinSize:              aws.Int64(int64(min)),
+		AutoScalingGroupName: amazon.String(g.name),
+		DesiredCapacity:      amazon.Int64(int64(desired)),
+		MaxSize:              amazon.Int64(int64(max)),
+		MinSize:              amazon.Int64(int64(min)),
 	}
 	_, err := g.svc.UpdateAutoScalingGroup(input)
 	return err
@@ -105,7 +106,7 @@ func (g *autoScalingGroup) resize(min, max, desired int) error {
 
 func (g *autoScalingGroup) getInstances() ([]*autoscaling.Instance, error) {
 	input := &autoscaling.DescribeAutoScalingGroupsInput{
-		AutoScalingGroupNames: []*string{aws.String(g.name)},
+		AutoScalingGroupNames: []*string{amazon.String(g.name)},
 	}
 	res, err := g.svc.DescribeAutoScalingGroups(input)
 	if err != nil {

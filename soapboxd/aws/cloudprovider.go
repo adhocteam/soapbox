@@ -61,6 +61,6 @@ func (a *aws) Deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	return a.deploy(app, env, config)
 }
 
-func (a *aws) Rollforward() error {
-	return a.rollforward()
+func (a *aws) Rollforward(app soapboxd.Application, env soapboxd.Environment) error {
+	return a.rollforward(app, env)
 }

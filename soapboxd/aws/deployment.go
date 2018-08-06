@@ -18,7 +18,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (a *aws) rollforward() error {
+const deployStateTagName = "deploystate"
+
+func (a *aws) rollforward(app soapboxd.Application, env soapboxd.Environment) error {
+	blueASG, greenASG, err := a.blueGreenASGs(app, env)
+	if err != nil {
+		return err
+	}
+
+	target, err := greenASG.getTargetGroup(a.sess)
+	if err != nil {
+		return err
+	}
+
 	log.Printf("detaching (stale) green ASG from load balancer")
 	if err := greenASG.detachFromLBTargetGroup(target.arn); err != nil {
 		return err
@@ -36,6 +48,8 @@ func (a *aws) rollforward() error {
 	if err := blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}}); err != nil {
 		return err
 	}
+
+	return nil
 }
 
 func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config *pb.Configuration) error {
@@ -87,7 +101,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 
 	var blueASG, greenASG *autoScalingGroup
 
-	blueASG, greenASG, err = app.blueGreenASGs(env)
+	blueASG, greenASG, err = a.blueGreenASGs(app, env)
 	if err != nil {
 		return err
 	}
@@ -157,7 +171,7 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 
 	log.Printf("blue ASG instances ready")
 
-	target, err := greenASG.getTargetGroup()
+	target, err := greenASG.getTargetGroup(a.sess)
 	if err != nil {
 		return err
 	}
@@ -198,6 +212,20 @@ func (a *aws) createLaunchConfig(appSlug string, envSlug string, committish stri
 	}
 
 	return name, nil
+}
+
+func (a *aws) blueGreenASGs(app soapboxd.Application, env soapboxd.Environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
+	blue, err = a.getASGByColor(env, "blue")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting blue ASG")
+	}
+
+	green, err = a.getASGByColor(env, "green")
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting green ASG")
+	}
+
+	return blue, green, nil
 }
 
 func (a *aws) getASGByColor(env soapboxd.Environment, color string) (*autoScalingGroup, error) {
@@ -247,20 +275,6 @@ func (a *aws) getASGByColor(env soapboxd.Environment, color string) (*autoScalin
 	}, nil
 }
 
-func (a *application) blueGreenASGs(env *environment) (blue *autoScalingGroup, green *autoScalingGroup, err error) {
-	blue, err = a.getASGByColor(env, "blue")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "getting blue ASG")
-	}
-
-	green, err = a.getASGByColor(env, "green")
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "getting green ASG")
-	}
-
-	return blue, green, nil
-}
-
 func (a *aws) getAppSecurityGroupID(app soapboxd.Application, env soapboxd.Environment) (string, error) {
 	sgname := fmt.Sprintf("%s: %s application subnet security group", app.slug, env.slug)
 	svc := ec2.New(a.sess)
@@ -281,7 +295,7 @@ func (a *aws) getAppSecurityGroupID(app soapboxd.Application, env soapboxd.Envir
 	return *sg.GroupId, nil
 }
 
-func (a *application) getRecentAmiId(amiNameGlob string) (string, error) {
+func (a *aws) getRecentAmiId(amiNameGlob string) (string, error) {
 	svc := ec2.New(a.sess)
 	filters := []*ec2.Filter{
 		&ec2.Filter{

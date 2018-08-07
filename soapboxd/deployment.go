@@ -202,6 +202,7 @@ func (s *Server) startDeployment(dep *pb.Deployment) {
 				if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_FAILURE, dep); err != nil {
 					log.Printf("adding deployment activity: %v", err)
 				}
+				log.Println(err)
 			}
 		}
 	}

@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"html/template"
 	"log"
 	"os"
 	"path"
 	"sort"
 	"strconv"
+	"text/template"
 	"time"
 
 	pb "github.com/adhocteam/soapbox/proto"

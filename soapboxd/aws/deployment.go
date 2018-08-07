@@ -112,18 +112,6 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 		return err
 	}
 
-	defer func() {
-		log.Printf("cleaning up: terminating instances in blue ASG")
-		blueASG, err := a.getASGByColor(app, env, "blue")
-		if err != nil {
-			log.Printf("getting blue ASG: %v", err)
-		}
-		if err := blueASG.ensureEmpty(); err != nil {
-			log.Printf("ensuring blue ASG is empty: %v", err)
-		}
-		log.Printf("cleaning up: blue ASG empty")
-	}()
-
 	log.Printf("tagging blue ASG with release info")
 	if err := blueASG.updateTags([]tag{{key: "release", value: app.Committish}}); err != nil {
 		return err
@@ -340,6 +328,16 @@ func (a *aws) rollforward(app soapboxd.Application, env soapboxd.Environment) er
 	if err := blueASG.updateTags([]tag{{key: deployStateTagName, value: "green"}}); err != nil {
 		return err
 	}
+
+	log.Printf("cleaning up: terminating instances in blue ASG")
+	blueASG, err = a.getASGByColor(app, env, "blue")
+	if err != nil {
+		log.Printf("getting blue ASG: %v", err)
+	}
+	if err := blueASG.ensureEmpty(); err != nil {
+		log.Printf("ensuring blue ASG is empty: %v", err)
+	}
+	log.Printf("cleaning up: blue ASG empty")
 
 	return nil
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"time"
@@ -27,7 +29,12 @@ func (a *aws) deploy(app soapboxd.Application, env soapboxd.Environment, config 
 	// Create a userdata script tailored to this application deploy
 	var tmpl *template.Template
 
-	tmpl, err := template.ParseFiles("user-data.tmpl")
+	root, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	tmpl, err = template.ParseFiles(path.Join(root, "templates", "aws-user-data.tmpl"))
 	if err != nil {
 		return err
 	}

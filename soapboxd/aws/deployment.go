@@ -266,6 +266,9 @@ func (a *aws) getAppSecurityGroupID(app soapboxd.Application, env soapboxd.Envir
 	if err != nil {
 		return "", err
 	}
+	if len(res.SecurityGroups) < 1 {
+		return "", errors.New("no security groups found")
+	}
 	sg := res.SecurityGroups[0]
 	return *sg.GroupId, nil
 }

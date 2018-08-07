@@ -1,11 +1,12 @@
 pipeline {
   agent any
   stages {
-    stage ("Build container") {
+    stage ("Build containers") {
       steps {
         sh '''
           set -e
           docker build --target builder -t soapboxbuilder .
+          docker build -f web/Dockerfile -t soapboxrails web
         '''
       }
     }
@@ -25,6 +26,14 @@ pipeline {
         sh '''
           set -e
           docker run soapboxbuilder go test ./...
+        '''
+      }
+    }
+    stage ("Run rails tests") {
+      steps {
+        sh '''
+          set -e
+          docker run soapboxrails rspec
         '''
       }
     }

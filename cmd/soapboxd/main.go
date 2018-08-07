@@ -19,6 +19,7 @@ import (
 	"github.com/adhocteam/soapbox/buildinfo"
 	pb "github.com/adhocteam/soapbox/proto"
 	"github.com/adhocteam/soapbox/soapboxd"
+	"github.com/adhocteam/soapbox/soapboxd/aws"
 	_ "github.com/lib/pq"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -59,9 +60,11 @@ func main() {
 		opts = append(opts, serverInterceptor(timingInterceptor))
 	}
 
+	soapboxConfig := getConfig()
+	cloud := aws.NewCloudProvider(soapboxConfig)
+
 	server := grpc.NewServer(opts...)
-	config := getConfig()
-	apiServer := soapboxd.NewServer(db, nil, config)
+	apiServer := soapboxd.NewServer(db, nil, cloud)
 	pb.RegisterApplicationsServer(server, apiServer)
 	pb.RegisterConfigurationsServer(server, apiServer)
 	pb.RegisterEnvironmentsServer(server, apiServer)
@@ -83,8 +86,8 @@ func checkJobDependencies() error {
 	return nil
 }
 
-func getConfig() *soapbox.Config {
-	c := &soapbox.Config{
+func getConfig() soapbox.Config {
+	c := soapbox.Config{
 		AmiName:      "soapbox-aws-linux-ami-*",
 		Domain:       "soapbox.hosting",
 		IamProfile:   "soapbox-app",
@@ -150,18 +153,26 @@ func (e *accessDeniedErr) Error() string {
 	return fmt.Sprintf("Incorrect login token for user %s", e.userID)
 }
 
-type emptyMetadataErr struct{}
+type missingMetadataErr struct{}
 
-func (e *emptyMetadataErr) Error() string {
-	return fmt.Sprint("No metadata attached with request")
+func (e *missingMetadataErr) Error() string {
+	return fmt.Sprint("Not enough metadata attached to authorize request")
 }
 
 // TODO(kalilsn) The token calculated here is static, so it can't be revoked, and if stolen
 // would allow an attacker to impersonate a user indefinitely.
 func authorize(ctx context.Context) error {
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		userID := []byte(md["user_id"][0])
-		sentToken, err := base64.StdEncoding.DecodeString(md["login_token"][0])
+		vals, ok := md["user_id"]
+		if !ok || len(vals) < 1 {
+			return &missingMetadataErr{}
+		}
+		userID := []byte(vals[0])
+		vals, ok = md["login_token"]
+		if !ok || len(vals) < 1 {
+			return &missingMetadataErr{}
+		}
+		sentToken, err := base64.StdEncoding.DecodeString(vals[0])
 		if err != nil {
 			return err
 		}
@@ -176,5 +187,5 @@ func authorize(ctx context.Context) error {
 		return &accessDeniedErr{userID}
 	}
 
-	return &emptyMetadataErr{}
+	return &missingMetadataErr{}
 }

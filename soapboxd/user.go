@@ -15,7 +15,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*pb.User, error) {
+func (s *Server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*pb.User, error) {
 	password := []byte(user.Password)
 
 	// Hashing the password with the default cost of 10
@@ -47,15 +47,14 @@ func (s *server) CreateUser(ctx context.Context, user *pb.CreateUserRequest) (*p
 	return newUser, nil
 }
 
-func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
+func (s *Server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
 	if req.GetEmail() != "" {
 		return s.getUserByEmail(ctx, req.GetEmail())
-	} else {
-		return s.getUserById(ctx, int(req.GetId()))
 	}
+	return s.getUserByID(ctx, int(req.GetId()))
 }
 
-func (s *server) getUserById(ctx context.Context, id int) (*pb.User, error) {
+func (s *Server) getUserByID(ctx context.Context, id int) (*pb.User, error) {
 	model, err := models.UserByID(s.db, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user by id from db")
@@ -72,7 +71,7 @@ func (s *server) getUserById(ctx context.Context, id int) (*pb.User, error) {
 	return user, nil
 }
 
-func (s *server) getUserByEmail(ctx context.Context, email string) (*pb.User, error) {
+func (s *Server) getUserByEmail(ctx context.Context, email string) (*pb.User, error) {
 	model, err := models.UserByEmail(s.db, email)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user by email from db")
@@ -89,7 +88,7 @@ func (s *server) getUserByEmail(ctx context.Context, email string) (*pb.User, er
 	return user, nil
 }
 
-func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
+func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error) {
 	const genericLoginErrorMsg = "could not log in user"
 
 	res := &pb.LoginUserResponse{
@@ -114,7 +113,7 @@ func (s *server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 	return res, nil
 }
 
-func (s *server) AssignGithubOmniauthTokenToUser(ctx context.Context, user *pb.User) (*pb.User, error) {
+func (s *Server) AssignGithubOmniauthTokenToUser(ctx context.Context, user *pb.User) (*pb.User, error) {
 	model, err := models.UserByEmail(s.db, user.Email)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user by email from db")

@@ -1,0 +1,86 @@
+#!/bin/bash
+
+set -xeuo pipefail
+
+# log all script output
+exec > >(tee /var/log/user-data.log) 2>&1
+
+AWS=/usr/bin/aws
+DOCKER=/usr/bin/docker
+
+APP_NAME="{{.Slug}}"
+PORT="{{.ListenPort}}"
+RELEASE_BUCKET="{{.Bucket}}"
+RELEASE="{{.Release}}" # Version string/committish
+ENV="{{.Environment}}"
+IMAGE="{{.Image}}"
+CONFIG_VERSION="{{.ConfigVersion}}"
+
+# Retrieve the release from s3
+$AWS s3 cp s3://$RELEASE_BUCKET/$APP_NAME/$APP_NAME-$RELEASE.tar.gz /tmp/$APP_NAME-$RELEASE.tar.gz
+
+# Install the docker image
+$DOCKER image load -i /tmp/$APP_NAME-$RELEASE.tar.gz
+
+# Set up the runit dirs
+mkdir -p "/etc/sv/$APP_NAME"
+mkdir -p "/etc/sv/$APP_NAME/env"
+
+# Place env vars in /etc/sv/$APP_NAME/env
+{{- range .Variables}}
+cat << EOF > /etc/sv/$APP_NAME/env/{{.Name}}
+{{.Value}}
+EOF
+{{end}}
+
+# Logging configuration
+mkdir -p "/etc/sv/$APP_NAME/log"
+mkdir -p "/var/log/$APP_NAME"
+
+# Create the logging run script
+cat << EOF > /etc/sv/$APP_NAME/log/run
+#!/bin/sh
+exec svlogd -tt /var/log/$APP_NAME
+EOF
+
+# Configure logs to forward to rsyslogd
+cat << EOF > /var/log/$APP_NAME/config
+U127.0.0.1
+EOF
+
+# Mark the log/run file executable
+chmod +x /etc/sv/$APP_NAME/log/run
+
+# Create the run script for the app
+cat << EOF > /etc/sv/$APP_NAME/run
+#!/bin/bash
+exec 2>&1 chpst -e /etc/sv/$APP_NAME/env $DOCKER run \
+{{range .Variables -}}
+  --env {{.Name}} \
+{{end -}}
+--env PORT \
+--rm --name $APP_NAME-run -p 9090:$PORT "$IMAGE"
+EOF
+
+# Mark the run file executable
+chmod +x /etc/sv/$APP_NAME/run
+
+# Create a link from /etc/service/$APP_NAME -> /etc/sv/$APP_NAME
+ln -s /etc/sv/$APP_NAME /etc/service/$APP_NAME
+
+# Switch to /etc/nginx/app.conf
+mv /etc/nginx/app.conf /etc/nginx/nginx.conf
+
+# nginx is now proxying to the app itself
+service nginx reload
+
+# Set the X-Soapbox-App-Version HTTP header
+sed -i.bak \
+  $"s/add_header X-Soapbox-App-Version \"latest\"/add_header X-Soapbox-App-Version \"$RELEASE\";\nadd_header X-Soapbox-Config-Version \"$CONFIG_VERSION\";\nadd_header X-Soapbox-Environment \"$ENV\"/" \
+  /etc/nginx/nginx.conf
+
+# Safely remove backup
+rm -f /etc/nginx/nginx.conf.bak
+
+# Pick up changes to response header
+service nginx reload

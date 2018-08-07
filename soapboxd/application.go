@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*pb.Application, error) {
+func (s *Server) CreateApplication(ctx context.Context, app *pb.Application) (*pb.Application, error) {
 	// verify access to the GitHub repo (if private, then need
 	// OAuth2 token: this is not the responsibility of this
 	// module, the caller should supply this server with an HTTP
@@ -72,7 +72,7 @@ func (s *server) CreateApplication(ctx context.Context, app *pb.Application) (*p
 	return app, nil
 }
 
-func (s *server) createAppInfrastructure(app *pb.Application) {
+func (s *Server) createAppInfrastructure(app *pb.Application) {
 	setState := func(state pb.CreationState) {
 		app.CreationState = state
 		updateSQL := "UPDATE applications SET creation_state = $1 WHERE id = $2"
@@ -262,7 +262,7 @@ func canAccessURL(client httpHead, url string) error {
 	return nil
 }
 
-func (s *server) ListApplications(ctx context.Context, req *pb.ListApplicationRequest) (*pb.ListApplicationResponse, error) {
+func (s *Server) ListApplications(ctx context.Context, req *pb.ListApplicationRequest) (*pb.ListApplicationResponse, error) {
 	const query = `SELECT id, name, description, created_at FROM applications WHERE user_id = $1 AND deletion_state = $2 ORDER BY created_at ASC`
 	rows, err := s.db.Query(query, req.UserId, "NOT_DELETED")
 	if err != nil {
@@ -370,7 +370,7 @@ func deletionStateTypePbToModel(cst pb.DeletionState) models.DeletionStateType {
 	}
 }
 
-func (s *server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
+func (s *Server) GetApplication(ctx context.Context, req *pb.GetApplicationRequest) (*pb.Application, error) {
 	model, err := models.ApplicationByID(s.db, int(req.Id))
 	if err != nil {
 		return nil, errors.Wrap(err, "getting application by ID from db")
@@ -417,13 +417,13 @@ func setPbTimestamp(ts *gpb.Timestamp, t time.Time) {
 	ts.Seconds = t.Unix()
 }
 
-func (s *server) DeleteApplication(ctx context.Context, app *pb.Application) (*pb.Empty, error) {
+func (s *Server) DeleteApplication(ctx context.Context, app *pb.Application) (*pb.Empty, error) {
 	go s.deleteAppInfrastructure(ctx, app)
 
 	return &pb.Empty{}, nil
 }
 
-func (s *server) deleteAppInfrastructure(ctx context.Context, app *pb.Application) {
+func (s *Server) deleteAppInfrastructure(ctx context.Context, app *pb.Application) {
 	setState := func(state pb.DeletionState) {
 		app.DeletionState = state
 		updateSQL := "UPDATE applications SET deletion_state = $1 WHERE id = $2"
@@ -533,7 +533,10 @@ func (m metricParams) getCountFromDataPoint(d cloudwatch.Datapoint) int32 {
 	return count
 }
 
-func (s *server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicationMetricsRequest) (*pb.ApplicationMetricsResponse, error) {
+func (s *Server) GetApplicationMetrics(ctx context.Context, req *pb.GetApplicationMetricsRequest) (*pb.ApplicationMetricsResponse, error) {
+
+	//TODO(bob) Need to Remove this to aws package
+
 	sess, err := session.NewSession()
 	if err != nil {
 		return nil, errors.Wrap(err, "new AWS session")

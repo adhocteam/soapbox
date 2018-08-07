@@ -75,8 +75,8 @@ class ApplicationsController < ApplicationController
 
   def destroy
     req = Soapbox::GetApplicationRequest.new(id: params[:id].to_i)
-    @app = $api_client.applications.get_application(req)
-    $api_client.applications.delete_application(@app)
+    @app = $api_client.applications.get_application(req, user_metadata)
+    $api_client.applications.delete_application(@app, user_metadata)
     redirect_to application_path(@app.id)
   end
 

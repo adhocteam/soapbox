@@ -22,7 +22,7 @@ var activityTypeToModel = map[pb.ActivityType]models.ActivityType{
 	pb.ActivityType_APPLICATION_DELETED:   models.ActivityTypeApplicationDeleted,
 }
 
-func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Empty, error) {
+func (s *Server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Empty, error) {
 	query := `
 	INSERT INTO activities (user_id, activity, application_id, deployment_id, environment_id)
 	VALUES ($1, $2, $3, $4, $5)
@@ -42,7 +42,7 @@ func (s *server) AddActivity(ctx context.Context, activity *pb.Activity) (*pb.Em
 	return &proto.Empty{}, nil
 }
 
-func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActivitiesResponse, error) {
+func (s *Server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActivitiesResponse, error) {
 	translations := map[models.ActivityType]pb.ActivityType{
 		models.ActivityTypeApplicationCreated:   pb.ActivityType_APPLICATION_CREATED,
 		models.ActivityTypeDeploymentStarted:    pb.ActivityType_DEPLOYMENT_STARTED,
@@ -72,31 +72,31 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 		}
 		var (
 			aType         models.ActivityType
-			applicationId sql.NullInt64
-			deploymentId  sql.NullInt64
-			environmentId sql.NullInt64
+			applicationID sql.NullInt64
+			deploymentID  sql.NullInt64
+			environmentID sql.NullInt64
 		)
 		var createdAt time.Time
 		dest := []interface{}{
 			&activity.Id,
 			&activity.UserId,
 			&aType,
-			&applicationId,
-			&deploymentId,
-			&environmentId,
+			&applicationID,
+			&deploymentID,
+			&environmentID,
 			&createdAt,
 		}
 		if err := rows.Scan(dest...); err != nil {
 			return nil, errors.Wrap(err, "scanning db row")
 		}
-		if applicationId.Valid {
-			activity.ApplicationId = int32(applicationId.Int64)
+		if applicationID.Valid {
+			activity.ApplicationId = int32(applicationID.Int64)
 		}
-		if deploymentId.Valid {
-			activity.DeploymentId = int32(deploymentId.Int64)
+		if deploymentID.Valid {
+			activity.DeploymentId = int32(deploymentID.Int64)
 		}
-		if environmentId.Valid {
-			activity.EnvironmentId = int32(environmentId.Int64)
+		if environmentID.Valid {
+			activity.EnvironmentId = int32(environmentID.Int64)
 		}
 		activity.Type = translations[aType]
 		setPbTimestamp(activity.CreatedAt, createdAt)
@@ -110,15 +110,15 @@ func (s *server) ListActivities(ctx context.Context, _ *pb.Empty) (*pb.ListActiv
 	return &pb.ListActivitiesResponse{Activities: activities}, nil
 }
 
-func (s *server) AddApplicationActivity(ctx context.Context, applicationId int32, userId int32, activityType models.ActivityType) error {
+func (s *Server) AddApplicationActivity(ctx context.Context, applicationID int32, userID int32, activityType models.ActivityType) error {
 	query := `
 	INSERT INTO activities (user_id, activity, application_id)
 	VALUES ($1, $2, $3)
 	`
 	_, err := s.db.Exec(query,
-		userId,
+		userID,
 		activityType,
-		applicationId,
+		applicationID,
 	)
 	if err != nil {
 		return errors.Wrap(err, "error adding application activity")
@@ -127,7 +127,7 @@ func (s *server) AddApplicationActivity(ctx context.Context, applicationId int32
 	return nil
 }
 
-func (s *server) AddDeploymentActivity(ctx context.Context, activityType pb.ActivityType, dep *pb.Deployment) error {
+func (s *Server) AddDeploymentActivity(ctx context.Context, activityType pb.ActivityType, dep *pb.Deployment) error {
 	query := `
 	INSERT INTO activities (user_id, activity, application_id, deployment_id)
 	VALUES ($1, $2, $3, $4)
@@ -146,7 +146,7 @@ func (s *server) AddDeploymentActivity(ctx context.Context, activityType pb.Acti
 	return nil
 }
 
-func (s *server) AddCreateEnvironmentActivity(ctx context.Context, env *pb.Environment) error {
+func (s *Server) AddCreateEnvironmentActivity(ctx context.Context, env *pb.Environment) error {
 	application, err := s.GetApplication(ctx, &pb.GetApplicationRequest{Id: env.GetApplicationId()})
 	if err != nil {
 		return errors.Wrap(err, "error adding environment activity")
@@ -167,13 +167,13 @@ func (s *server) AddCreateEnvironmentActivity(ctx context.Context, env *pb.Envir
 	return nil
 }
 
-func (s *server) ListApplicationActivities(ctx context.Context, app *pb.GetApplicationRequest) (*pb.ListActivitiesResponse, error) {
+func (s *Server) ListApplicationActivities(ctx context.Context, app *pb.GetApplicationRequest) (*pb.ListActivitiesResponse, error) {
 	// XXX TODO
 	var activities []*pb.Activity
 	return &pb.ListActivitiesResponse{Activities: activities}, nil
 }
 
-func (s *server) ListDeploymentActivities(ctx context.Context, app *pb.GetDeploymentRequest) (*pb.ListActivitiesResponse, error) {
+func (s *Server) ListDeploymentActivities(ctx context.Context, app *pb.GetDeploymentRequest) (*pb.ListActivitiesResponse, error) {
 	// XXX TODO
 	var activities []*pb.Activity
 	return &pb.ListActivitiesResponse{Activities: activities}, nil

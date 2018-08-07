@@ -23,4 +23,5 @@ WORKDIR /root/
 RUN mkdir ops
 COPY --from=builder /go/bin/soapboxd .
 COPY ./ops ./ops
+COPY ./templates ./templates
 CMD ["./soapboxd"]

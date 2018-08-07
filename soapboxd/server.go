@@ -39,6 +39,7 @@ type ConfigurationStore interface {
 type Deployer interface {
 	Deploy(app Application, env Environment, config *pb.Configuration) error // Deploy is defined by the trio of application, environment, and configuration
 	Rollforward(app Application, env Environment) error                      // Finalize a successful deployment
+	Cleanup(app Application, env Environment)                                // Clean any remaining resources (e.g., Blue group) from either a failed or successful deployment
 }
 
 // NewServer creates an new instance of the server object

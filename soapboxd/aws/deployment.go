@@ -329,8 +329,12 @@ func (a *aws) rollforward(app soapboxd.Application, env soapboxd.Environment) er
 		return err
 	}
 
+	return nil
+}
+
+func (a *aws) cleanup(app soapboxd.Application, env soapboxd.Environment) {
 	log.Printf("cleaning up: terminating instances in blue ASG")
-	blueASG, err = a.getASGByColor(app, env, "blue")
+	blueASG, err := a.getASGByColor(app, env, "blue")
 	if err != nil {
 		log.Printf("getting blue ASG: %v", err)
 	}
@@ -338,6 +342,4 @@ func (a *aws) rollforward(app soapboxd.Application, env soapboxd.Environment) er
 		log.Printf("ensuring blue ASG is empty: %v", err)
 	}
 	log.Printf("cleaning up: blue ASG empty")
-
-	return nil
 }

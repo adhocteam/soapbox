@@ -298,13 +298,18 @@ func (s *Server) startDeployment(dep *pb.Deployment) {
 		return s.deployer.Rollforward(app, env)
 	})
 
+	// Should always run to either clean up failed blue nodes or outdated ones
+	s.deployer.Cleanup(app, env)
+
 	log.Printf("done")
 
 	// TODO(paulsmith): health check?
 
-	setState("success")
-	if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_SUCCESS, dep); err != nil {
-		log.Println("error adding deployment activity", err)
+	if dep.State != "failed" {
+		setState("success")
+		if err := s.AddDeploymentActivity(context.Background(), pb.ActivityType_DEPLOYMENT_SUCCESS, dep); err != nil {
+			log.Println("error adding deployment activity", err)
+		}
 	}
 }
 

@@ -1,5 +1,7 @@
 pipeline {
-  agent any
+  agent {
+    label 'general'
+  }
   stages {
     stage ("Build containers") {
       steps {

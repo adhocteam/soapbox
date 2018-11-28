@@ -1,0 +1,15 @@
+{
+    "Statement": [
+        {
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "*"
+            },
+            "Resource": "arn:aws:s3:::${bucket}/*",
+            "Sid": "PublicReadAccess"
+        }
+    ]
+}
